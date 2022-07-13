@@ -4,19 +4,22 @@ use std::collections::HashMap;
 /// Block reference, 0: init pos in the Catvec, 1: block len
 pub type BlockRef = (usize, usize);
 
-#[derive(Debug)]
 enum DictEntry {
-    Native, //TODO: ref to native function
+    Native(fn(&mut Stack)),
     Defined(BlockRef),
 }
 
-struct Dictionary {
+pub struct Dictionary {
     dict: HashMap<String, DictEntry>,
 }
 
 impl Dictionary {
     fn new() -> Self {
         Self { dict: HashMap::new() }
+    }
+
+    pub fn implement(&mut self, word: &str, func: fn(&mut Stack)) {
+        self.dict.insert(word.into(), DictEntry::Native(func));
     }
 }
 
@@ -68,7 +71,7 @@ pub type IntegerType = i64;
 /// Float type alias
 pub type FloatType = f64;
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 /// Data primitive
 pub enum Cell {
     Empty,  // TODO: once we implement error handling, we won't need an empty variant
@@ -84,7 +87,7 @@ pub enum Cell {
 
 impl Cell {
     /// Parse a number into a cell
-    pub fn number(token: &str) -> Option<Self> {
+    fn number(token: &str) -> Option<Self> {
         if let Ok(int) = token.parse::<IntegerType>() {
             Some(Cell::Integer(int))
         }
@@ -97,7 +100,7 @@ impl Cell {
     }
 
     /// Parse a symbol into a cell
-    pub fn symbol(token: &str) -> Option<Self> {
+    fn symbol(token: &str) -> Option<Self> {
         if token.starts_with("#") {
             Some(Cell::Symbol(token.into()))
         }
@@ -107,7 +110,7 @@ impl Cell {
     }
 
     /// Parse a boolean into a cell
-    pub fn boolean(token: &str) -> Option<Self> {
+    fn boolean(token: &str) -> Option<Self> {
         if token == "true" {
             Some(Cell::Boolean(true))
         }
@@ -189,7 +192,8 @@ impl Stack {
 
 /// RunPack interpreter
 pub struct Script<T: Iterator<Item=u8> + Sized> {
-    dict: Dictionary,
+    pub stack: Stack,
+    pub dictionary: Dictionary,
     ret: RetStack,
     catvec: Concat,
     reader: T,
@@ -197,12 +201,15 @@ pub struct Script<T: Iterator<Item=u8> + Sized> {
 
 impl<T: Iterator<Item=u8> + Sized> Script<T> {
     pub fn new(reader: T) -> Self {
-        Self {
-            dict: Dictionary::new(),
+        let mut script = Self {
+            stack: Stack::new(),
+            dictionary: Dictionary::new(),
             ret: RetStack::new(),
             catvec: Concat::new(),
             reader,
-        }
+        };
+        script.tokenize();
+        script
     }
 
     fn next_cell(&mut self) -> Cell {
@@ -291,8 +298,7 @@ impl<T: Iterator<Item=u8> + Sized> Script<T> {
         }
     }
     
-    /// Tokenize and parse
-    pub fn tokenize(&mut self) {
+    fn tokenize(&mut self) {
         loop {
             let cell = self.next_cell();
             if let Cell::Empty = cell {
@@ -305,5 +311,37 @@ impl<T: Iterator<Item=u8> + Sized> Script<T> {
         }
 
         println!("Tokens =\n{:?}", self.catvec.array);
+    }
+
+    //TODO: append: parse another piece of program into the same script space. Is appened at the end of the CatVec.
+    //TODO: run a piece a code directly: appends and runs from the pos of the new code
+
+    /// Run the script
+    pub fn run(&mut self) {
+        let mut pointer = 0;
+        while pointer < self.catvec.array.len() {
+            let cell = &self.catvec.array[pointer];
+            match cell {
+                Cell::Integer(_) | Cell::Float(_) | Cell::Boolean(_) | Cell::Symbol(_) | Cell::String(_) => self.stack.push(cell.clone()),
+                Cell::Word(w) => {
+                    // TODO: execute the word
+                    if let Some(dict_entry) = self.dictionary.dict.get(w) {
+                        match dict_entry {
+                            DictEntry::Native(func) => {
+                                func(&mut self.stack);
+                            },
+                            DictEntry::Defined(block_ref) => {
+                                println!("TODO: execute defined word {}", w);
+                            },
+                        }
+                    }
+                    else {
+                        panic!("{}: word not found in the dictionary", w);
+                    }
+                },
+                _ => { panic!("Found an invalid cell value in the CatVec: {:?}", cell) },
+            }
+            pointer += 1;
+        }
     }
 }
