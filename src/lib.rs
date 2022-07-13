@@ -211,12 +211,10 @@ impl<T: Iterator<Item=u8> + Sized> Script<T> {
             reader,
         };
         script.tokenize();
-        script.def_primitives();
+        script.def_natives(&[
+            ("(", open_parenth), (")", close_parenth),
+        ]);
         script
-    }
-
-    fn def_primitives(&mut self) {
-        //TODO
     }
 
     fn next_cell(&mut self) -> Cell {
@@ -320,6 +318,13 @@ impl<T: Iterator<Item=u8> + Sized> Script<T> {
         println!("Tokens =\n{:?}", self.catvec.array);
     }
 
+    /// Define a batch of native functions
+    pub fn def_natives(&mut self, list: &[(&str, fn(&mut Stack))]) {
+        list.iter().for_each(|(word_name, function)| {
+            self.dictionary.define(word_name, *function);
+        });
+    }
+
     //TODO: append: parse another piece of program into the same script space. Is appened at the end of the CatVec.
     //TODO: run a piece a code directly: appends and runs from the pos of the new code
 
@@ -355,5 +360,17 @@ impl<T: Iterator<Item=u8> + Sized> Script<T> {
     /// Get mutable ref to ductionary
     pub fn dictionary(&mut self) -> &mut Dictionary {
         &mut self.dictionary
+    }
+}
+
+// Primitives
+
+fn open_parenth(stack: &mut Stack) {
+    stack.start_stack();
+}
+
+fn close_parenth(stack: &mut Stack) {
+    if let None = stack.end_stack() {
+        panic!("Stack level undeflow");
     }
 }
