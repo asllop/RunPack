@@ -5,11 +5,15 @@ use runpack::{
 fn main() {
     println!("Run Pack!");
 
-    let mut concat = Concat::new(r#"
+    let program = r#"
         10 hello #symbol 99.11
         'This is a \'string\' my friend'
         false
-    "#.bytes());
+    "#;
+
+    println!("Program = {}", program);
+
+    let mut concat = Concat::new(program.bytes());
 
     concat.tokenize();
 }

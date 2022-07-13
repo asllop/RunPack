@@ -1,50 +1,4 @@
 
-/// Max size of a word name
-pub const NAME_SIZE: usize = 32;
-
-/// Word name type
-pub type WordName = [u8; NAME_SIZE];
-
-/// Word struct, a WordName plus length
-#[derive(Debug)]
-pub struct Word {
-    word_name: WordName,
-    len: u8,
-}
-
-impl Word {
-    /// Create word from parts
-    pub fn from_parts(word_name: WordName, len: u8) -> Self {
-        Self {
-            word_name,
-            len
-        }
-    }
-
-    /// Create word from a str
-    pub fn new(name: &str) -> Word {
-        let mut word_name = WordName::default();
-        for (i, b) in name.as_bytes().into_iter().enumerate() {
-            if i >= NAME_SIZE {
-                break;
-            }
-            word_name[i] = *b;
-        }
-        let name_len = core::cmp::min(name.as_bytes().len(), NAME_SIZE) as u8;
-        Self { word_name, len: name_len }
-    }
-
-    /// Word name
-    pub fn name(&self) -> WordName {
-        self.word_name
-    }
-
-    /// Word name size
-    pub fn len(&self) -> u8 {
-        self.len
-    }
-}
-
 /// Integer type alias
 pub type IntegerType = i64;
 
@@ -58,28 +12,43 @@ pub enum Cell {
     Integer(IntegerType),
     Float(FloatType),
     Boolean(bool),
-    Symbol(Word),
+    Symbol(String),
     String(String),
-    Function(Word),
+    Word(String),
     //TODO: object
-    //Block(Vec<Word>),
 }
 
 impl Cell {
-    //TODO: build cell from all other types
-
-    pub fn number(word: Word) -> Option<Self> {
-        // Safety note: we assume that the source code is a well formed UTF-8 text to avoid slow checks.
-        let word_name_str = unsafe {
-            let arr = core::slice::from_raw_parts(word.name().as_ptr(), word.len() as usize);
-            core::str::from_utf8_unchecked(arr)
-        };
-        //IMPROVEMENT: find a faster way to parse a number, in a single pass
-        if let Ok(int) = word_name_str.parse::<IntegerType>() {
+    /// Parse a number into a cell
+    pub fn number(token: &str) -> Option<Self> {
+        if let Ok(int) = token.parse::<IntegerType>() {
             Some(Cell::Integer(int))
         }
-        else if let Ok(flt) = word_name_str.parse::<FloatType>() {
+        else if let Ok(flt) = token.parse::<FloatType>() {
             Some(Cell::Float(flt))
+        }
+        else {
+            None
+        }
+    }
+
+    /// Parse a symbol into a cell
+    pub fn symbol(token: &str) -> Option<Self> {
+        if token.starts_with("#") {
+            Some(Cell::Symbol(token.into()))
+        }
+        else {
+            None
+        }
+    }
+
+    /// Parse a boolean into a cell
+    pub fn boolean(token: &str) -> Option<Self> {
+        if token == "true" {
+            Some(Cell::Boolean(true))
+        }
+        else if token == "false" {
+            Some(Cell::Boolean(false))
         }
         else {
             None
@@ -102,7 +71,7 @@ impl<T: Iterator<Item=u8> + Sized> Concat<T> {
         }
     }
 
-    pub fn next_cell(&mut self) -> Cell {
+    fn next_cell(&mut self) -> Cell {
         //TODO: parse next entity and convert into cell
         let mut word_found = false;
         let mut in_string = false;
@@ -137,8 +106,7 @@ impl<T: Iterator<Item=u8> + Sized> Concat<T> {
                     in_string = true;
                     word_found = true;
                 }
-                // Found a word separator (comma, space or any control character)
-                else if b == 44 || b <= 32 {
+                else if b == 44 || b <= 32 {    // Found a word separator (comma, space or any control character)
                     if word_found {
                         break;
                     }
@@ -151,14 +119,36 @@ impl<T: Iterator<Item=u8> + Sized> Concat<T> {
         }
 
         if buff.len() > 0 {
-            let token = std::str::from_utf8(&buff).expect("Error parsing UTF-8 string");
-            println!("Token found = {}", token);
             if in_string {
-                Cell::String(String::from(token))
+                if let Ok(token) = String::from_utf8(buff) {
+                    Cell::String(token)
+                }
+                else {
+                    Cell::Empty
+                }
             }
             else {
-                //TEST
-                Cell::Boolean(true)
+                self.parse_token(buff)
+            }
+        }
+        else {
+            Cell::Empty
+        }
+    }
+
+    fn parse_token(&mut self, token: Vec<u8>) -> Cell {
+        if let Ok(token) = String::from_utf8(token) {
+            if let Some(num_cell) = Cell::number(&token) {
+                num_cell
+            }
+            else if let Some(sym_cell) = Cell::symbol(&token) {
+                sym_cell
+            }
+            else if let Some(bool_cell) = Cell::boolean(&token) {
+                bool_cell
+            }
+            else {
+                Cell::Word(token)
             }
         }
         else {
@@ -178,7 +168,7 @@ impl<T: Iterator<Item=u8> + Sized> Concat<T> {
             }
         }
 
-        println!("Array of token = {:?}", self.array);
+        println!("Array of tokens = {:?}", self.array);
     }
 }
 
