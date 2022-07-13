@@ -9,7 +9,7 @@ pub struct BlockRef {
 }
 
 enum DictEntry {
-    Native(fn(&mut Stack, &mut Concat)),
+    Native(fn(&mut Stack, &mut Concat, &mut Dictionary)),
     Defined(BlockRef),
 }
 
@@ -24,8 +24,13 @@ impl Dictionary {
     }
 
     /// Define a native word
-    pub fn define(&mut self, word: &str, func: fn(&mut Stack, &mut Concat)) {
+    pub fn define(&mut self, word: &str, func: fn(&mut Stack, &mut Concat, &mut Dictionary)) {
         self.dict.insert(word.into(), DictEntry::Native(func));
+    }
+
+    /// Define block word
+    pub fn block(&mut self, word: &str, block: BlockRef) {
+        self.dict.insert(word.into(), DictEntry::Defined(block));
     }
 }
 
@@ -232,7 +237,7 @@ impl<T: Iterator<Item=u8> + Sized> Script<T> {
         };
         script.tokenize();
         script.def_natives(&[
-            ("(", open_parenth), (")", close_parenth), ("{", open_curly), ("}", close_curly),
+            ("(", open_parenth), (")", close_parenth), ("{", open_curly), ("}", close_curly), ("def", def), ("+", plus),
         ]);
         script
     }
@@ -243,6 +248,7 @@ impl<T: Iterator<Item=u8> + Sized> Script<T> {
         let mut last_was_escape = false;
         let mut buff = Vec::new();
 
+        //TODO: comments
         while let Some(b) = self.reader.next() {
             if in_string {
                 if b == 92 {    // backslash
@@ -339,7 +345,7 @@ impl<T: Iterator<Item=u8> + Sized> Script<T> {
     }
 
     /// Define a batch of native functions
-    pub fn def_natives(&mut self, list: &[(&str, fn(&mut Stack, &mut Concat))]) {
+    pub fn def_natives(&mut self, list: &[(&str, fn(&mut Stack, &mut Concat, &mut Dictionary))]) {
         list.iter().for_each(|(word_name, function)| {
             self.dictionary.define(word_name, *function);
         });
@@ -357,7 +363,7 @@ impl<T: Iterator<Item=u8> + Sized> Script<T> {
                     if let Some(dict_entry) = self.dictionary.dict.get(w) {
                         match dict_entry {
                             DictEntry::Native(func) => {
-                                func(&mut self.stack, &mut self.concat);
+                                func(&mut self.stack, &mut self.concat, &mut self.dictionary);
                             },
                             DictEntry::Defined(block_ref) => {
                                 //TODO
@@ -382,17 +388,17 @@ impl<T: Iterator<Item=u8> + Sized> Script<T> {
 
 // Primitives
 
-fn open_parenth(stack: &mut Stack, _: &mut Concat) {
+fn open_parenth(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary) {
     stack.start_stack();
 }
 
-fn close_parenth(stack: &mut Stack, _: &mut Concat) {
+fn close_parenth(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary) {
     if let None = stack.end_stack() {
         panic!("Stack level undeflow");
     }
 }
 
-fn open_curly(stack: &mut Stack, concat: &mut Concat) {
+fn open_curly(stack: &mut Stack, concat: &mut Concat, _: &mut Dictionary) {
     let pos = concat.pointer;
     loop {
         if let Some(cell) = concat.next() {
@@ -410,6 +416,28 @@ fn open_curly(stack: &mut Stack, concat: &mut Concat) {
     }
 }
 
-fn close_curly(stack: &mut Stack, concat: &mut Concat) {
+fn close_curly(stack: &mut Stack, concat: &mut Concat, _: &mut Dictionary) {
     //TODO: return from subroutine
+}
+
+fn def(stack: &mut Stack, concat: &mut Concat, dict: &mut Dictionary) {
+    if let (Some(Cell::Block(block)), Some(Cell::Word(word))) = (stack.pop(), concat.next()) {
+        dict.block(word, block);
+    }
+    else {
+        panic!("Expecting a block");
+    }
+}
+
+fn plus(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary) {
+    let (cell_a, cell_b) = (stack.pop(), stack.pop());
+    if let (Some(Cell::Integer(int_a)), Some(Cell::Integer(int_b))) = (&cell_a, &cell_b) {
+        stack.push(Cell::Integer(int_a + int_b));
+    }
+    else if let (Some(Cell::Float(flt_a)), Some(Cell::Float(flt_b))) = (&cell_a, &cell_b) {
+        stack.push(Cell::Float(flt_a + flt_b));
+    }
+    else {
+        panic!("Expecting two numbers of the same type");
+    }
 }

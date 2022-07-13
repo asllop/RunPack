@@ -1,4 +1,4 @@
-use runpack::{Script, Cell, Stack, Concat};
+use runpack::{Script, Cell, Stack, Concat, Dictionary};
 
 fn main() {
     println!("Run Pack!");
@@ -20,8 +20,12 @@ fn main() {
         ( 10 -0.444 ( 'hola amic' print_stack ) true )
         '--------------' print
         print_stack
-        { 'Hola' print }
+        { 1 + } def inc
         '--------------' print
+        print_stack
+        66 inc
+        10 20 +
+        11.1 0.9 +
         print_stack
     "#;
 
@@ -33,7 +37,7 @@ fn main() {
     script.run();
 }
 
-fn print(stack: &mut Stack, _: &mut Concat) {
+fn print(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary) {
     if let Some(Cell::String(data)) = stack.pop() {
         println!("{}", data);
     }
@@ -42,6 +46,6 @@ fn print(stack: &mut Stack, _: &mut Concat) {
     }
 }
 
-fn print_stack(stack: &mut Stack, _: &mut Concat) {
+fn print_stack(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary) {
     println!("{:?}", stack);
 }
