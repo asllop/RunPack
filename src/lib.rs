@@ -81,10 +81,10 @@ impl<T: Iterator<Item=u8> + Sized> Concat<T> {
         while let Some(b) = self.reader.next() {
             if in_string {
                 if b == 92 {    // backslash
-                    last_was_escape = !last_was_escape;
-                    if !last_was_escape {
+                    if last_was_escape {
                         buff.push(b);
                     }
+                    last_was_escape = !last_was_escape;
                 }
                 else if b == 39 {    // apostrophe
                     if last_was_escape {
@@ -124,6 +124,7 @@ impl<T: Iterator<Item=u8> + Sized> Concat<T> {
                     Cell::String(token)
                 }
                 else {
+                    //TODO: string parse error
                     Cell::Empty
                 }
             }
@@ -152,6 +153,7 @@ impl<T: Iterator<Item=u8> + Sized> Concat<T> {
             }
         }
         else {
+            //TODO: string parse error
             Cell::Empty
         }
     }
@@ -161,6 +163,7 @@ impl<T: Iterator<Item=u8> + Sized> Concat<T> {
         loop {
             let cell = self.next_cell();
             if let Cell::Empty = cell {
+                //TODO: add error handling, when the parser fails somewhere
                 break;
             }
             else {
@@ -168,7 +171,7 @@ impl<T: Iterator<Item=u8> + Sized> Concat<T> {
             }
         }
 
-        println!("Array of tokens = {:?}", self.array);
+        println!("Tokens =\n{:?}", self.array);
     }
 }
 
