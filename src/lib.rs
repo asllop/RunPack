@@ -1,3 +1,66 @@
+//TODO: use no_std, hashbrown::HashMap and alloc::vec::Vec
+use std::collections::HashMap;
+
+/// Block reference, 0: init pos in the Catvec, 1: block len
+pub type BlockRef = (usize, usize);
+
+#[derive(Debug)]
+enum DictEntry {
+    Native, //TODO: ref to native function
+    Defined(BlockRef),
+}
+
+struct Dictionary {
+    dict: HashMap<String, DictEntry>,
+}
+
+impl Dictionary {
+    fn new() -> Self {
+        Self { dict: HashMap::new() }
+    }
+}
+
+struct RetStack {
+    stack: Vec<usize>,
+}
+
+impl RetStack {
+    fn new() -> Self {
+        Self { stack: Vec::new() }
+    }
+
+    fn push(&mut self, ret_pos: usize) {
+        self.stack.push(ret_pos)
+    }
+
+    fn pop(&mut self) -> Option<usize> {
+        self.stack.pop()
+    }
+}
+
+#[derive(Debug)]
+/// TODO: Custom object
+pub struct Object {
+
+}
+
+/*
+Definir una paraula:
+    Una paraula dins el diccionari és només una pos dins el CatVec, que ens indica allà on comença el codi de la paraula. I una llargada que ens indica quantes paraules la conformen.
+    Si la paraula és nadiua, és una funció.
+
+Model d'execució:
+    
+    Quan trobem una dada (int, float, string, symbol, bool), la fiquem a la pila
+    Quan trobem una paraula, la cerquem al diccionari i l'executem.
+    Paraula nadiua:
+        Guardem la pos de retorn a la pila de retorn. La pos de retorn és l'índex següent dins el CatVec.
+        Executem la funció nadiua associada a la paraula.
+        Quan s'acaba d'executar, obtenim adreça de return i continuem avaluant per allà.
+    Paraula definida:
+        Guardem la pos de retorn a la pila de retorn. La pos de retorn és l'índex següent dins el CatVec.
+        Movem el punter d'execució a l'inici de la paraula dins del CatVec.
+ */
 
 /// Integer type alias
 pub type IntegerType = i64;
@@ -5,17 +68,18 @@ pub type IntegerType = i64;
 /// Float type alias
 pub type FloatType = f64;
 
-/// Data primitive
 #[derive(Debug)]
+/// Data primitive
 pub enum Cell {
-    Empty,
+    Empty,  // TODO: once we implement error handling, we won't need an empty variant
     Integer(IntegerType),
     Float(FloatType),
     Boolean(bool),
     Symbol(String),
     String(String),
     Word(String),
-    //TODO: object
+    Block(BlockRef),
+    //Object(Box<Object>),
 }
 
 impl Cell {
@@ -56,23 +120,92 @@ impl Cell {
     }
 }
 
-/// Concatenation of words
-pub struct Concat<T: Iterator<Item=u8> + Sized> {
+/// Concatenation of words. It contains the Concatenation Vector (CatVec): the array of words that conform the program.
+struct Concat {
     array: Vec<Cell>,
+}
+
+impl Concat {
+    fn new() -> Self {
+        Self { array: Vec::new() }
+    }
+}
+
+#[derive(Debug)]
+/// Stack structure
+pub struct Stack {
+    stack: Vec<Cell>,
+    base: usize,
+    nested: Vec<usize>,
+}
+
+impl Stack {
+    /// Create new stack
+    pub fn new() -> Self {
+        Self {
+            stack: Vec::new(),
+            base: 0,
+            nested: Vec::new(),
+        }
+    }
+
+    /// Starts a new nested stack
+    pub fn start_stack(&mut self) {
+        self.nested.push(self.base);
+        self.base = self.stack.len();
+    }
+
+    /// Ends current stack
+    pub fn end_stack(&mut self) -> Option<usize> {
+        if let Some(base) = self.nested.pop() {
+            self.base = base;
+            Some(base)
+        }
+        else {
+            None
+        }
+    }
+
+    /// Push cell to current stack
+    pub fn push(&mut self, cell: Cell) {
+        self.stack.push(cell);
+    }
+
+    /// Pop cell from current stack
+    pub fn pop(&mut self) -> Option<Cell> {
+        if self.stack.len() > self.base {
+            self.stack.pop()
+        }
+        else {
+            None
+        }
+    }
+
+    /// Size of current stack
+    pub fn size(&self) -> usize {
+        self.stack.len() - self.base
+    }
+}
+
+/// RunPack interpreter
+pub struct Script<T: Iterator<Item=u8> + Sized> {
+    dict: Dictionary,
+    ret: RetStack,
+    catvec: Concat,
     reader: T,
 }
 
-impl<T: Iterator<Item=u8> + Sized> Concat<T> {
-    /// Create Concat using a u8 iterator
+impl<T: Iterator<Item=u8> + Sized> Script<T> {
     pub fn new(reader: T) -> Self {
         Self {
-            array: Vec::new(),
-            reader
+            dict: Dictionary::new(),
+            ret: RetStack::new(),
+            catvec: Concat::new(),
+            reader,
         }
     }
 
     fn next_cell(&mut self) -> Cell {
-        //TODO: parse next entity and convert into cell
         let mut word_found = false;
         let mut in_string = false;
         let mut last_was_escape = false;
@@ -167,66 +300,10 @@ impl<T: Iterator<Item=u8> + Sized> Concat<T> {
                 break;
             }
             else {
-                self.array.push(cell);
+                self.catvec.array.push(cell);
             }
         }
 
-        println!("Tokens =\n{:?}", self.array);
-    }
-}
-
-#[derive(Debug)]
-/// Stack structure
-pub struct Stack {
-    stack: Vec<Cell>,
-    base: usize,
-    nested: Vec<usize>,
-}
-
-impl Stack {
-    /// Create new stack
-    pub fn new() -> Self {
-        Self {
-            stack: Vec::new(),
-            base: 0,
-            nested: Vec::new(),
-        }
-    }
-
-    /// Starts a new nested stack
-    pub fn start_stack(&mut self) {
-        self.nested.push(self.base);
-        self.base = self.stack.len();
-    }
-
-    /// Ends current stack
-    pub fn end_stack(&mut self) -> Option<usize> {
-        if let Some(base) = self.nested.pop() {
-            self.base = base;
-            Some(base)
-        }
-        else {
-            None
-        }
-    }
-
-    /// Push cell to current stack
-    pub fn push(&mut self, cell: Cell) {
-        self.stack.push(cell);
-    }
-
-    /// Pop cell from current stack
-    pub fn pop(&mut self) -> Option<Cell> {
-        if self.stack.len() > self.base {
-            self.stack.pop()
-        }
-        else {
-            None
-        }
-    }
-
-    /// Size of current stack
-    pub fn size(&self) -> usize {
-        self.stack.len() - self.base
+        println!("Tokens =\n{:?}", self.catvec.array);
     }
 }

@@ -13,7 +13,7 @@ fn main() {
 
     println!("Program = {}", program);
 
-    let mut concat = runpack::Concat::new(program.bytes());
+    let mut script = runpack::Script::new(program.bytes());
 
-    concat.tokenize();
+    script.tokenize();
 }
