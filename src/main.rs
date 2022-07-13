@@ -23,7 +23,7 @@ fn main() {
     println!("Program = {}", program);
 
     let mut script = runpack::Script::new(program.bytes());
-    script.dictionary.implement("hola", | stack | {
+    script.dictionary().define("hola", | stack | {
         if let Some(Cell::String(name)) = stack.pop() {
             println!("Hola {}!", name);
         }
@@ -31,7 +31,7 @@ fn main() {
             panic!("hola: couldn't get a string from stack");
         }
     });
-    script.dictionary.implement("print_stack", | stack | {
+    script.dictionary().define("print_stack", | stack | {
         println!("{:?}", stack);
     });
     script.run();

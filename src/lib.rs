@@ -9,6 +9,7 @@ enum DictEntry {
     Defined(BlockRef),
 }
 
+/// Dictionary of words
 pub struct Dictionary {
     dict: HashMap<String, DictEntry>,
 }
@@ -18,7 +19,8 @@ impl Dictionary {
         Self { dict: HashMap::new() }
     }
 
-    pub fn implement(&mut self, word: &str, func: fn(&mut Stack)) {
+    /// Define a native word
+    pub fn define(&mut self, word: &str, func: fn(&mut Stack)) {
         self.dict.insert(word.into(), DictEntry::Native(func));
     }
 }
@@ -192,8 +194,8 @@ impl Stack {
 
 /// RunPack interpreter
 pub struct Script<T: Iterator<Item=u8> + Sized> {
-    pub stack: Stack,
-    pub dictionary: Dictionary,
+    stack: Stack,
+    dictionary: Dictionary,
     ret: RetStack,
     catvec: Concat,
     reader: T,
@@ -209,7 +211,12 @@ impl<T: Iterator<Item=u8> + Sized> Script<T> {
             reader,
         };
         script.tokenize();
+        script.def_primitives();
         script
+    }
+
+    fn def_primitives(&mut self) {
+        //TODO
     }
 
     fn next_cell(&mut self) -> Cell {
@@ -324,13 +331,13 @@ impl<T: Iterator<Item=u8> + Sized> Script<T> {
             match cell {
                 Cell::Integer(_) | Cell::Float(_) | Cell::Boolean(_) | Cell::Symbol(_) | Cell::String(_) => self.stack.push(cell.clone()),
                 Cell::Word(w) => {
-                    // TODO: execute the word
                     if let Some(dict_entry) = self.dictionary.dict.get(w) {
                         match dict_entry {
                             DictEntry::Native(func) => {
                                 func(&mut self.stack);
                             },
                             DictEntry::Defined(block_ref) => {
+                                //TODO
                                 println!("TODO: execute defined word {}", w);
                             },
                         }
@@ -343,5 +350,10 @@ impl<T: Iterator<Item=u8> + Sized> Script<T> {
             }
             pointer += 1;
         }
+    }
+
+    /// Get mutable ref to ductionary
+    pub fn dictionary(&mut self) -> &mut Dictionary {
+        &mut self.dictionary
     }
 }
