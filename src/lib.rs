@@ -1,11 +1,15 @@
 //TODO: use no_std, hashbrown::HashMap and alloc::vec::Vec
 use std::collections::HashMap;
 
-/// Block reference, 0: init pos in the Catvec, 1: block len
-pub type BlockRef = (usize, usize);
+#[derive(Clone, Debug)]
+/// Block reference
+pub struct BlockRef {
+    pos: usize,
+    len: usize,
+}
 
 enum DictEntry {
-    Native(fn(&mut Stack)),
+    Native(fn(&mut Stack, &mut Concat)),
     Defined(BlockRef),
 }
 
@@ -20,7 +24,7 @@ impl Dictionary {
     }
 
     /// Define a native word
-    pub fn define(&mut self, word: &str, func: fn(&mut Stack)) {
+    pub fn define(&mut self, word: &str, func: fn(&mut Stack, &mut Concat)) {
         self.dict.insert(word.into(), DictEntry::Native(func));
     }
 }
@@ -51,7 +55,7 @@ pub struct Object {
 
 /*
 Definir una paraula:
-    Una paraula dins el diccionari és només una pos dins el CatVec, que ens indica allà on comença el codi de la paraula. I una llargada que ens indica quantes paraules la conformen.
+    Una paraula dins el diccionari és només una pos dins el Concat, que ens indica allà on comença el codi de la paraula. I una llargada que ens indica quantes paraules la conformen.
     Si la paraula és nadiua, és una funció.
 
 Model d'execució:
@@ -59,12 +63,12 @@ Model d'execució:
     Quan trobem una dada (int, float, string, symbol, bool), la fiquem a la pila
     Quan trobem una paraula, la cerquem al diccionari i l'executem.
     Paraula nadiua:
-        Guardem la pos de retorn a la pila de retorn. La pos de retorn és l'índex següent dins el CatVec.
+        Guardem la pos de retorn a la pila de retorn. La pos de retorn és l'índex següent dins el Concat.
         Executem la funció nadiua associada a la paraula.
         Quan s'acaba d'executar, obtenim adreça de return i continuem avaluant per allà.
     Paraula definida:
-        Guardem la pos de retorn a la pila de retorn. La pos de retorn és l'índex següent dins el CatVec.
-        Movem el punter d'execució a l'inici de la paraula dins del CatVec.
+        Guardem la pos de retorn a la pila de retorn. La pos de retorn és l'índex següent dins el Concat.
+        Movem el punter d'execució a l'inici de la paraula dins del Concat.
  */
 
 /// Integer type alias
@@ -125,14 +129,30 @@ impl Cell {
     }
 }
 
-/// Concatenation of words. It contains the Concatenation Vector (CatVec): the array of words that conform the program.
-struct Concat {
+/// Concatenation, the array of words that conforms the program.
+pub struct Concat {
     array: Vec<Cell>,
+    pointer: usize,
 }
 
 impl Concat {
     fn new() -> Self {
-        Self { array: Vec::new() }
+        Self { array: Vec::new(), pointer: 0 }
+    }
+
+    fn go_to(&mut self, pos: usize) {
+        self.pointer = pos;
+    }
+
+    fn next(&mut self) -> Option<&Cell> {
+        if self.pointer < self.array.len() {
+            let cell = &self.array[self.pointer];
+            self.pointer += 1;
+            Some(cell)
+        }
+        else {
+            None
+        }
     }
 }
 
@@ -197,7 +217,7 @@ pub struct Script<T: Iterator<Item=u8> + Sized> {
     stack: Stack,
     dictionary: Dictionary,
     ret: RetStack,
-    catvec: Concat,
+    concat: Concat,
     reader: T,
 }
 
@@ -207,12 +227,12 @@ impl<T: Iterator<Item=u8> + Sized> Script<T> {
             stack: Stack::new(),
             dictionary: Dictionary::new(),
             ret: RetStack::new(),
-            catvec: Concat::new(),
+            concat: Concat::new(),
             reader,
         };
         script.tokenize();
         script.def_natives(&[
-            ("(", open_parenth), (")", close_parenth),
+            ("(", open_parenth), (")", close_parenth), ("{", open_curly), ("}", close_curly),
         ]);
         script
     }
@@ -311,35 +331,33 @@ impl<T: Iterator<Item=u8> + Sized> Script<T> {
                 break;
             }
             else {
-                self.catvec.array.push(cell);
+                self.concat.array.push(cell);
             }
         }
 
-        println!("Tokens =\n{:?}", self.catvec.array);
+        println!("Tokens =\n{:?}", self.concat.array);
     }
 
     /// Define a batch of native functions
-    pub fn def_natives(&mut self, list: &[(&str, fn(&mut Stack))]) {
+    pub fn def_natives(&mut self, list: &[(&str, fn(&mut Stack, &mut Concat))]) {
         list.iter().for_each(|(word_name, function)| {
             self.dictionary.define(word_name, *function);
         });
     }
 
-    //TODO: append: parse another piece of program into the same script space. Is appened at the end of the CatVec.
+    //TODO: append: parse another piece of program into the same script space. Is appened at the end of the Concat.
     //TODO: run a piece a code directly: appends and runs from the pos of the new code
 
     /// Run the script
     pub fn run(&mut self) {
-        let mut pointer = 0;
-        while pointer < self.catvec.array.len() {
-            let cell = &self.catvec.array[pointer];
+        while let Some(cell) = self.concat.next() {
             match cell {
                 Cell::Integer(_) | Cell::Float(_) | Cell::Boolean(_) | Cell::Symbol(_) | Cell::String(_) => self.stack.push(cell.clone()),
                 Cell::Word(w) => {
                     if let Some(dict_entry) = self.dictionary.dict.get(w) {
                         match dict_entry {
                             DictEntry::Native(func) => {
-                                func(&mut self.stack);
+                                func(&mut self.stack, &mut self.concat);
                             },
                             DictEntry::Defined(block_ref) => {
                                 //TODO
@@ -351,9 +369,8 @@ impl<T: Iterator<Item=u8> + Sized> Script<T> {
                         panic!("{}: word not found in the dictionary", w);
                     }
                 },
-                _ => { panic!("Found an invalid cell value in the CatVec: {:?}", cell) },
+                _ => { panic!("Found an invalid cell value in the Concat: {:?}", cell) },
             }
-            pointer += 1;
         }
     }
 
@@ -365,12 +382,34 @@ impl<T: Iterator<Item=u8> + Sized> Script<T> {
 
 // Primitives
 
-fn open_parenth(stack: &mut Stack) {
+fn open_parenth(stack: &mut Stack, _: &mut Concat) {
     stack.start_stack();
 }
 
-fn close_parenth(stack: &mut Stack) {
+fn close_parenth(stack: &mut Stack, _: &mut Concat) {
     if let None = stack.end_stack() {
         panic!("Stack level undeflow");
     }
+}
+
+fn open_curly(stack: &mut Stack, concat: &mut Concat) {
+    let pos = concat.pointer;
+    loop {
+        if let Some(cell) = concat.next() {
+            if let Cell::Word(w) = cell {
+                if w == "}" {
+                    let len = concat.pointer - pos;
+                    stack.push(Cell::Block(BlockRef { pos, len }));
+                    break;
+                }
+            }
+        }
+        else {
+            panic!("Reached the end and didn't find a closing block");
+        }
+    }
+}
+
+fn close_curly(stack: &mut Stack, concat: &mut Concat) {
+    //TODO: return from subroutine
 }
