@@ -69,7 +69,7 @@ impl RetStack {
     }
 }
 
-/// TODO: Custom objects, add a new variant to Cell and create a Trait
+/// TODO: Custom objects, add a new variant of Cell and create a Trait
 
 /// Integer type alias
 pub type IntegerType = i64;
@@ -238,7 +238,7 @@ impl<T: Iterator<Item=u8> + Sized> Script<T> {
         script.def_natives(&[
             ("(", open_parenth), (")", close_parenth), ("{", open_curly), ("}", close_curly), ("def", def), ("+", plus), ("-", minus),
             ("*", star), ("/", slash), ("%", percent), (">", bigger), ("=", equal), ("&", and), ("|", or), ("!", not), ("drop", drop),
-            ("swap", swap), ("dup", dup), ("over", over), ("rot", rot), ("if", if_word), ("if-else", ifelse_word),
+            ("swap", swap), ("dup", dup), ("over", over), ("rot", rot), ("if", if_word), ("ifelse", ifelse_word), /*("while", while_word),*/
         ]);
         script
     }
@@ -412,13 +412,20 @@ fn close_parenth(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut 
 
 fn open_curly(stack: &mut Stack, concat: &mut Concat, _: &mut Dictionary, _: &mut RetStack) {
     let pos = concat.pointer();
+    let mut level = 1;
     loop {
         if let Some(cell) = concat.next() {
             if let Cell::Word(w) = cell {
                 if w == "}" {
-                    let len = concat.pointer() - pos;
-                    stack.push(Cell::Block(BlockRef { pos, len }));
-                    break;
+                    level -= 1;
+                    if level == 0 {
+                        let len = concat.pointer() - pos;
+                        stack.push(Cell::Block(BlockRef { pos, len }));
+                        break;
+                    }
+                }
+                else if w == "{" {
+                    level += 1;
                 }
             }
         }
@@ -576,7 +583,7 @@ fn rot(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack) 
         stack.push(cell_a);
     }
     else {
-        panic!("over: Stack underflow");
+        panic!("rot: Stack underflow");
     }
 }
 
@@ -609,7 +616,16 @@ fn ifelse_word(stack: &mut Stack, concat: &mut Concat, _: &mut Dictionary, ret: 
 
 /*
 // { loop code } { condition } while
-fn while_word(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack) {
-    
+fn while_word(stack: &mut Stack, concat: &mut Concat, _: &mut Dictionary, _: &mut RetStack) {
+    if let (Some(Cell::Block(cond_blk)), Some(Cell::Block(loop_blk))) = (stack.pop(), stack.pop()) {
+        //TODO: com fem per executar un bloc i retornar en acabat?
+
+        //TODO: run cond block
+        //TODO: check if there is a boolean in the stack
+        //TODO: if true: run loop_block and go again. If false, end.
+    }
+    else {
+        panic!("while: couldn't find 2 blocks");
+    }
 }
 */

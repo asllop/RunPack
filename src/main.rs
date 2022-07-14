@@ -45,7 +45,11 @@ fn main() {
         'After comment' print
         print_stack
         '--------------' print
-        { 'Is true!' print } { 'Is false!' print } ( 10 100 > ) if-else
+        { 'Is true!' print } { 'Is false!' print } ( 10 100 > ) ifelse
+        '--------------' print
+        { { 'Has encertat!' print } { 'Malament :(' print } rot 10 = ifelse } def endevina
+        10 endevina
+        5 endevina
     "#;
 
     println!("Program = {}", program);
@@ -58,6 +62,7 @@ fn main() {
     script.dictionary.native("print_stack", print_stack);
     script.run();
 
+    script.exec("newline".bytes());
     script.exec("50 twice_plus".bytes());
     if let Some(Cell::Integer(num)) = script.stack.pop() {
         println!("Got value from exec script = {}", num);
@@ -65,7 +70,6 @@ fn main() {
     else {
         println!("Couldn't get value");
     }
-    script.exec("newline".bytes());
 }
 
 fn print(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack) {
