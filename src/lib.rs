@@ -125,6 +125,7 @@ impl Cell {
     }
 }
 
+#[derive(Debug)]
 /// Concatenation, the array of words that conforms the program.
 pub struct Concat {
     array: Vec<Cell>,
@@ -237,7 +238,7 @@ impl<T: Iterator<Item=u8> + Sized> Script<T> {
         script.def_natives(&[
             ("(", open_parenth), (")", close_parenth), ("{", open_curly), ("}", close_curly), ("def", def), ("+", plus), ("-", minus),
             ("*", star), ("/", slash), ("%", percent), (">", bigger), ("=", equal), ("&", and), ("|", or), ("!", not), ("drop", drop),
-            ("swap", swap), ("dup", dup), ("over", over), ("rot", rot)
+            ("swap", swap), ("dup", dup), ("over", over), ("rot", rot),
         ]);
         script
     }
@@ -245,10 +246,10 @@ impl<T: Iterator<Item=u8> + Sized> Script<T> {
     fn next_cell(&mut self) -> Cell {
         let mut word_found = false;
         let mut in_string = false;
+        let mut in_comment = false;
         let mut last_was_escape = false;
         let mut buff = Vec::new();
-
-        //TODO: comments
+        
         while let Some(b) = self.reader.next() {
             if in_string {
                 if b == 92 {    // backslash
@@ -272,10 +273,18 @@ impl<T: Iterator<Item=u8> + Sized> Script<T> {
                     buff.push(b);
                 }
             }
+            else if in_comment {
+                if b == 34 {    // quotation mark
+                    in_comment = false;
+                }
+            }
             else {
                 if b == 39 {    // apostrophe
                     in_string = true;
                     word_found = true;
+                }
+                else if b == 34 {    // quotation mark
+                    in_comment = true;
                 }
                 else if b == 44 || b <= 32 {    // Found a word separator (comma, space or any control character)
                     if word_found {

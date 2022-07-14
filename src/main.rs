@@ -37,11 +37,19 @@ fn main() {
         { 'Déu vos guard, amic!' print } def hola
         hola
         '--------------' print
+        "---------------------------------------------------------------------
+            This is a comment and won't be executed and is actually ignored
+         ---------------------------------------------------------------------"
+        'After comment' print
+        print_stack
     "#;
 
     println!("Program = {}", program);
 
     let mut script = Script::new(program.bytes());
+
+    println!("Tokens =\n{:?}", script.concat);
+
     script.dictionary.native("print", print);
     script.dictionary.native("print_stack", print_stack);
     script.run();
