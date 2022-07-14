@@ -23,19 +23,36 @@ fn main() {
         10 1 > print
         10 10 > print
         10 1 - print
+        print_stack
         '--------------' print
-        'a' 'b' 'c'
+        2 def num
+        num print
+        { num 10 * def num } def set_num
         print_stack
-        rot
-        print_stack
+        set_num
+        num print
+        '--------------' print
+        10 def hola
+        hola print
+        { 'Déu vos guard, amic!' print } def hola
+        hola
+        '--------------' print
     "#;
 
     println!("Program = {}", program);
 
     let mut script = Script::new(program.bytes());
-    script.dictionary().native("print", print);
-    script.dictionary().native("print_stack", print_stack);
+    script.dictionary.native("print", print);
+    script.dictionary.native("print_stack", print_stack);
     script.run();
+
+    script.exec("50 twice_plus".bytes());
+    if let Some(Cell::Integer(num)) = script.stack.pop() {
+        println!("Got value from exec script = {}", num);
+    }
+    else {
+        println!("Couldn't get value");
+    }
 }
 
 fn print(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack) {

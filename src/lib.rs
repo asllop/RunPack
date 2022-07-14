@@ -222,10 +222,10 @@ impl Stack {
 
 /// RunPack interpreter
 pub struct Script<T: Iterator<Item=u8> + Sized> {
-    stack: Stack,
-    dictionary: Dictionary,
-    ret: RetStack,
-    concat: Concat,
+    pub stack: Stack,
+    pub dictionary: Dictionary,
+    pub ret: RetStack,
+    pub concat: Concat,
     reader: T,
 }
 
@@ -354,8 +354,14 @@ impl<T: Iterator<Item=u8> + Sized> Script<T> {
         });
     }
 
-    //TODO: append: parse another piece of program into the same script space. Is appened at the end of the Concat.
-    //TODO: run a piece a code directly: appends and runs from the pos of the new code
+    //TODO: problem: the arg provided in new must be the same type of the one we provide in exec. We would like to provide an &str in exec, regardless of the type T.
+
+    /// Exec a pice of code
+    pub fn exec(&mut self, code: T) {
+        self.reader = code;
+        self.tokenize();
+        self.run();
+    }
 
     /// Run the script
     pub fn run(&mut self) {
@@ -385,11 +391,6 @@ impl<T: Iterator<Item=u8> + Sized> Script<T> {
                 _ => { panic!("Found an invalid cell value in the Concat: {:?}", cell) },
             }
         }
-    }
-
-    /// Get mutable ref to ductionary
-    pub fn dictionary(&mut self) -> &mut Dictionary {
-        &mut self.dictionary
     }
 }
 
@@ -432,8 +433,6 @@ fn close_curly(_: &mut Stack, concat: &mut Concat, _: &mut Dictionary, ret: &mut
     }
 }
 
-//TODO: Podem definir paraules sense emprar el Concat: #twice { 2 * } def#
-
 fn def(stack: &mut Stack, concat: &mut Concat, dict: &mut Dictionary, _: &mut RetStack) {
     let (data, word) = (stack.pop(), concat.next());
     if let Some(Cell::Word(word)) = word {
@@ -464,6 +463,8 @@ fn two_num_op(stack: &mut Stack, int_op: fn(IntegerType, IntegerType) -> Integer
         panic!("two_num_op: Expecting two numbers of the same type");
     }
 }
+
+//TODO: Overload artithmetic operators, using the traits Add, Sub, etc
 
 fn plus(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack) {
     two_num_op(stack, |a, b| a + b, |a, b| a + b);
@@ -577,14 +578,14 @@ fn rot(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack) 
     }
 }
 
-/*TODO:
-Condicions:
+/* TODO: Flow control
+Normal:
+    { true code } condition if
+    { true code } { false code } condition if-else
+    { loop code } { condition } while
+Compact:
     condition EITHER word_true word_false
     condition YES? word_true
     condition NO? word_false
     LOOP word_condition word_loop
-We can also use blocks:
-    { true code } condition if
-    { true code } { false code } condition if-else
-    { loop code } { condition } while
 */
