@@ -9,7 +9,7 @@ pub struct BlockRef {
 }
 
 enum DictEntry {
-    Native(fn(&mut Stack, &mut Concat, &mut Dictionary)),
+    Native(fn(&mut Stack, &mut Concat, &mut Dictionary, &mut RetStack)),
     Defined(BlockRef),
     Data(Cell),
 }
@@ -25,7 +25,7 @@ impl Dictionary {
     }
 
     /// Define a native word
-    pub fn native(&mut self, word: &str, func: fn(&mut Stack, &mut Concat, &mut Dictionary)) {
+    pub fn native(&mut self, word: &str, func: fn(&mut Stack, &mut Concat, &mut Dictionary, &mut RetStack)) {
         self.dict.insert(word.into(), DictEntry::Native(func));
     }
 
@@ -67,24 +67,6 @@ impl RetStack {
 pub struct Object {
 
 }
-
-/*
-Definir una paraula:
-    Una paraula dins el diccionari és només una pos dins el Concat, que ens indica allà on comença el codi de la paraula. I una llargada que ens indica quantes paraules la conformen.
-    Si la paraula és nadiua, és una funció.
-
-Model d'execució:
-    
-    Quan trobem una dada (int, float, string, symbol, bool), la fiquem a la pila
-    Quan trobem una paraula, la cerquem al diccionari i l'executem.
-    Paraula nadiua:
-        Guardem la pos de retorn a la pila de retorn. La pos de retorn és l'índex següent dins el Concat.
-        Executem la funció nadiua associada a la paraula.
-        Quan s'acaba d'executar, obtenim adreça de return i continuem avaluant per allà.
-    Paraula definida:
-        Guardem la pos de retorn a la pila de retorn. La pos de retorn és l'índex següent dins el Concat.
-        Movem el punter d'execució a l'inici de la paraula dins del Concat.
- */
 
 /// Integer type alias
 pub type IntegerType = i64;
@@ -251,7 +233,7 @@ impl<T: Iterator<Item=u8> + Sized> Script<T> {
         };
         script.tokenize();
         script.def_natives(&[
-            ("(", open_parenth), (")", close_parenth), ("{", open_curly), ("}", close_curly), ("def", def), ("+", plus),
+            ("(", open_parenth), (")", close_parenth), ("{", open_curly), ("}", close_curly), ("def", def), ("+", plus), ("-", minus), ("*", star), ("/", slash), ("%", percent),
         ]);
         script
     }
@@ -354,12 +336,10 @@ impl<T: Iterator<Item=u8> + Sized> Script<T> {
                 self.concat.array.push(cell);
             }
         }
-
-        println!("Tokens =\n{:?}", self.concat.array);
     }
 
     /// Define a batch of native functions
-    pub fn def_natives(&mut self, list: &[(&str, fn(&mut Stack, &mut Concat, &mut Dictionary))]) {
+    pub fn def_natives(&mut self, list: &[(&str, fn(&mut Stack, &mut Concat, &mut Dictionary, &mut RetStack))]) {
         list.iter().for_each(|(word_name, function)| {
             self.dictionary.native(word_name, *function);
         });
@@ -371,19 +351,20 @@ impl<T: Iterator<Item=u8> + Sized> Script<T> {
     /// Run the script
     pub fn run(&mut self) {
         while let Some(cell) = self.concat.next() {
+            let cell = cell.clone();
             match cell {
-                Cell::Integer(_) | Cell::Float(_) | Cell::Boolean(_) | Cell::Symbol(_) | Cell::String(_) => self.stack.push(cell.clone()),
+                Cell::Integer(_) | Cell::Float(_) | Cell::Boolean(_) | Cell::Symbol(_) | Cell::String(_) => self.stack.push(cell),
                 Cell::Word(w) => {
-                    if let Some(dict_entry) = self.dictionary.dict.get(w) {
+                    if let Some(dict_entry) = self.dictionary.dict.get(&w) {
                         match dict_entry {
                             DictEntry::Native(func) => {
-                                func(&mut self.stack, &mut self.concat, &mut self.dictionary);
+                                func(&mut self.stack, &mut self.concat, &mut self.dictionary, &mut self.ret);
                             },
                             DictEntry::Defined(block_ref) => {
-                                //TODO
-                                println!("TODO: execute defined word {}", w);
+                                self.ret.push(self.concat.pointer());
+                                self.concat.go_to(block_ref.pos);
                             },
-                            DictEntry::Data(cell) => {
+                            DictEntry::Data(data_cell) => {
                                 //TODO
                                 println!("TODO: execute data word {}", w);
                             },
@@ -406,17 +387,17 @@ impl<T: Iterator<Item=u8> + Sized> Script<T> {
 
 // Primitives
 
-fn open_parenth(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary) {
+fn open_parenth(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack) {
     stack.start_stack();
 }
 
-fn close_parenth(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary) {
+fn close_parenth(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack) {
     if let None = stack.end_stack() {
-        panic!("Stack level undeflow");
+        panic!("close_parenth: Stack level undeflow");
     }
 }
 
-fn open_curly(stack: &mut Stack, concat: &mut Concat, _: &mut Dictionary) {
+fn open_curly(stack: &mut Stack, concat: &mut Concat, _: &mut Dictionary, _: &mut RetStack) {
     let pos = concat.pointer();
     loop {
         if let Some(cell) = concat.next() {
@@ -429,16 +410,23 @@ fn open_curly(stack: &mut Stack, concat: &mut Concat, _: &mut Dictionary) {
             }
         }
         else {
-            panic!("Reached the end and didn't find a closing block");
+            panic!("open_curly: Reached the end and didn't find a closing block");
         }
     }
 }
 
-fn close_curly(stack: &mut Stack, concat: &mut Concat, _: &mut Dictionary) {
-    //TODO: return from subroutine
+fn close_curly(_: &mut Stack, concat: &mut Concat, _: &mut Dictionary, ret: &mut RetStack) {
+    if let Some(pos) = ret.pop() {
+        concat.go_to(pos);
+    }
+    else {
+        panic!("close_curly: Return stack underflow");
+    }
 }
 
-fn def(stack: &mut Stack, concat: &mut Concat, dict: &mut Dictionary) {
+//TODO: Podem definir paraules sense emprar el Concat: #twice { 2 * } def#
+
+fn def(stack: &mut Stack, concat: &mut Concat, dict: &mut Dictionary, _: &mut RetStack) {
     let (data, word) = (stack.pop(), concat.next());
     if let Some(Cell::Word(word)) = word {
         if let Some(Cell::Block(block)) = data{
@@ -448,23 +436,43 @@ fn def(stack: &mut Stack, concat: &mut Concat, dict: &mut Dictionary) {
             dict.data(word, cell);
         }
         else {
-            panic!("Expecting a block or a cell");
+            panic!("def: Expecting a block or a cell");
         }
     }
     else {
-        panic!("Expecting a word in the Concat");
+        panic!("def: Expecting a word in the Concat");
     }
 }
 
-fn plus(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary) {
+fn two_num_op(stack: &mut Stack, int_op: fn(IntegerType, IntegerType) -> IntegerType, flt_op: fn(FloatType, FloatType) -> FloatType) {
     let (cell_a, cell_b) = (stack.pop(), stack.pop());
     if let (Some(Cell::Integer(int_a)), Some(Cell::Integer(int_b))) = (&cell_a, &cell_b) {
-        stack.push(Cell::Integer(int_a + int_b));
+        stack.push(Cell::Integer(int_op(*int_a, *int_b)));
     }
     else if let (Some(Cell::Float(flt_a)), Some(Cell::Float(flt_b))) = (&cell_a, &cell_b) {
-        stack.push(Cell::Float(flt_a + flt_b));
+        stack.push(Cell::Float(flt_op(*flt_a, *flt_b)));
     }
     else {
-        panic!("Expecting two numbers of the same type");
+        panic!("two_num_op: Expecting two numbers of the same type");
     }
+}
+
+fn plus(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack) {
+    two_num_op(stack, |a, b| a + b, |a, b| a + b);
+}
+
+fn minus(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack) {
+    two_num_op(stack, |a, b| a - b, |a, b| a - b);
+}
+
+fn star(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack) {
+    two_num_op(stack, |a, b| a * b, |a, b| a * b);
+}
+
+fn slash(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack) {
+    two_num_op(stack, |a, b| a / b, |a, b| a / b);
+}
+
+fn percent(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack) {
+    two_num_op(stack, |a, b| a % b, |a, b| a % b);
 }

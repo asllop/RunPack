@@ -1,36 +1,21 @@
-use runpack::{Script, Cell, Stack, Concat, Dictionary};
+use runpack::{Script, Cell, Stack, Concat, Dictionary, RetStack};
 
 fn main() {
-    println!("Run Pack!");
+    println!("Run Pack!\n");
 
     let program = r#"
-        'Andreu' hola #symbol 10 99.11
-        'This is a \'string\' \\my \\ \ \friend'
-        ( false true ( 1,2,3,4 ) 'Hi!' )
-        { 1 + } def inc
-        #twice { 2 * } def#
-    "#;
+        'This is a \'string\' with \ \\scape \stuff' print
+        #hello_world print
 
-
-    let program = r#"
-        #symbol 10 99.11 'This is a \'string\' \\my \\ \ \friend' print
-'        Això és un text multiline
-        que conté molts caràcters especials UTF-8'
-        print
-        print_stack
-        '--------------' print
-        ( 10 -0.444 ( 'hola amic' print_stack ) true )
-        '--------------' print
-        print_stack
+        { 2 * inc } def twice_plus
         { 1 + } def inc
         '--------------' print
-        print_stack
-        66 inc
-        10 20 +
-        11.1 0.9 +
-        print_stack
+        66 inc print
+        10 twice_plus print
+        '--------------' print
         39 def age
         age
+        print_stack
     "#;
 
     println!("Program = {}", program);
@@ -41,15 +26,23 @@ fn main() {
     script.run();
 }
 
-fn print(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary) {
-    if let Some(Cell::String(data)) = stack.pop() {
-        println!("{}", data);
+fn print(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack) {
+    if let Some(cell) = stack.pop() {
+        match cell {
+            Cell::Integer(i) => println!("{}", i),
+            Cell::Float(f) => println!("{}", f),
+            Cell::Boolean(b) => println!("{}", b),
+            Cell::Symbol(s) => println!("{}", s),
+            Cell::String(st) => println!("{}", st),
+            Cell::Word(w) => println!("{}", w),
+            _ => println!("<OTHER>")
+        }
     }
     else {
-        panic!("prints: couldn't get a string from stack");
+        panic!("prints: couldn't get data from stack");
     }
 }
 
-fn print_stack(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary) {
+fn print_stack(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack) {
     println!("{:?}", stack);
 }
