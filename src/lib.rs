@@ -170,7 +170,6 @@ pub struct Stack {
 }
 
 impl Stack {
-    /// Create new stack
     fn new() -> Self {
         Self {
             stack: Vec::new(),
@@ -217,7 +216,7 @@ impl Stack {
     }
 }
 
-/// RunPack interpreter
+/// RunPack script interpreter
 pub struct Script<T: Iterator<Item=u8> + Sized> {
     pub stack: Stack,
     pub dictionary: Dictionary,
@@ -360,7 +359,7 @@ impl<T: Iterator<Item=u8> + Sized> Script<T> {
     }
 
     //TODO: problem: the arg provided to Script::new must be of the same type that the one we provide to exec. We would like to provide an &str to exec, regardless of T.
-
+    //TODO: this will append cells to the Concat, if called in a loop will consume the memory.
     /// Exec a pice of code
     pub fn exec(&mut self, code: T) {
         self.reader = code;
