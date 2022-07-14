@@ -240,7 +240,6 @@ impl<T: Iterator<Item=u8> + Sized> Script<T> {
             ("(", open_parenth), (")", close_parenth), ("{", open_curly), ("}", close_curly), ("def", def), ("+", plus), ("-", minus),
             ("*", star), ("/", slash), ("%", percent), (">", bigger), ("=", equal), ("&", and), ("|", or), ("!", not), ("drop", drop),
             ("swap", swap), ("dup", dup), ("over", over), ("rot", rot), ("if", if_word), ("ifelse", ifelse_word), ("lex", lex),
-            ("lex;", lex_semicolon),
         ]);
         script
     }
@@ -619,16 +618,12 @@ fn ifelse_word(stack: &mut Stack, concat: &mut Concat, _: &mut Dictionary, ret: 
 }
 
 fn lex(_: &mut Stack, concat: &mut Concat, dict: &mut Dictionary, _: &mut RetStack) {
-    if let Some(Cell::Word(lex_name)) = concat.next() {
+    if let Some(Cell::String(lex_name)) = concat.next() {
         dict.lex = lex_name.clone();
     }
     else {
-        panic!("lex: couldn't find word");
+        panic!("lex: couldn't find string");
     }
-}
-
-fn lex_semicolon(_: &mut Stack, _: &mut Concat, dict: &mut Dictionary, _: &mut RetStack) {
-    dict.lex = String::default();
 }
 
 //TODO: stack transfer operator, will substitute dup, drop, etc.

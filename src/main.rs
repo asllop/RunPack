@@ -51,10 +51,10 @@ fn main() {
         10 endevina
         5 endevina
         '--------------' print
-        lex math.
+        lex 'math.'
             { 1 + } def inc
             { 1 - } def dec
-        lex;
+        lex ''
         { 'Hi!' print } def hi
 
         10 math.inc print
