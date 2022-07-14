@@ -50,6 +50,16 @@ fn main() {
         { { 'Has encertat!' print } { 'Malament :(' print } rot 10 = ifelse } def endevina
         10 endevina
         5 endevina
+        '--------------' print
+        lex math.
+            { 1 + } def inc
+            { 1 - } def dec
+        lex;
+        { 'Hi!' print } def hi
+
+        10 math.inc print
+        10 math.dec print
+        hi
     "#;
 
     println!("Program = {}", program);

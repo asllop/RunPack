@@ -24,11 +24,12 @@ enum DictEntry {
 /// Dictionary of words
 pub struct Dictionary {
     dict: HashMap<String, DictEntry>,
+    lex: String,
 }
 
 impl Dictionary {
     fn new() -> Self {
-        Self { dict: HashMap::new() }
+        Self { dict: HashMap::new(), lex: String::default() }
     }
 
     /// Define a native word
@@ -238,7 +239,8 @@ impl<T: Iterator<Item=u8> + Sized> Script<T> {
         script.def_natives(&[
             ("(", open_parenth), (")", close_parenth), ("{", open_curly), ("}", close_curly), ("def", def), ("+", plus), ("-", minus),
             ("*", star), ("/", slash), ("%", percent), (">", bigger), ("=", equal), ("&", and), ("|", or), ("!", not), ("drop", drop),
-            ("swap", swap), ("dup", dup), ("over", over), ("rot", rot), ("if", if_word), ("ifelse", ifelse_word), /*("while", while_word),*/
+            ("swap", swap), ("dup", dup), ("over", over), ("rot", rot), ("if", if_word), ("ifelse", ifelse_word), ("lex", lex),
+            ("lex;", lex_semicolon),
         ]);
         script
     }
@@ -447,11 +449,13 @@ fn close_curly(_: &mut Stack, concat: &mut Concat, _: &mut Dictionary, ret: &mut
 fn def(stack: &mut Stack, concat: &mut Concat, dict: &mut Dictionary, _: &mut RetStack) {
     let (data, word) = (stack.pop(), concat.next());
     if let Some(Cell::Word(word)) = word {
-        if let Some(Cell::Block(block)) = data{
-            dict.block(word, block);
+        if let Some(Cell::Block(block)) = data {
+            let lex = dict.lex.clone();
+            dict.block(&(lex + word), block);
         }
         else if let Some(cell) = data {
-            dict.data(word, cell);
+            let lex = dict.lex.clone();
+            dict.data(&(lex + word), cell);
         }
         else {
             panic!("def: Expecting a block or a cell");
@@ -613,6 +617,24 @@ fn ifelse_word(stack: &mut Stack, concat: &mut Concat, _: &mut Dictionary, ret: 
         panic!("ifelse: couldn't find condition and 2 blocks");
     }
 }
+
+fn lex(_: &mut Stack, concat: &mut Concat, dict: &mut Dictionary, _: &mut RetStack) {
+    if let Some(Cell::Word(lex_name)) = concat.next() {
+        dict.lex = lex_name.clone();
+    }
+    else {
+        panic!("lex: couldn't find word");
+    }
+}
+
+fn lex_semicolon(_: &mut Stack, _: &mut Concat, dict: &mut Dictionary, _: &mut RetStack) {
+    dict.lex = String::default();
+}
+
+//TODO: stack transfer operator, will substitute dup, drop, etc.
+/*
+[ a b c : b b c c ]
+*/
 
 /*
 // { loop code } { condition } while
