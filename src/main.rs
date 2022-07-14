@@ -13,9 +13,11 @@ fn main() {
 
 
     let program = r#"
-        #symbol 10 99.11 'This is a \'string\' \\my \\ \ \friend'
-        print_stack
+        #symbol 10 99.11 'This is a \'string\' \\my \\ \ \friend' print
+'        Això és un text multiline
+        que conté molts caràcters especials UTF-8'
         print
+        print_stack
         '--------------' print
         ( 10 -0.444 ( 'hola amic' print_stack ) true )
         '--------------' print
@@ -27,13 +29,15 @@ fn main() {
         10 20 +
         11.1 0.9 +
         print_stack
+        39 def age
+        age
     "#;
 
     println!("Program = {}", program);
 
     let mut script = Script::new(program.bytes());
-    script.dictionary().define("print", print);
-    script.dictionary().define("print_stack", print_stack);
+    script.dictionary().native("print", print);
+    script.dictionary().native("print_stack", print_stack);
     script.run();
 }
 

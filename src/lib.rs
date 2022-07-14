@@ -11,6 +11,7 @@ pub struct BlockRef {
 enum DictEntry {
     Native(fn(&mut Stack, &mut Concat, &mut Dictionary)),
     Defined(BlockRef),
+    Data(Cell),
 }
 
 /// Dictionary of words
@@ -24,13 +25,18 @@ impl Dictionary {
     }
 
     /// Define a native word
-    pub fn define(&mut self, word: &str, func: fn(&mut Stack, &mut Concat, &mut Dictionary)) {
+    pub fn native(&mut self, word: &str, func: fn(&mut Stack, &mut Concat, &mut Dictionary)) {
         self.dict.insert(word.into(), DictEntry::Native(func));
     }
 
     /// Define block word
     pub fn block(&mut self, word: &str, block: BlockRef) {
         self.dict.insert(word.into(), DictEntry::Defined(block));
+    }
+
+    /// Define data word
+    pub fn data(&mut self, word: &str, cell: Cell) {
+        self.dict.insert(word.into(), DictEntry::Data(cell));
     }
 }
 
@@ -347,7 +353,7 @@ impl<T: Iterator<Item=u8> + Sized> Script<T> {
     /// Define a batch of native functions
     pub fn def_natives(&mut self, list: &[(&str, fn(&mut Stack, &mut Concat, &mut Dictionary))]) {
         list.iter().for_each(|(word_name, function)| {
-            self.dictionary.define(word_name, *function);
+            self.dictionary.native(word_name, *function);
         });
     }
 
@@ -368,6 +374,10 @@ impl<T: Iterator<Item=u8> + Sized> Script<T> {
                             DictEntry::Defined(block_ref) => {
                                 //TODO
                                 println!("TODO: execute defined word {}", w);
+                            },
+                            DictEntry::Data(cell) => {
+                                //TODO
+                                println!("TODO: execute data word {}", w);
                             },
                         }
                     }
@@ -421,11 +431,20 @@ fn close_curly(stack: &mut Stack, concat: &mut Concat, _: &mut Dictionary) {
 }
 
 fn def(stack: &mut Stack, concat: &mut Concat, dict: &mut Dictionary) {
-    if let (Some(Cell::Block(block)), Some(Cell::Word(word))) = (stack.pop(), concat.next()) {
-        dict.block(word, block);
+    let (data, word) = (stack.pop(), concat.next());
+    if let Some(Cell::Word(word)) = word {
+        if let Some(Cell::Block(block)) = data{
+            dict.block(word, block);
+        }
+        else if let Some(cell) = data {
+            dict.data(word, cell);
+        }
+        else {
+            panic!("Expecting a block or a cell");
+        }
     }
     else {
-        panic!("Expecting a block");
+        panic!("Expecting a word in the Concat");
     }
 }
 
