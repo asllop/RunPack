@@ -69,11 +69,7 @@ impl RetStack {
     }
 }
 
-#[derive(Debug)]
-/// TODO: Custom object
-pub struct Object {
-
-}
+/// TODO: Custom objects, add a new variant to Cell and create a Trait
 
 /// Integer type alias
 pub type IntegerType = i64;
@@ -92,7 +88,6 @@ pub enum Cell {
     String(String),
     Word(String),
     Block(BlockRef),
-    //Object(Box<Object>),
 }
 
 impl Cell {
@@ -354,7 +349,7 @@ impl<T: Iterator<Item=u8> + Sized> Script<T> {
         });
     }
 
-    //TODO: problem: the arg provided in new must be the same type of the one we provide in exec. We would like to provide an &str in exec, regardless of the type T.
+    //TODO: problem: the arg provided to Script::new must be of the same type that the one we provide to exec. We would like to provide an &str to exec, regardless of T.
 
     /// Exec a pice of code
     pub fn exec(&mut self, code: T) {
@@ -463,8 +458,6 @@ fn two_num_op(stack: &mut Stack, int_op: fn(IntegerType, IntegerType) -> Integer
         panic!("two_num_op: Expecting two numbers of the same type");
     }
 }
-
-//TODO: Overload artithmetic operators, using the traits Add, Sub, etc
 
 fn plus(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack) {
     two_num_op(stack, |a, b| a + b, |a, b| a + b);
