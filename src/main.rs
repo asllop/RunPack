@@ -13,8 +13,10 @@ fn main() {
         66 inc print
         10 twice_plus print
         '--------------' print
-        39 def age
-        age
+        100 def num
+        ( num inc ) def num
+        num print
+        '--------------' print
         print_stack
     "#;
 

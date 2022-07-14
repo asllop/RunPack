@@ -365,8 +365,7 @@ impl<T: Iterator<Item=u8> + Sized> Script<T> {
                                 self.concat.go_to(block_ref.pos);
                             },
                             DictEntry::Data(data_cell) => {
-                                //TODO
-                                println!("TODO: execute data word {}", w);
+                                self.stack.push(data_cell.clone());
                             },
                         }
                     }
