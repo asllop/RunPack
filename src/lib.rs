@@ -8,7 +8,7 @@ use alloc::{
     string::String,
 };
 
-#[derive(Clone, Debug)]
+#[derive(PartialEq, PartialOrd, Clone, Debug)]
 /// Block reference
 pub struct BlockRef {
     pub pos: usize,
@@ -81,7 +81,7 @@ pub type IntegerType = i64;
 /// Float type alias
 pub type FloatType = f64;
 
-#[derive(Clone, Debug)]
+#[derive(PartialEq, PartialOrd, Clone, Debug)]
 /// Data primitive
 pub enum Cell {
     Empty,  // TODO: once we implement error handling, we won't need an empty variant
@@ -240,8 +240,9 @@ impl<T: Iterator<Item=u8> + Sized> Script<T> {
         };
         script.tokenize();
         script.def_natives(&[
-            ("(", open_parenth), (")", close_parenth), ("{", open_curly), ("}", close_curly), ("def", def), ("+", plus), ("-", minus), ("*", star), ("/", slash), ("%", percent), (">", bigger), ("=", equal), ("&", and), ("|", or), ("!", not),
-            ("drop", drop), ("swap", swap), ("dup", dup), ("over", over), ("rot", rot)
+            ("(", open_parenth), (")", close_parenth), ("{", open_curly), ("}", close_curly), ("def", def), ("+", plus), ("-", minus),
+            ("*", star), ("/", slash), ("%", percent), (">", bigger), ("=", equal), ("&", and), ("|", or), ("!", not), ("drop", drop),
+            ("swap", swap), ("dup", dup), ("over", over), ("rot", rot)
         ]);
         script
     }
@@ -484,27 +485,14 @@ fn percent(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetSta
     two_num_op(stack, |a, b| a % b, |a, b| a % b);
 }
 
-//TODO: overload comparators so they can work with any type, not only numbers
-
-fn two_num_cmp(stack: &mut Stack, int_op: fn(IntegerType, IntegerType) -> bool, flt_op: fn(FloatType, FloatType) -> bool) {
-    let (cell_b, cell_a) = (stack.pop(), stack.pop());
-    if let (Some(Cell::Integer(int_a)), Some(Cell::Integer(int_b))) = (&cell_a, &cell_b) {
-        stack.push(Cell::Boolean(int_op(*int_a, *int_b)));
-    }
-    else if let (Some(Cell::Float(flt_a)), Some(Cell::Float(flt_b))) = (&cell_a, &cell_b) {
-        stack.push(Cell::Boolean(flt_op(*flt_a, *flt_b)));
-    }
-    else {
-        panic!("two_num_cmp: Expecting two numbers of the same type");
-    }
-}
-
 fn bigger(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack) {
-    two_num_cmp(stack, |a, b| a > b, |a, b| a > b);
+    let (cell_b, cell_a) = (stack.pop(), stack.pop());
+    stack.push(Cell::Boolean(cell_a > cell_b));
 }
 
 fn equal(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack) {
-    two_num_cmp(stack, |a, b| a == b, |a, b| a == b);
+    let (cell_b, cell_a) = (stack.pop(), stack.pop());
+    stack.push(Cell::Boolean(cell_a == cell_b));
 }
 
 //TODO: overload logic operators so they can work with integers too
