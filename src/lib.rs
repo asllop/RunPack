@@ -240,7 +240,8 @@ impl<T: Iterator<Item=u8> + Sized> Script<T> {
         };
         script.tokenize();
         script.def_natives(&[
-            ("(", open_parenth), (")", close_parenth), ("{", open_curly), ("}", close_curly), ("def", def), ("+", plus), ("-", minus), ("*", star), ("/", slash), ("%", percent),
+            ("(", open_parenth), (")", close_parenth), ("{", open_curly), ("}", close_curly), ("def", def), ("+", plus), ("-", minus), ("*", star), ("/", slash), ("%", percent), (">", bigger), ("=", equal), ("&", and), ("|", or), ("!", not),
+            ("drop", drop), ("swap", swap), ("dup", dup), ("over", over), ("rot", rot)
         ]);
         script
     }
@@ -451,7 +452,7 @@ fn def(stack: &mut Stack, concat: &mut Concat, dict: &mut Dictionary, _: &mut Re
 }
 
 fn two_num_op(stack: &mut Stack, int_op: fn(IntegerType, IntegerType) -> IntegerType, flt_op: fn(FloatType, FloatType) -> FloatType) {
-    let (cell_a, cell_b) = (stack.pop(), stack.pop());
+    let (cell_b, cell_a) = (stack.pop(), stack.pop());
     if let (Some(Cell::Integer(int_a)), Some(Cell::Integer(int_b))) = (&cell_a, &cell_b) {
         stack.push(Cell::Integer(int_op(*int_a, *int_b)));
     }
@@ -482,3 +483,110 @@ fn slash(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack
 fn percent(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack) {
     two_num_op(stack, |a, b| a % b, |a, b| a % b);
 }
+
+//TODO: overload comparators so they can work with any type, not only numbers
+
+fn two_num_cmp(stack: &mut Stack, int_op: fn(IntegerType, IntegerType) -> bool, flt_op: fn(FloatType, FloatType) -> bool) {
+    let (cell_b, cell_a) = (stack.pop(), stack.pop());
+    if let (Some(Cell::Integer(int_a)), Some(Cell::Integer(int_b))) = (&cell_a, &cell_b) {
+        stack.push(Cell::Boolean(int_op(*int_a, *int_b)));
+    }
+    else if let (Some(Cell::Float(flt_a)), Some(Cell::Float(flt_b))) = (&cell_a, &cell_b) {
+        stack.push(Cell::Boolean(flt_op(*flt_a, *flt_b)));
+    }
+    else {
+        panic!("two_num_cmp: Expecting two numbers of the same type");
+    }
+}
+
+fn bigger(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack) {
+    two_num_cmp(stack, |a, b| a > b, |a, b| a > b);
+}
+
+fn equal(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack) {
+    two_num_cmp(stack, |a, b| a == b, |a, b| a == b);
+}
+
+//TODO: overload logic operators so they can work with integers too
+
+fn two_bool_op(stack: &mut Stack, op: fn(bool, bool) -> bool) {
+    let (cell_b, cell_a) = (stack.pop(), stack.pop());
+    if let (Some(Cell::Boolean(bool_a)), Some(Cell::Boolean(bool_b))) = (&cell_a, &cell_b) {
+        stack.push(Cell::Boolean(op(*bool_a, *bool_b)));
+    }
+    else {
+        panic!("two_bool_op: Expecting two booleans");
+    }
+}
+
+fn and(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack) {
+    two_bool_op(stack, |a, b| a & b);
+}
+
+fn or(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack) {
+    two_bool_op(stack, |a, b| a | b);
+}
+
+fn not(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack) {
+    if let Some(Cell::Boolean(a)) = stack.pop() {
+        stack.push(Cell::Boolean(!a));
+    }
+    else {
+        panic!("not: Expecting a boolean");
+    }
+}
+
+fn drop(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack) {
+    if let None = stack.pop() {
+        panic!("drop: Stack underflow");
+    }
+}
+
+fn swap(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack) {
+    if let (Some(cell_b), Some(cell_a)) = (stack.pop(), stack.pop()) {
+        stack.push(cell_b);
+        stack.push(cell_a);
+    }
+    else {
+        panic!("swap: Stack underflow");
+    }
+}
+
+fn dup(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack) {
+    if let Some(cell) = stack.pop() {
+        stack.push(cell.clone());
+        stack.push(cell);
+    }
+    else {
+        panic!("dup: Stack underflow");
+    }
+}
+
+fn over(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack) {
+    if let (Some(cell_b), Some(cell_a)) = (stack.pop(), stack.pop()) {
+        stack.push(cell_a.clone());
+        stack.push(cell_b);
+        stack.push(cell_a);
+    }
+    else {
+        panic!("over: Stack underflow");
+    }
+}
+
+fn rot(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack) {
+    if let (Some(cell_c), Some(cell_b), Some(cell_a)) = (stack.pop(), stack.pop(), stack.pop()) {
+        stack.push(cell_b);
+        stack.push(cell_c);
+        stack.push(cell_a);
+    }
+    else {
+        panic!("over: Stack underflow");
+    }
+}
+
+/*TODO: implement either, yes?, no? and loop
+    condition EITHER word_true word_false
+    condition YES? word_true
+    condition NO? word_false
+    LOOP word_condition word_loop
+*/

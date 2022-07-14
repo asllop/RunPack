@@ -17,6 +17,16 @@ fn main() {
         ( num inc ) def num
         num print
         '--------------' print
+        { = ! } def !=
+        10 1 != print
+        10 10 != print
+        10 1 > print
+        10 10 > print
+        10 1 - print
+        '--------------' print
+        'a' 'b' 'c'
+        print_stack
+        rot
         print_stack
     "#;
 
