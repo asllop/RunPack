@@ -44,6 +44,8 @@ fn main() {
          ---------------------------------------------------------------------"
         'After comment' print
         print_stack
+        '--------------' print
+        { 'Is true!' print } { 'Is false!' print } ( 10 100 > ) if-else
     "#;
 
     println!("Program = {}", program);

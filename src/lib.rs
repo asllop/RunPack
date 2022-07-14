@@ -238,7 +238,7 @@ impl<T: Iterator<Item=u8> + Sized> Script<T> {
         script.def_natives(&[
             ("(", open_parenth), (")", close_parenth), ("{", open_curly), ("}", close_curly), ("def", def), ("+", plus), ("-", minus),
             ("*", star), ("/", slash), ("%", percent), (">", bigger), ("=", equal), ("&", and), ("|", or), ("!", not), ("drop", drop),
-            ("swap", swap), ("dup", dup), ("over", over), ("rot", rot),
+            ("swap", swap), ("dup", dup), ("over", over), ("rot", rot), ("if", if_word), ("if-else", ifelse_word),
         ]);
         script
     }
@@ -297,7 +297,7 @@ impl<T: Iterator<Item=u8> + Sized> Script<T> {
                 }
             }
         }
-        
+
         if in_string {
             if let Ok(token) = String::from_utf8(buff) {
                 Cell::String(token)
@@ -580,14 +580,36 @@ fn rot(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack) 
     }
 }
 
-/* TODO: Flow control
-Normal:
-    { true code } condition if
-    { true code } { false code } condition if-else
-    { loop code } { condition } while
-Compact:
-    condition EITHER word_true word_false
-    condition YES? word_true
-    condition NO? word_false
-    LOOP word_condition word_loop
+fn if_word(stack: &mut Stack, concat: &mut Concat, _: &mut Dictionary, ret: &mut RetStack) {
+    if let (Some(Cell::Boolean(cond)), Some(Cell::Block(blk))) = (stack.pop(), stack.pop()) {
+        if cond {
+            ret.push(concat.pointer());
+            concat.go_to(blk.pos);
+        }
+    }
+    else {
+        panic!("ifelse: couldn't find condition and 1 block");
+    }
+}
+
+fn ifelse_word(stack: &mut Stack, concat: &mut Concat, _: &mut Dictionary, ret: &mut RetStack) {
+    if let (Some(Cell::Boolean(cond)), Some(Cell::Block(false_blk)), Some(Cell::Block(true_blk))) = (stack.pop(), stack.pop(), stack.pop()) {
+        ret.push(concat.pointer());
+        if cond {
+            concat.go_to(true_blk.pos);
+        }
+        else {
+            concat.go_to(false_blk.pos);
+        }
+    }
+    else {
+        panic!("ifelse: couldn't find condition and 2 blocks");
+    }
+}
+
+/*
+// { loop code } { condition } while
+fn while_word(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack) {
+    
+}
 */
