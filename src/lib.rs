@@ -1,5 +1,12 @@
-//TODO: use no_std, hashbrown::HashMap and alloc::vec::Vec
-use std::collections::HashMap;
+#![no_std]
+
+extern crate alloc;
+
+use hashbrown::HashMap;
+use alloc::{
+    vec::Vec,
+    string::String,
+};
 
 #[derive(Clone, Debug)]
 /// Block reference
