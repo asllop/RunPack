@@ -4,6 +4,8 @@ fn main() {
     println!("Run Pack!\n");
 
     let program = r#"
+        { '' print } def newline
+        
         'This is a \'string\' with \ \\scape \stuff' print
         #hello_world print
 
@@ -48,7 +50,7 @@ fn main() {
 
     let mut script = Script::new(program.bytes());
 
-    println!("Tokens =\n{:?}", script.concat);
+    println!("Tokens =\n{:?}\n", script.concat);
 
     script.dictionary.native("print", print);
     script.dictionary.native("print_stack", print_stack);
@@ -61,6 +63,7 @@ fn main() {
     else {
         println!("Couldn't get value");
     }
+    script.exec("newline".bytes());
 }
 
 fn print(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack) {

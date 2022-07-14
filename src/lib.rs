@@ -249,7 +249,7 @@ impl<T: Iterator<Item=u8> + Sized> Script<T> {
         let mut in_comment = false;
         let mut last_was_escape = false;
         let mut buff = Vec::new();
-        
+
         while let Some(b) = self.reader.next() {
             if in_string {
                 if b == 92 {    // backslash
@@ -297,23 +297,23 @@ impl<T: Iterator<Item=u8> + Sized> Script<T> {
                 }
             }
         }
-
-        if buff.len() > 0 {
-            if in_string {
-                if let Ok(token) = String::from_utf8(buff) {
-                    Cell::String(token)
-                }
-                else {
-                    //TODO: string parse error
-                    Cell::Empty
-                }
+        
+        if in_string {
+            if let Ok(token) = String::from_utf8(buff) {
+                Cell::String(token)
             }
             else {
-                self.parse_token(buff)
+                //TODO: string parse error
+                Cell::Empty
             }
         }
         else {
-            Cell::Empty
+            if buff.len() > 0 {
+                self.parse_token(buff)
+            }
+            else {
+                Cell::Empty
+            }
         }
     }
 
