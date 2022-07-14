@@ -4,8 +4,8 @@ use std::collections::HashMap;
 #[derive(Clone, Debug)]
 /// Block reference
 pub struct BlockRef {
-    pos: usize,
-    len: usize,
+    pub pos: usize,
+    pub len: usize,
 }
 
 enum DictEntry {
@@ -40,7 +40,9 @@ impl Dictionary {
     }
 }
 
-struct RetStack {
+#[derive(Debug)]
+/// Return stack
+pub struct RetStack {
     stack: Vec<usize>,
 }
 
@@ -49,11 +51,13 @@ impl RetStack {
         Self { stack: Vec::new() }
     }
 
-    fn push(&mut self, ret_pos: usize) {
+    /// Push value to return stack
+    pub fn push(&mut self, ret_pos: usize) {
         self.stack.push(ret_pos)
     }
 
-    fn pop(&mut self) -> Option<usize> {
+    /// Pop value from return stack
+    pub fn pop(&mut self) -> Option<usize> {
         self.stack.pop()
     }
 }
@@ -103,7 +107,6 @@ pub enum Cell {
 }
 
 impl Cell {
-    /// Parse a number into a cell
     fn number(token: &str) -> Option<Self> {
         if let Ok(int) = token.parse::<IntegerType>() {
             Some(Cell::Integer(int))
@@ -116,7 +119,6 @@ impl Cell {
         }
     }
 
-    /// Parse a symbol into a cell
     fn symbol(token: &str) -> Option<Self> {
         if token.starts_with("#") {
             Some(Cell::Symbol(token.into()))
@@ -126,7 +128,6 @@ impl Cell {
         }
     }
 
-    /// Parse a boolean into a cell
     fn boolean(token: &str) -> Option<Self> {
         if token == "true" {
             Some(Cell::Boolean(true))
@@ -151,11 +152,13 @@ impl Concat {
         Self { array: Vec::new(), pointer: 0 }
     }
 
-    fn go_to(&mut self, pos: usize) {
+    /// Set pointer to position
+    pub fn go_to(&mut self, pos: usize) {
         self.pointer = pos;
     }
 
-    fn next(&mut self) -> Option<&Cell> {
+    /// Get next cell from the Concat
+    pub fn next(&mut self) -> Option<&Cell> {
         if self.pointer < self.array.len() {
             let cell = &self.array[self.pointer];
             self.pointer += 1;
@@ -164,6 +167,11 @@ impl Concat {
         else {
             None
         }
+    }
+
+    /// Get current pointer position
+    pub fn pointer(&self) -> usize {
+        self.pointer
     }
 }
 
@@ -177,7 +185,7 @@ pub struct Stack {
 
 impl Stack {
     /// Create new stack
-    pub fn new() -> Self {
+    fn new() -> Self {
         Self {
             stack: Vec::new(),
             base: 0,
@@ -409,12 +417,12 @@ fn close_parenth(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary) {
 }
 
 fn open_curly(stack: &mut Stack, concat: &mut Concat, _: &mut Dictionary) {
-    let pos = concat.pointer;
+    let pos = concat.pointer();
     loop {
         if let Some(cell) = concat.next() {
             if let Cell::Word(w) = cell {
                 if w == "}" {
-                    let len = concat.pointer - pos;
+                    let len = concat.pointer() - pos;
                     stack.push(Cell::Block(BlockRef { pos, len }));
                     break;
                 }
