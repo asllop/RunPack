@@ -495,32 +495,37 @@ fn equal(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack
     stack.push(Cell::Boolean(cell_a == cell_b));
 }
 
-//TODO: overload logic operators so they can work with integers too
-
-fn two_bool_op(stack: &mut Stack, op: fn(bool, bool) -> bool) {
+fn two_logic_op(stack: &mut Stack, op_bool: fn(bool, bool) -> bool, op_int: fn(IntegerType, IntegerType) -> IntegerType) {
     let (cell_b, cell_a) = (stack.pop(), stack.pop());
     if let (Some(Cell::Boolean(bool_a)), Some(Cell::Boolean(bool_b))) = (&cell_a, &cell_b) {
-        stack.push(Cell::Boolean(op(*bool_a, *bool_b)));
+        stack.push(Cell::Boolean(op_bool(*bool_a, *bool_b)));
+    }
+    else if let (Some(Cell::Integer(int_a)), Some(Cell::Integer(int_b))) = (&cell_a, &cell_b) {
+        stack.push(Cell::Integer(op_int(*int_a, *int_b)));
     }
     else {
-        panic!("two_bool_op: Expecting two booleans");
+        panic!("two_logic_op: Expecting two booleans or two integers");
     }
 }
 
 fn and(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack) {
-    two_bool_op(stack, |a, b| a & b);
+    two_logic_op(stack, |a, b| a & b, |a, b| a & b);
 }
 
 fn or(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack) {
-    two_bool_op(stack, |a, b| a | b);
+    two_logic_op(stack, |a, b| a | b, |a, b| a | b);
 }
 
 fn not(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack) {
-    if let Some(Cell::Boolean(a)) = stack.pop() {
+    let cell = stack.pop();
+    if let Some(Cell::Boolean(a)) = cell {
         stack.push(Cell::Boolean(!a));
     }
+    else if let Some(Cell::Integer(a)) = cell {
+        stack.push(Cell::Integer(!a));
+    }
     else {
-        panic!("not: Expecting a boolean");
+        panic!("not: Expecting a boolean or an integer");
     }
 }
 
