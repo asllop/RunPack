@@ -584,9 +584,14 @@ fn rot(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack) 
     }
 }
 
-/*TODO: implement either, yes?, no? and loop
+/*TODO:
+Condicions:
     condition EITHER word_true word_false
     condition YES? word_true
     condition NO? word_false
     LOOP word_condition word_loop
+We can also use blocks:
+    { true code } condition if
+    { true code } { false code } condition if-else
+    { loop code } { condition } while
 */
