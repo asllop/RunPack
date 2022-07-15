@@ -58,7 +58,7 @@ fn main() {
 
             "is_correct? ( a:Int b c -- b c d:Bool )"
             {
-                rot guess.hidden =
+                [ c b a : b c a ] guess.hidden =
             }
             def is_correct?
 
@@ -89,10 +89,11 @@ fn main() {
         ---
         10 def num
         { num print, ( num dec ) def num } { num -1 > } while
-        ---
-
-        ---
         print_stack
+        ---
+        10 20 30 40 [ a b c d : b d ]
+        print_stack
+        ---
     "#;
 
     println!("Program = {}", program);
@@ -107,7 +108,6 @@ fn main() {
 
     script.append("newline");
     script.append("50 twice_plus");
-    script.append("dup print");
     script.run();
     if let Some(Cell::Integer(num)) = script.stack.pop() {
         println!("Got value from exec script = {}", num);

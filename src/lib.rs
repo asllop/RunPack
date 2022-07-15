@@ -229,9 +229,8 @@ impl Script {
         script.tokenize();
         script.def_natives(&[
             ("(", open_parenth), (")", close_parenth), ("{", open_curly), ("}", close_curly), ("def", def), ("+", plus), ("-", minus),
-            ("*", star), ("/", slash), ("%", percent), (">", bigger), ("=", equal), ("&", and), ("|", or), ("!", not), ("drop", drop),
-            ("swap", swap), ("dup", dup), ("over", over), ("rot", rot), ("if", if_word), ("ifelse", ifelse_word), ("while", while_word),
-            ("lex", lex),
+            ("*", star), ("/", slash), ("%", percent), (">", bigger), ("=", equal), ("&", and), ("|", or), ("!", not), ("if", if_word),
+            ("ifelse", ifelse_word), ("while", while_word), ("lex", lex), ("[", open_bracket),
         ]);
         script
     }
@@ -578,54 +577,6 @@ fn not(script: &mut Script) {
     }
 }
 
-fn drop(script: &mut Script) {
-    if let None = script.stack.pop() {
-        panic!("drop: Stack underflow");
-    }
-}
-
-fn swap(script: &mut Script) {
-    if let (Some(cell_b), Some(cell_a)) = (script.stack.pop(), script.stack.pop()) {
-        script.stack.push(cell_b);
-        script.stack.push(cell_a);
-    }
-    else {
-        panic!("swap: Stack underflow");
-    }
-}
-
-fn dup(script: &mut Script) {
-    if let Some(cell) = script.stack.pop() {
-        script.stack.push(cell.clone());
-        script.stack.push(cell);
-    }
-    else {
-        panic!("dup: Stack underflow");
-    }
-}
-
-fn over(script: &mut Script) {
-    if let (Some(cell_b), Some(cell_a)) = (script.stack.pop(), script.stack.pop()) {
-        script.stack.push(cell_a.clone());
-        script.stack.push(cell_b);
-        script.stack.push(cell_a);
-    }
-    else {
-        panic!("over: Stack underflow");
-    }
-}
-
-fn rot(script: &mut Script) {
-    if let (Some(cell_c), Some(cell_b), Some(cell_a)) = (script.stack.pop(), script.stack.pop(), script.stack.pop()) {
-        script.stack.push(cell_b);
-        script.stack.push(cell_c);
-        script.stack.push(cell_a);
-    }
-    else {
-        panic!("rot: Stack underflow");
-    }
-}
-
 fn if_word(script: &mut Script) {
     if let (Some(Cell::Boolean(cond)), Some(Cell::Block(blk))) = (script.stack.pop(), script.stack.pop()) {
         if cond {
@@ -683,7 +634,32 @@ fn lex(script: &mut Script) {
     }
 }
 
-//TODO: stack transfer operator, will substitute dup, drop, etc.
-/*
-[ a b c : b b c c ]
-*/
+fn open_bracket(script: &mut Script) {
+    let mut vars: HashMap<String, Cell> = HashMap::with_capacity(16);
+    while let Some(Cell::Word(w)) = script.concat.next() {
+        if w == ":" {
+            break;
+        }
+        else {
+            if let Some(cell) = script.stack.pop() {
+                vars.insert(w.clone(), cell);
+            }
+            else {
+                panic!("open_bracket: stack is empty");
+            }
+        }
+    }
+    while let Some(Cell::Word(w)) = script.concat.next() {
+        if w == "]" {
+            break;
+        }
+        else {
+            if let Some(k) = vars.remove(w) {
+                script.stack.push(k);
+            }
+            else {
+                panic!("open_bracket: Couldn't find variable name");
+            }
+        }
+    }
+}
