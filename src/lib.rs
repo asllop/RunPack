@@ -3,12 +3,33 @@
 extern crate alloc;
 
 use hashbrown::HashMap;
-use alloc::{
-    vec::Vec,
-    string::String,
-};
+use alloc::{ vec::Vec, string::String };
 
-// TODO: Custom objects, add a new variant of Cell and create a Trait
+#[derive(PartialEq, PartialOrd, Clone, Debug)]
+/// Block reference type
+pub struct BlockRef {
+    pub pos: usize,
+    pub len: usize,
+}
+
+#[derive(Clone, Debug)]
+/// Custom object type
+pub struct Object {
+    pub map: HashMap<Cell, Cell>,
+    pub kind: String,
+}
+
+impl PartialEq for Object {
+    fn eq(&self, other: &Self) -> bool {
+        self.kind == other.kind
+    }
+}
+
+impl PartialOrd for Object {
+    fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
+        self.kind.partial_cmp(&other.kind)
+    }
+}
 
 /// Integer type alias
 pub type IntegerType = i64;
@@ -27,6 +48,7 @@ pub enum Cell {
     String(String),
     Word(String),
     Block(BlockRef),
+    Object(Object),
 }
 
 impl Cell {
@@ -62,13 +84,6 @@ impl Cell {
             None
         }
     }
-}
-
-#[derive(PartialEq, PartialOrd, Clone, Debug)]
-/// Block reference
-pub struct BlockRef {
-    pub pos: usize,
-    pub len: usize,
 }
 
 enum DictEntry {
@@ -367,6 +382,7 @@ impl Script {
                     let block = block_ref.clone();
                     self.run_block(&block);
                 },
+                //TODO: if Cell is an Object, put in the stack a ref to that object
                 DictEntry::Data(data_cell) => {
                     self.stack.push(data_cell.clone());
                 },
@@ -405,27 +421,12 @@ impl Script {
     /// Run one cell of the Concat
     pub fn one_step(&mut self) -> bool {
         if let Some(cell) = self.concat.next() {
+            //TODO: if Cell is an Object, we need an ref to that object, not a clone
             let cell = cell.clone();
             match cell {
                 Cell::Integer(_) | Cell::Float(_) | Cell::Boolean(_) | Cell::Symbol(_) | Cell::String(_) => self.stack.push(cell),
                 Cell::Word(w) => {
-                    if let Some(dict_entry) = self.dictionary.dict.get(&w) {
-                        match dict_entry {
-                            DictEntry::Native(func) => {
-                                func(self);
-                            },
-                            DictEntry::Defined(block_ref) => {
-                                self.ret.push(self.concat.pointer);
-                                self.concat.pointer = block_ref.pos;
-                            },
-                            DictEntry::Data(data_cell) => {
-                                self.stack.push(data_cell.clone());
-                            },
-                        }
-                    }
-                    else {
-                        panic!("{}: word not found in the dictionary", w);
-                    }
+                    self.exec(&w);
                 },
                 _ => panic!("Found an invalid cell value in the Concat: {:?}", cell)
             }
@@ -656,6 +657,7 @@ fn open_bracket(script: &mut Script) {
         }
         else {
             if let Some(k) = vars.get(w) {
+                //TODO: if Cell is an Object, put in the stack a ref to that object
                 script.stack.push(k.clone());
             }
             else {
@@ -664,3 +666,5 @@ fn open_bracket(script: &mut Script) {
         }
     }
 }
+
+//TODO: Object lexicon
