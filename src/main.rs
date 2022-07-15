@@ -48,9 +48,26 @@ fn main() {
         ---
         { 'Is true!' print } { 'Is false!' print } ( 10 100 > ) ifelse
         ---
-        { { 'You found it!' print } { 'Nope :(' print } rot 10 = ifelse } def guess
-        5 guess
-        10 guess
+        'The Guess Game' print
+        lex 'guess.'
+            10 def hidden
+
+            "is_correct? ( a:Int b c -- b c d:Bool )"
+            {
+                rot guess.hidden =
+            }
+            def is_correct?
+
+            "try ( a:Int -- )"
+            {
+                { 'You found it!' print } { 'Nope :(' print } guess.is_correct? ifelse
+            }
+            def try
+        lex ''
+
+        5 guess.try
+        10 guess.try
+        guess.hidden print
         ---
         lex 'math.'
             { 1 + } def inc

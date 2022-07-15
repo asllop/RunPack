@@ -70,7 +70,7 @@ impl RetStack {
     }
 }
 
-/// TODO: Custom objects, add a new variant of Cell and create a Trait
+// TODO: Custom objects, add a new variant of Cell and create a Trait
 
 /// Integer type alias
 pub type IntegerType = i64;
