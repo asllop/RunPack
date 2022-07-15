@@ -107,6 +107,8 @@ fn main() {
 
     script.append("newline");
     script.append("50 twice_plus");
+    script.append("dup print");
+    script.run();
     if let Some(Cell::Integer(num)) = script.stack.pop() {
         println!("Got value from exec script = {}", num);
     }

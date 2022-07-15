@@ -376,13 +376,11 @@ impl Script {
         }
     }
 
-    /// Append literal code to the end of the Concat and execute it.
-    /// Warning: this will append cells to the Concat array, if called in a loop it will consume the memory.
+    /// Append literal code to the end of the Concat.
     pub fn append(&mut self, code: &str) {
         self.reader = code.into();
         self.pos = 0;
         self.tokenize();
-        self.run();
     }
 
     /// Run the script
