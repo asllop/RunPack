@@ -8,6 +8,62 @@ use alloc::{
     string::String,
 };
 
+// TODO: Custom objects, add a new variant of Cell and create a Trait
+
+/// Integer type alias
+pub type IntegerType = i64;
+
+/// Float type alias
+pub type FloatType = f64;
+
+#[derive(PartialEq, PartialOrd, Clone, Debug)]
+/// Data primitive
+pub enum Cell {
+    Empty,  // TODO: once we implement error handling, we won't need an empty variant
+    Integer(IntegerType),
+    Float(FloatType),
+    Boolean(bool),
+    Symbol(String),
+    String(String),
+    Word(String),
+    Block(BlockRef),
+}
+
+impl Cell {
+    fn number(token: &str) -> Option<Self> {
+        if let Ok(int) = token.parse::<IntegerType>() {
+            Some(Cell::Integer(int))
+        }
+        else if let Ok(flt) = token.parse::<FloatType>() {
+            Some(Cell::Float(flt))
+        }
+        else {
+            None
+        }
+    }
+
+    fn symbol(token: &str) -> Option<Self> {
+        if token.starts_with("#") {
+            Some(Cell::Symbol(token.into()))
+        }
+        else {
+            None
+        }
+    }
+
+    fn boolean(token: &str) -> Option<Self> {
+        if token == "true" {
+            Some(Cell::Boolean(true))
+        }
+        else if token == "false" {
+            Some(Cell::Boolean(false))
+        }
+        else {
+            None
+        }
+    }
+}
+
 #[derive(PartialEq, PartialOrd, Clone, Debug)]
 /// Block reference
 pub struct BlockRef {
@@ -67,62 +123,6 @@ impl RetStack {
     /// Pop value from return stack
     pub fn pop(&mut self) -> Option<usize> {
         self.stack.pop()
-    }
-}
-
-// TODO: Custom objects, add a new variant of Cell and create a Trait
-
-/// Integer type alias
-pub type IntegerType = i64;
-
-/// Float type alias
-pub type FloatType = f64;
-
-#[derive(PartialEq, PartialOrd, Clone, Debug)]
-/// Data primitive
-pub enum Cell {
-    Empty,  // TODO: once we implement error handling, we won't need an empty variant
-    Integer(IntegerType),
-    Float(FloatType),
-    Boolean(bool),
-    Symbol(String),
-    String(String),
-    Word(String),
-    Block(BlockRef),
-}
-
-impl Cell {
-    fn number(token: &str) -> Option<Self> {
-        if let Ok(int) = token.parse::<IntegerType>() {
-            Some(Cell::Integer(int))
-        }
-        else if let Ok(flt) = token.parse::<FloatType>() {
-            Some(Cell::Float(flt))
-        }
-        else {
-            None
-        }
-    }
-
-    fn symbol(token: &str) -> Option<Self> {
-        if token.starts_with("#") {
-            Some(Cell::Symbol(token.into()))
-        }
-        else {
-            None
-        }
-    }
-
-    fn boolean(token: &str) -> Option<Self> {
-        if token == "true" {
-            Some(Cell::Boolean(true))
-        }
-        else if token == "false" {
-            Some(Cell::Boolean(false))
-        }
-        else {
-            None
-        }
     }
 }
 
