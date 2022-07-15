@@ -83,12 +83,16 @@ fn main() {
         10 math.dec print
         hi
         ---
+        "Puts a block in the stack"
         { 'Hello from block' print }
         'This is a test' print
         ---
         10 def num
         { num print, ( num dec ) def num } { num -1 > } while
         ---
+
+        ---
+        print_stack
     "#;
 
     println!("Program = {}", program);
@@ -116,6 +120,12 @@ fn main() {
     else {
         println!("Couldn't get block");
     }
+
+    script.exec("---");
+    script.exec("hi");
+    script.exec("num");
+    script.exec("print");
+    script.exec("---");
 }
 
 fn print(script: &mut Script) {

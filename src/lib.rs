@@ -353,8 +353,28 @@ impl Script {
             self.dictionary.native(word_name, *function);
         });
     }
-
-    //TODO: create a method to execute a word without adding code to the Concat
+    
+    /// Execute a word from the dictionary
+    pub fn exec(&mut self, word: &str) -> bool {
+        if let Some(dict_entry) = self.dictionary.dict.get(word) {
+            match dict_entry {
+                DictEntry::Native(func) => {
+                    func(self);
+                },
+                DictEntry::Defined(block_ref) => {
+                    let block = block_ref.clone();
+                    self.run_block(&block);
+                },
+                DictEntry::Data(data_cell) => {
+                    self.stack.push(data_cell.clone());
+                },
+            }
+            true
+        }
+        else {
+            false
+        }
+    }
 
     /// Append literal code to the end of the Concat and execute it.
     /// Warning: this will append cells to the Concat array, if called in a loop it will consume the memory.
