@@ -1,4 +1,5 @@
-use runpack::{Script, Cell, Stack, Concat, Dictionary, RetStack};
+use runpack::{Script, Cell};
+//use std::{fs, io::Read};
 
 fn main() {
     println!("Run Pack!\n");
@@ -85,7 +86,7 @@ fn main() {
 
     println!("Program = {}", program);
 
-    let mut script = Script::new(program.bytes());
+    let mut script = Script::new(program);
 
     println!("Tokens =\n{:?}\n", script.concat);
 
@@ -93,8 +94,8 @@ fn main() {
     script.dictionary.native("print_stack", print_stack);
     script.run();
 
-    script.exec("newline".bytes());
-    script.exec("50 twice_plus".bytes());
+    script.append("newline");
+    script.append("50 twice_plus");
     if let Some(Cell::Integer(num)) = script.stack.pop() {
         println!("Got value from exec script = {}", num);
     }
@@ -108,10 +109,21 @@ fn main() {
     else {
         println!("Couldn't get block");
     }
+
+    //let file = fs::File::open("foo.txt").expect("File not found");
+    /*
+    let bytes = file.bytes();
+    for b in bytes {
+        if let Ok(b) = b {
+            
+        }
+    }
+    */
+    
 }
 
-fn print(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack) {
-    if let Some(cell) = stack.pop() {
+fn print(script: &mut Script) {
+    if let Some(cell) = script.stack.pop() {
         match cell {
             Cell::Integer(i) => println!("{}", i),
             Cell::Float(f) => println!("{}", f),
@@ -127,6 +139,6 @@ fn print(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack
     }
 }
 
-fn print_stack(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack) {
-    println!("{:?}", stack);
+fn print_stack(script: &mut Script) {
+    println!("{:?}", script.stack);
 }

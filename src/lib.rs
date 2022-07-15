@@ -16,7 +16,7 @@ pub struct BlockRef {
 }
 
 enum DictEntry {
-    Native(fn(&mut Stack, &mut Concat, &mut Dictionary, &mut RetStack)),
+    Native(fn(&mut Script)),
     Defined(BlockRef),
     Data(Cell),
 }
@@ -33,7 +33,7 @@ impl Dictionary {
     }
 
     /// Define a native word
-    pub fn native(&mut self, word: &str, func: fn(&mut Stack, &mut Concat, &mut Dictionary, &mut RetStack)) {
+    pub fn native(&mut self, word: &str, func: fn(&mut Script)) {
         self.dict.insert(word.into(), DictEntry::Native(func));
     }
 
@@ -207,22 +207,24 @@ impl Stack {
 }
 
 /// RunPack script interpreter
-pub struct Script<T: Iterator<Item=u8> + Sized> {
+pub struct Script {
     pub stack: Stack,
     pub dictionary: Dictionary,
     pub ret: RetStack,
     pub concat: Concat,
-    reader: T,
+    reader: String,
+    pos: usize,
 }
 
-impl<T: Iterator<Item=u8> + Sized> Script<T> {
-    pub fn new(reader: T) -> Self {
+impl Script {
+    pub fn new(reader: &str) -> Self {
         let mut script = Self {
             stack: Stack::new(),
             dictionary: Dictionary::new(),
             ret: RetStack::new(),
             concat: Concat::new(),
-            reader,
+            reader: reader.into(),
+            pos: 0,
         };
         script.tokenize();
         script.def_natives(&[
@@ -239,8 +241,11 @@ impl<T: Iterator<Item=u8> + Sized> Script<T> {
         let mut in_comment = false;
         let mut last_was_escape = false;
         let mut buff = Vec::new();
+        let reader_bytes = self.reader.as_bytes();
 
-        while let Some(b) = self.reader.next() {
+        while self.pos < reader_bytes.len() {
+            let b = reader_bytes[self.pos];
+            self.pos += 1;
             if in_string {
                 if b == 92 {    // backslash
                     if last_was_escape {
@@ -342,17 +347,19 @@ impl<T: Iterator<Item=u8> + Sized> Script<T> {
     }
 
     /// Define a batch of native functions
-    pub fn def_natives(&mut self, list: &[(&str, fn(&mut Stack, &mut Concat, &mut Dictionary, &mut RetStack))]) {
+    pub fn def_natives(&mut self, list: &[(&str, fn(&mut Script))]) {
         list.iter().for_each(|(word_name, function)| {
             self.dictionary.native(word_name, *function);
         });
     }
 
-    //TODO: problem: the arg provided to Script::new must be of the same type that the one we provide to exec. We would like to provide an &str to exec, regardless of T.
-    //TODO: this will append cells to the Concat, if called in a loop will consume the memory.
-    /// Exec a literal pice of code
-    pub fn exec(&mut self, code: T) {
-        self.reader = code;
+    //TODO: create a method to execute a word without adding code to the Concat
+
+    /// Append literal code to the end of the Concat and execute it.
+    /// Warning: this will append cells to the Concat array, if called in a loop it will consume the memory.
+    pub fn append(&mut self, code: &str) {
+        self.reader = code.into();
+        self.pos = 0;
         self.tokenize();
         self.run();
     }
@@ -384,7 +391,7 @@ impl<T: Iterator<Item=u8> + Sized> Script<T> {
                     if let Some(dict_entry) = self.dictionary.dict.get(&w) {
                         match dict_entry {
                             DictEntry::Native(func) => {
-                                func(&mut self.stack, &mut self.concat, &mut self.dictionary, &mut self.ret);
+                                func(self);
                             },
                             DictEntry::Defined(block_ref) => {
                                 self.ret.push(self.concat.pointer);
@@ -411,27 +418,27 @@ impl<T: Iterator<Item=u8> + Sized> Script<T> {
 
 // Primitives
 
-fn open_parenth(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack) {
-    stack.start_stack();
+fn open_parenth(script: &mut Script) {
+    script.stack.start_stack();
 }
 
-fn close_parenth(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack) {
-    if let None = stack.end_stack() {
+fn close_parenth(script: &mut Script) {
+    if let None = script.stack.end_stack() {
         panic!("close_parenth: Stack level undeflow");
     }
 }
 
-fn open_curly(stack: &mut Stack, concat: &mut Concat, _: &mut Dictionary, _: &mut RetStack) {
-    let pos = concat.pointer;
+fn open_curly(script: &mut Script) {
+    let pos = script.concat.pointer;
     let mut level = 1;
     loop {
-        if let Some(cell) = concat.next() {
+        if let Some(cell) = script.concat.next() {
             if let Cell::Word(w) = cell {
                 if w == "}" {
                     level -= 1;
                     if level == 0 {
-                        let len = concat.pointer - pos;
-                        stack.push(Cell::Block(BlockRef { pos, len }));
+                        let len = script.concat.pointer - pos;
+                        script.stack.push(Cell::Block(BlockRef { pos, len }));
                         break;
                     }
                 }
@@ -446,25 +453,25 @@ fn open_curly(stack: &mut Stack, concat: &mut Concat, _: &mut Dictionary, _: &mu
     }
 }
 
-fn close_curly(_: &mut Stack, concat: &mut Concat, _: &mut Dictionary, ret: &mut RetStack) {
-    if let Some(pos) = ret.pop() {
-        concat.pointer = pos;
+fn close_curly(script: &mut Script) {
+    if let Some(pos) = script.ret.pop() {
+        script.concat.pointer = pos;
     }
     else {
         panic!("close_curly: Return stack underflow");
     }
 }
 
-fn def(stack: &mut Stack, concat: &mut Concat, dict: &mut Dictionary, _: &mut RetStack) {
-    let (data, word) = (stack.pop(), concat.next());
+fn def(script: &mut Script) {
+    let (data, word) = (script.stack.pop(), script.concat.next());
     if let Some(Cell::Word(word)) = word {
         if let Some(Cell::Block(block)) = data {
-            let lex = dict.lex.clone();
-            dict.block(&(lex + word), block);
+            let lex = script.dictionary.lex.clone();
+            script.dictionary.block(&(lex + word), block);
         }
         else if let Some(cell) = data {
-            let lex = dict.lex.clone();
-            dict.data(&(lex + word), cell);
+            let lex = script.dictionary.lex.clone();
+            script.dictionary.data(&(lex + word), cell);
         }
         else {
             panic!("def: Expecting a block or a cell");
@@ -488,34 +495,34 @@ fn two_num_op(stack: &mut Stack, int_op: fn(IntegerType, IntegerType) -> Integer
     }
 }
 
-fn plus(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack) {
-    two_num_op(stack, |a, b| a + b, |a, b| a + b);
+fn plus(script: &mut Script) {
+    two_num_op(&mut script.stack, |a, b| a + b, |a, b| a + b);
 }
 
-fn minus(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack) {
-    two_num_op(stack, |a, b| a - b, |a, b| a - b);
+fn minus(script: &mut Script) {
+    two_num_op(&mut script.stack, |a, b| a - b, |a, b| a - b);
 }
 
-fn star(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack) {
-    two_num_op(stack, |a, b| a * b, |a, b| a * b);
+fn star(script: &mut Script) {
+    two_num_op(&mut script.stack, |a, b| a * b, |a, b| a * b);
 }
 
-fn slash(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack) {
-    two_num_op(stack, |a, b| a / b, |a, b| a / b);
+fn slash(script: &mut Script) {
+    two_num_op(&mut script.stack, |a, b| a / b, |a, b| a / b);
 }
 
-fn percent(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack) {
-    two_num_op(stack, |a, b| a % b, |a, b| a % b);
+fn percent(script: &mut Script) {
+    two_num_op(&mut script.stack, |a, b| a % b, |a, b| a % b);
 }
 
-fn bigger(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack) {
-    let (cell_b, cell_a) = (stack.pop(), stack.pop());
-    stack.push(Cell::Boolean(cell_a > cell_b));
+fn bigger(script: &mut Script) {
+    let (cell_b, cell_a) = (script.stack.pop(), script.stack.pop());
+    script.stack.push(Cell::Boolean(cell_a > cell_b));
 }
 
-fn equal(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack) {
-    let (cell_b, cell_a) = (stack.pop(), stack.pop());
-    stack.push(Cell::Boolean(cell_a == cell_b));
+fn equal(script: &mut Script) {
+    let (cell_b, cell_a) = (script.stack.pop(), script.stack.pop());
+    script.stack.push(Cell::Boolean(cell_a == cell_b));
 }
 
 fn two_logic_op(stack: &mut Stack, op_bool: fn(bool, bool) -> bool, op_int: fn(IntegerType, IntegerType) -> IntegerType) {
@@ -531,80 +538,80 @@ fn two_logic_op(stack: &mut Stack, op_bool: fn(bool, bool) -> bool, op_int: fn(I
     }
 }
 
-fn and(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack) {
-    two_logic_op(stack, |a, b| a & b, |a, b| a & b);
+fn and(script: &mut Script) {
+    two_logic_op(&mut script.stack, |a, b| a & b, |a, b| a & b);
 }
 
-fn or(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack) {
-    two_logic_op(stack, |a, b| a | b, |a, b| a | b);
+fn or(script: &mut Script) {
+    two_logic_op(&mut script.stack, |a, b| a | b, |a, b| a | b);
 }
 
-fn not(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack) {
-    let cell = stack.pop();
+fn not(script: &mut Script) {
+    let cell = script.stack.pop();
     if let Some(Cell::Boolean(a)) = cell {
-        stack.push(Cell::Boolean(!a));
+        script.stack.push(Cell::Boolean(!a));
     }
     else if let Some(Cell::Integer(a)) = cell {
-        stack.push(Cell::Integer(!a));
+        script.stack.push(Cell::Integer(!a));
     }
     else {
         panic!("not: Expecting a boolean or an integer");
     }
 }
 
-fn drop(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack) {
-    if let None = stack.pop() {
+fn drop(script: &mut Script) {
+    if let None = script.stack.pop() {
         panic!("drop: Stack underflow");
     }
 }
 
-fn swap(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack) {
-    if let (Some(cell_b), Some(cell_a)) = (stack.pop(), stack.pop()) {
-        stack.push(cell_b);
-        stack.push(cell_a);
+fn swap(script: &mut Script) {
+    if let (Some(cell_b), Some(cell_a)) = (script.stack.pop(), script.stack.pop()) {
+        script.stack.push(cell_b);
+        script.stack.push(cell_a);
     }
     else {
         panic!("swap: Stack underflow");
     }
 }
 
-fn dup(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack) {
-    if let Some(cell) = stack.pop() {
-        stack.push(cell.clone());
-        stack.push(cell);
+fn dup(script: &mut Script) {
+    if let Some(cell) = script.stack.pop() {
+        script.stack.push(cell.clone());
+        script.stack.push(cell);
     }
     else {
         panic!("dup: Stack underflow");
     }
 }
 
-fn over(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack) {
-    if let (Some(cell_b), Some(cell_a)) = (stack.pop(), stack.pop()) {
-        stack.push(cell_a.clone());
-        stack.push(cell_b);
-        stack.push(cell_a);
+fn over(script: &mut Script) {
+    if let (Some(cell_b), Some(cell_a)) = (script.stack.pop(), script.stack.pop()) {
+        script.stack.push(cell_a.clone());
+        script.stack.push(cell_b);
+        script.stack.push(cell_a);
     }
     else {
         panic!("over: Stack underflow");
     }
 }
 
-fn rot(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack) {
-    if let (Some(cell_c), Some(cell_b), Some(cell_a)) = (stack.pop(), stack.pop(), stack.pop()) {
-        stack.push(cell_b);
-        stack.push(cell_c);
-        stack.push(cell_a);
+fn rot(script: &mut Script) {
+    if let (Some(cell_c), Some(cell_b), Some(cell_a)) = (script.stack.pop(), script.stack.pop(), script.stack.pop()) {
+        script.stack.push(cell_b);
+        script.stack.push(cell_c);
+        script.stack.push(cell_a);
     }
     else {
         panic!("rot: Stack underflow");
     }
 }
 
-fn if_word(stack: &mut Stack, concat: &mut Concat, _: &mut Dictionary, ret: &mut RetStack) {
-    if let (Some(Cell::Boolean(cond)), Some(Cell::Block(blk))) = (stack.pop(), stack.pop()) {
+fn if_word(script: &mut Script) {
+    if let (Some(Cell::Boolean(cond)), Some(Cell::Block(blk))) = (script.stack.pop(), script.stack.pop()) {
         if cond {
-            ret.push(concat.pointer);
-            concat.pointer = blk.pos;
+            script.ret.push(script.concat.pointer);
+            script.concat.pointer = blk.pos;
         }
     }
     else {
@@ -612,34 +619,20 @@ fn if_word(stack: &mut Stack, concat: &mut Concat, _: &mut Dictionary, ret: &mut
     }
 }
 
-fn ifelse_word(stack: &mut Stack, concat: &mut Concat, _: &mut Dictionary, ret: &mut RetStack) {
-    if let (Some(Cell::Boolean(cond)), Some(Cell::Block(false_blk)), Some(Cell::Block(true_blk))) = (stack.pop(), stack.pop(), stack.pop()) {
-        ret.push(concat.pointer);
+fn ifelse_word(script: &mut Script) {
+    if let (Some(Cell::Boolean(cond)), Some(Cell::Block(false_blk)), Some(Cell::Block(true_blk))) = (script.stack.pop(), script.stack.pop(), script.stack.pop()) {
+        script.ret.push(script.concat.pointer);
         if cond {
-            concat.pointer = true_blk.pos;
+            script.concat.pointer = true_blk.pos;
         }
         else {
-            concat.pointer = false_blk.pos;
+            script.concat.pointer = false_blk.pos;
         }
     }
     else {
         panic!("ifelse: couldn't find condition and 2 blocks");
     }
 }
-
-fn lex(_: &mut Stack, concat: &mut Concat, dict: &mut Dictionary, _: &mut RetStack) {
-    if let Some(Cell::String(lex_name)) = concat.next() {
-        dict.lex = lex_name.clone();
-    }
-    else {
-        panic!("lex: couldn't find string");
-    }
-}
-
-//TODO: stack transfer operator, will substitute dup, drop, etc.
-/*
-[ a b c : b b c c ]
-*/
 
 /*
 // { loop code } { condition } while
@@ -655,4 +648,18 @@ fn while_word(stack: &mut Stack, concat: &mut Concat, _: &mut Dictionary, _: &mu
         panic!("while: couldn't find 2 blocks");
     }
 }
+*/
+
+fn lex(script: &mut Script) {
+    if let Some(Cell::String(lex_name)) = script.concat.next() {
+        script.dictionary.lex = lex_name.clone();
+    }
+    else {
+        panic!("lex: couldn't find string");
+    }
+}
+
+//TODO: stack transfer operator, will substitute dup, drop, etc.
+/*
+[ a b c : b b c c ]
 */
