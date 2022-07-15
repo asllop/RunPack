@@ -79,6 +79,8 @@ fn main() {
         10 math.dec print
         hi
         ---
+        { 'Hello from block' print }
+        'This is a test' print
     "#;
 
     println!("Program = {}", program);
@@ -98,6 +100,13 @@ fn main() {
     }
     else {
         println!("Couldn't get value");
+    }
+
+    if let Some(Cell::Block(blk)) = script.stack.pop() {
+        script.run_block(blk);
+    }
+    else {
+        println!("Couldn't get block");
     }
 }
 

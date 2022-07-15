@@ -130,17 +130,12 @@ impl Cell {
 /// Concatenation, the array of words that conforms the program.
 pub struct Concat {
     array: Vec<Cell>,
-    pointer: usize,
+    pub pointer: usize,
 }
 
 impl Concat {
     fn new() -> Self {
         Self { array: Vec::new(), pointer: 0 }
-    }
-
-    /// Set pointer to position
-    pub fn go_to(&mut self, pos: usize) {
-        self.pointer = pos;
     }
 
     /// Get next cell from the Concat
@@ -153,11 +148,6 @@ impl Concat {
         else {
             None
         }
-    }
-
-    /// Get current pointer position
-    pub fn pointer(&self) -> usize {
-        self.pointer
     }
 }
 
@@ -360,7 +350,7 @@ impl<T: Iterator<Item=u8> + Sized> Script<T> {
 
     //TODO: problem: the arg provided to Script::new must be of the same type that the one we provide to exec. We would like to provide an &str to exec, regardless of T.
     //TODO: this will append cells to the Concat, if called in a loop will consume the memory.
-    /// Exec a pice of code
+    /// Exec a literal pice of code
     pub fn exec(&mut self, code: T) {
         self.reader = code;
         self.tokenize();
@@ -369,7 +359,24 @@ impl<T: Iterator<Item=u8> + Sized> Script<T> {
 
     /// Run the script
     pub fn run(&mut self) {
-        while let Some(cell) = self.concat.next() {
+        while self.one_step() {}
+    }
+    
+    /// Run a block
+    pub fn run_block(&mut self, block: BlockRef) {
+        let init_pointer = self.concat.pointer;
+        self.ret.push(self.concat.pointer);
+        self.concat.pointer = block.pos;
+        while self.one_step() {
+            if self.concat.pointer == init_pointer {
+                break;
+            }
+        }
+    }
+
+    /// Run one cell of the Concat
+    pub fn one_step(&mut self) -> bool {
+        if let Some(cell) = self.concat.next() {
             let cell = cell.clone();
             match cell {
                 Cell::Integer(_) | Cell::Float(_) | Cell::Boolean(_) | Cell::Symbol(_) | Cell::String(_) => self.stack.push(cell),
@@ -380,8 +387,8 @@ impl<T: Iterator<Item=u8> + Sized> Script<T> {
                                 func(&mut self.stack, &mut self.concat, &mut self.dictionary, &mut self.ret);
                             },
                             DictEntry::Defined(block_ref) => {
-                                self.ret.push(self.concat.pointer());
-                                self.concat.go_to(block_ref.pos);
+                                self.ret.push(self.concat.pointer);
+                                self.concat.pointer = block_ref.pos;
                             },
                             DictEntry::Data(data_cell) => {
                                 self.stack.push(data_cell.clone());
@@ -392,8 +399,12 @@ impl<T: Iterator<Item=u8> + Sized> Script<T> {
                         panic!("{}: word not found in the dictionary", w);
                     }
                 },
-                _ => { panic!("Found an invalid cell value in the Concat: {:?}", cell) },
+                _ => panic!("Found an invalid cell value in the Concat: {:?}", cell)
             }
+            true
+        }
+        else {
+            false
         }
     }
 }
@@ -411,7 +422,7 @@ fn close_parenth(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut 
 }
 
 fn open_curly(stack: &mut Stack, concat: &mut Concat, _: &mut Dictionary, _: &mut RetStack) {
-    let pos = concat.pointer();
+    let pos = concat.pointer;
     let mut level = 1;
     loop {
         if let Some(cell) = concat.next() {
@@ -419,7 +430,7 @@ fn open_curly(stack: &mut Stack, concat: &mut Concat, _: &mut Dictionary, _: &mu
                 if w == "}" {
                     level -= 1;
                     if level == 0 {
-                        let len = concat.pointer() - pos;
+                        let len = concat.pointer - pos;
                         stack.push(Cell::Block(BlockRef { pos, len }));
                         break;
                     }
@@ -437,7 +448,7 @@ fn open_curly(stack: &mut Stack, concat: &mut Concat, _: &mut Dictionary, _: &mu
 
 fn close_curly(_: &mut Stack, concat: &mut Concat, _: &mut Dictionary, ret: &mut RetStack) {
     if let Some(pos) = ret.pop() {
-        concat.go_to(pos);
+        concat.pointer = pos;
     }
     else {
         panic!("close_curly: Return stack underflow");
@@ -592,8 +603,8 @@ fn rot(stack: &mut Stack, _: &mut Concat, _: &mut Dictionary, _: &mut RetStack) 
 fn if_word(stack: &mut Stack, concat: &mut Concat, _: &mut Dictionary, ret: &mut RetStack) {
     if let (Some(Cell::Boolean(cond)), Some(Cell::Block(blk))) = (stack.pop(), stack.pop()) {
         if cond {
-            ret.push(concat.pointer());
-            concat.go_to(blk.pos);
+            ret.push(concat.pointer);
+            concat.pointer = blk.pos;
         }
     }
     else {
@@ -603,12 +614,12 @@ fn if_word(stack: &mut Stack, concat: &mut Concat, _: &mut Dictionary, ret: &mut
 
 fn ifelse_word(stack: &mut Stack, concat: &mut Concat, _: &mut Dictionary, ret: &mut RetStack) {
     if let (Some(Cell::Boolean(cond)), Some(Cell::Block(false_blk)), Some(Cell::Block(true_blk))) = (stack.pop(), stack.pop(), stack.pop()) {
-        ret.push(concat.pointer());
+        ret.push(concat.pointer);
         if cond {
-            concat.go_to(true_blk.pos);
+            concat.pointer = true_blk.pos;
         }
         else {
-            concat.go_to(false_blk.pos);
+            concat.pointer = false_blk.pos;
         }
     }
     else {
