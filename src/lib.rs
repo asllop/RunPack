@@ -654,8 +654,8 @@ fn open_bracket(script: &mut Script) {
             break;
         }
         else {
-            if let Some(k) = vars.remove(w) {
-                script.stack.push(k);
+            if let Some(k) = vars.get(w) {
+                script.stack.push(k.clone());
             }
             else {
                 panic!("open_bracket: Couldn't find variable name");

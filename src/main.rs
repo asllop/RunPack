@@ -13,6 +13,9 @@ fn main() {
         { 2 * inc } def twice_plus
         { 1 + } def inc
         { 1 - } def dec
+        { [ a : ] } def drop
+        { [ a : a a ] } def dup
+        { [ a b : a b ] } def swap
         ---
         66 inc print
         10 twice_plus print
@@ -92,6 +95,15 @@ fn main() {
         print_stack
         ---
         10 20 30 40 [ a b c d : b d ]
+        print_stack
+        ---
+        [ a b : ] "2 drops"
+        print_stack
+        22 dup
+        print_stack
+        1 2 swap
+        print_stack
+        [ a b c d : ] "4 drops"
         print_stack
         ---
     "#;
