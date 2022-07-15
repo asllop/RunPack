@@ -230,7 +230,8 @@ impl Script {
         script.def_natives(&[
             ("(", open_parenth), (")", close_parenth), ("{", open_curly), ("}", close_curly), ("def", def), ("+", plus), ("-", minus),
             ("*", star), ("/", slash), ("%", percent), (">", bigger), ("=", equal), ("&", and), ("|", or), ("!", not), ("drop", drop),
-            ("swap", swap), ("dup", dup), ("over", over), ("rot", rot), ("if", if_word), ("ifelse", ifelse_word), ("lex", lex),
+            ("swap", swap), ("dup", dup), ("over", over), ("rot", rot), ("if", if_word), ("ifelse", ifelse_word), ("while", while_word),
+            ("lex", lex),
         ]);
         script
     }
@@ -370,7 +371,7 @@ impl Script {
     }
     
     /// Run a block
-    pub fn run_block(&mut self, block: BlockRef) {
+    pub fn run_block(&mut self, block: &BlockRef) {
         let init_pointer = self.concat.pointer;
         self.ret.push(self.concat.pointer);
         self.concat.pointer = block.pos;
@@ -610,8 +611,7 @@ fn rot(script: &mut Script) {
 fn if_word(script: &mut Script) {
     if let (Some(Cell::Boolean(cond)), Some(Cell::Block(blk))) = (script.stack.pop(), script.stack.pop()) {
         if cond {
-            script.ret.push(script.concat.pointer);
-            script.concat.pointer = blk.pos;
+            script.run_block(&blk);
         }
     }
     else {
@@ -623,10 +623,10 @@ fn ifelse_word(script: &mut Script) {
     if let (Some(Cell::Boolean(cond)), Some(Cell::Block(false_blk)), Some(Cell::Block(true_blk))) = (script.stack.pop(), script.stack.pop(), script.stack.pop()) {
         script.ret.push(script.concat.pointer);
         if cond {
-            script.concat.pointer = true_blk.pos;
+            script.run_block(&true_blk);
         }
         else {
-            script.concat.pointer = false_blk.pos;
+            script.run_block(&false_blk);
         }
     }
     else {
@@ -634,21 +634,27 @@ fn ifelse_word(script: &mut Script) {
     }
 }
 
-/*
-// { loop code } { condition } while
-fn while_word(stack: &mut Stack, concat: &mut Concat, _: &mut Dictionary, _: &mut RetStack) {
-    if let (Some(Cell::Block(cond_blk)), Some(Cell::Block(loop_blk))) = (stack.pop(), stack.pop()) {
-        //TODO: com fem per executar un bloc i retornar en acabat?
-
-        //TODO: run cond block
-        //TODO: check if there is a boolean in the stack
-        //TODO: if true: run loop_block and go again. If false, end.
+fn while_word(script: &mut Script) {
+    if let (Some(Cell::Block(cond_blk)), Some(Cell::Block(loop_blk))) = (script.stack.pop(), script.stack.pop()) {
+        loop {
+            script.run_block(&cond_blk);
+            if let Some(Cell::Boolean(cond)) = script.stack.pop() {
+                if cond {
+                    script.run_block(&loop_blk);
+                }
+                else {
+                    break;
+                }
+            }
+            else {
+                panic!("while: condition didn't produce a bool");
+            }
+        }
     }
     else {
         panic!("while: couldn't find 2 blocks");
     }
 }
-*/
 
 fn lex(script: &mut Script) {
     if let Some(Cell::String(lex_name)) = script.concat.next() {

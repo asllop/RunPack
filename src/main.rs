@@ -1,5 +1,4 @@
 use runpack::{Script, Cell};
-//use std::{fs, io::Read};
 
 fn main() {
     println!("Run Pack!\n");
@@ -13,6 +12,7 @@ fn main() {
 
         { 2 * inc } def twice_plus
         { 1 + } def inc
+        { 1 - } def dec
         ---
         66 inc print
         10 twice_plus print
@@ -48,6 +48,9 @@ fn main() {
         print_stack
         ---
         { 'Is true!' print } { 'Is false!' print } ( 10 100 > ) ifelse
+        { 'Is true!' print } { 'Is false!' print } ( 10 0 > ) ifelse
+        { 'Is true!' print } ( 10 0 > ) if
+        { 'Is true!' print } ( 10 1000 > ) if
         ---
         'The Guess Game' print
         lex 'guess.'
@@ -82,6 +85,10 @@ fn main() {
         ---
         { 'Hello from block' print }
         'This is a test' print
+        ---
+        10 def num
+        { num print, ( num dec ) def num } { num -1 > } while
+        ---
     "#;
 
     println!("Program = {}", program);
@@ -104,22 +111,11 @@ fn main() {
     }
 
     if let Some(Cell::Block(blk)) = script.stack.pop() {
-        script.run_block(blk);
+        script.run_block(&blk);
     }
     else {
         println!("Couldn't get block");
     }
-
-    //let file = fs::File::open("foo.txt").expect("File not found");
-    /*
-    let bytes = file.bytes();
-    for b in bytes {
-        if let Ok(b) = b {
-            
-        }
-    }
-    */
-    
 }
 
 fn print(script: &mut Script) {
