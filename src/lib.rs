@@ -90,17 +90,20 @@ impl Dictionary {
 
     /// Define a native word
     pub fn native(&mut self, word: &str, func: fn(&mut Script)) {
-        self.dict.insert(word.into(), DictEntry::Native(func));
+        let lex = self.lex.clone();
+        self.dict.insert(lex + word, DictEntry::Native(func));
     }
 
     /// Define block word
     pub fn block(&mut self, word: &str, block: BlockRef) {
-        self.dict.insert(word.into(), DictEntry::Defined(block));
+        let lex = self.lex.clone();
+        self.dict.insert(lex + word, DictEntry::Defined(block));
     }
 
     /// Define data word
     pub fn data(&mut self, word: &str, cell: Cell) {
-        self.dict.insert(word.into(), DictEntry::Data(cell));
+        let lex = self.lex.clone();
+        self.dict.insert(lex + word, DictEntry::Data(cell));
     }
 }
 
@@ -484,12 +487,10 @@ fn def(script: &mut Script) {
     let (data, word) = (script.stack.pop(), script.concat.next());
     if let Some(Cell::Word(word)) = word {
         if let Some(Cell::Block(block)) = data {
-            let lex = script.dictionary.lex.clone();
-            script.dictionary.block(&(lex + word), block);
+            script.dictionary.block(word, block);
         }
         else if let Some(cell) = data {
-            let lex = script.dictionary.lex.clone();
-            script.dictionary.data(&(lex + word), cell);
+            script.dictionary.data(word, cell);
         }
         else {
             panic!("def: Expecting a block or a cell");
