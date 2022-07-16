@@ -149,7 +149,7 @@ fn print(script: &mut Script) {
     if let Some(cell) = script.stack.pop() {
         match cell {
             Cell::Integer(i) => println!("{}", i),
-            Cell::Float(f) => println!("{}", f.0),
+            Cell::Float(f) => println!("{}", f),
             Cell::Boolean(b) => println!("{}", b),
             Cell::Symbol(s) => println!("{}", s),
             Cell::String(st) => println!("{}", st),

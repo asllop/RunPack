@@ -33,7 +33,6 @@ impl Hash for Object {
             k.hash(state);
             v.hash(state)
         });
-        //self.map.hash(state);
         self.kind.hash(state);
     }
 }
@@ -54,11 +53,7 @@ impl PartialOrd for Object {
 pub type IntegerType = i64;
 
 /// Float type alias
-pub type FloatAlias = i64;
-
-#[derive(PartialEq, PartialOrd, Hash, Eq, Clone, Copy, Debug)]
-/// Float new type
-pub struct FloatType(pub FloatAlias);
+pub type FloatType = i64;
 
 #[derive(PartialEq, PartialOrd, Eq, Hash, Clone, Debug)]
 /// Data primitive
@@ -79,8 +74,8 @@ impl Cell {
         if let Ok(int) = token.parse::<IntegerType>() {
             Some(Cell::Integer(int))
         }
-        else if let Ok(flt) = token.parse::<FloatAlias>() {
-            Some(Cell::Float(FloatType(flt)))
+        else if let Ok(flt) = token.parse::<FloatType>() {
+            Some(Cell::Float(flt))
         }
         else {
             None
@@ -539,23 +534,23 @@ fn two_num_op(stack: &mut Stack, int_op: fn(IntegerType, IntegerType) -> Integer
 }
 
 fn plus(script: &mut Script) {
-    two_num_op(&mut script.stack, |a, b| a + b, |a, b| FloatType(a.0 + b.0));
+    two_num_op(&mut script.stack, |a, b| a + b, |a, b| a + b);
 }
 
 fn minus(script: &mut Script) {
-    two_num_op(&mut script.stack, |a, b| a - b, |a, b| FloatType(a.0 - b.0));
+    two_num_op(&mut script.stack, |a, b| a - b, |a, b| a - b);
 }
 
 fn star(script: &mut Script) {
-    two_num_op(&mut script.stack, |a, b| a * b, |a, b| FloatType(a.0 * b.0));
+    two_num_op(&mut script.stack, |a, b| a * b, |a, b| a * b);
 }
 
 fn slash(script: &mut Script) {
-    two_num_op(&mut script.stack, |a, b| a / b, |a, b| FloatType(a.0 / b.0));
+    two_num_op(&mut script.stack, |a, b| a / b, |a, b| a / b);
 }
 
 fn percent(script: &mut Script) {
-    two_num_op(&mut script.stack, |a, b| a % b, |a, b| FloatType(a.0 % b.0));
+    two_num_op(&mut script.stack, |a, b| a % b, |a, b| a % b);
 }
 
 fn bigger(script: &mut Script) {
