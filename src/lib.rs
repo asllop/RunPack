@@ -26,17 +26,10 @@ pub struct BlockRef {
     pub len: usize,
 }
 
-#[derive(Eq, Clone, Debug)]
+#[derive(Default, Eq, Clone, Debug)]
 /// Custom object type
 pub struct Object {
     pub map: HashMap<Cell, Cell>,
-    pub kind: String,
-}
-
-impl Object {
-    pub fn new(kind: &str) -> Self {
-        Self { map: HashMap::new(), kind: kind.into()}
-    }
 }
 
 impl Hash for Object {
@@ -45,7 +38,6 @@ impl Hash for Object {
             k.hash(state);
             v.hash(state)
         });
-        self.kind.hash(state);
     }
 }
 
@@ -122,6 +114,7 @@ enum DictEntry {
     Data(Cell),
 }
 
+#[derive(Default)]
 /// Dictionary of words
 pub struct Dictionary {
     dict: HashMap<String, DictEntry>,
@@ -129,10 +122,6 @@ pub struct Dictionary {
 }
 
 impl Dictionary {
-    fn new() -> Self {
-        Self { dict: HashMap::new(), lex: String::default() }
-    }
-
     /// Define a native word
     pub fn native(&mut self, word: &str, func: fn(&mut Script) -> Result<bool, Error>) {
         let lex = self.lex.clone();
@@ -152,17 +141,13 @@ impl Dictionary {
     }
 }
 
-#[derive(Debug)]
+#[derive(Default, Debug)]
 /// Return stack
 pub struct RetStack {
     stack: Vec<usize>,
 }
 
 impl RetStack {
-    fn new() -> Self {
-        Self { stack: Vec::new() }
-    }
-
     /// Push value to return stack
     pub fn push(&mut self, ret_pos: usize) {
         self.stack.push(ret_pos)
@@ -174,7 +159,7 @@ impl RetStack {
     }
 }
 
-#[derive(Debug)]
+#[derive(Default, Debug)]
 /// Concatenation, the array of words that conforms the program.
 pub struct Concat {
     array: Vec<Cell>,
@@ -182,10 +167,6 @@ pub struct Concat {
 }
 
 impl Concat {
-    fn new() -> Self {
-        Self { array: Vec::new(), pointer: 0 }
-    }
-
     /// Get next cell from the Concat
     pub fn next(&mut self) -> Option<&Cell> {
         if self.pointer < self.array.len() {
@@ -199,7 +180,7 @@ impl Concat {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 /// Stack structure
 pub struct Stack {
     stack: Vec<Cell>,
@@ -208,14 +189,6 @@ pub struct Stack {
 }
 
 impl Stack {
-    fn new() -> Self {
-        Self {
-            stack: Vec::new(),
-            base: 0,
-            nested: Vec::new(),
-        }
-    }
-
     /// Starts a new nested stack
     pub fn start_stack(&mut self) {
         self.nested.push(self.base);
@@ -267,10 +240,10 @@ pub struct Script {
 impl Script {
     pub fn new(reader: &str) -> Self {
         let mut script = Self {
-            stack: Stack::new(),
-            dictionary: Dictionary::new(),
-            ret: RetStack::new(),
-            concat: Concat::new(),
+            stack: Stack::default(),
+            dictionary: Dictionary::default(),
+            ret: RetStack::default(),
+            concat: Concat::default(),
             reader: reader.into(),
             pos: 0,
         };
@@ -723,7 +696,7 @@ fn open_bracket(script: &mut Script) -> Result<bool, Error> {
 
 fn new_obj(script: &mut Script) -> Result<bool, Error> {
     if script.stack.size() % 2 == 0 && script.stack.size() > 0 {
-        let mut obj = Object::new("obj");
+        let mut obj = Object::default();
         while let (Some(val), Some(key)) = (script.stack.pop(), script.stack.pop()) {
             obj.map.insert(key, val);
         }
