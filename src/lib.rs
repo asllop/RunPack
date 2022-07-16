@@ -245,9 +245,9 @@ impl Script {
         script.tokenize();
         script.def_natives(&[
             ("(", open_parenth), (")", close_parenth), ("{", open_curly), ("}", close_curly), ("def", def), ("+", plus), ("-", minus),
-            ("*", star), ("/", slash), ("%", percent), (">", bigger), ("=", equal), ("&", and), ("|", or), ("!", not), ("if", if_word),
-            ("ifelse", ifelse_word), ("while", while_word), ("lex", lex), ("[", open_bracket), ("new", new_obj), ("set", set_obj),
-            ("get", get_obj), ("key?", key_obj),
+            ("*", star), ("/", slash), ("%", percent), (">", bigger), ("<", smaller), ("=", equal), ("!=", not_equal), (">=", big_equal),
+            ("<=", small_equal), ("&", and), ("|", or), ("!", not), ("if", if_word), ("ifelse", ifelse_word), ("while", while_word),
+            ("lex", lex), ("[", open_bracket), ("new", new_obj), ("set", set_obj), ("get", get_obj), ("key?", key_obj),
         ]);
         script
     }
@@ -550,16 +550,38 @@ fn percent(script: &mut Script) -> Result<bool, Error> {
     two_num_op(&mut script.stack, |a, b| a % b, |a, b| a % b)
 }
 
+fn two_cell_cmp(script: &mut Script, op: fn(Cell, Cell) -> bool) -> Result<bool, Error> {
+    if let (Some(cell_b), Some(cell_a)) = (script.stack.pop(), script.stack.pop()) {
+        script.stack.push(Cell::Boolean(op(cell_a, cell_b)));
+        Ok(true)
+    }
+    else {
+        Err(Error::new("two_cell_cmp: Couldn't get two cells".into(), 25))
+    }
+}
+
 fn bigger(script: &mut Script) -> Result<bool, Error> {
-    let (cell_b, cell_a) = (script.stack.pop(), script.stack.pop());
-    script.stack.push(Cell::Boolean(cell_a > cell_b));
-    Ok(true)
+    two_cell_cmp(script, |a,b| a > b)
+}
+
+fn smaller(script: &mut Script) -> Result<bool, Error> {
+    two_cell_cmp(script, |a,b| a < b)
 }
 
 fn equal(script: &mut Script) -> Result<bool, Error> {
-    let (cell_b, cell_a) = (script.stack.pop(), script.stack.pop());
-    script.stack.push(Cell::Boolean(cell_a == cell_b));
-    Ok(true)
+    two_cell_cmp(script, |a,b| a == b)
+}
+
+fn not_equal(script: &mut Script) -> Result<bool, Error> {
+    two_cell_cmp(script, |a,b| a != b)
+}
+
+fn big_equal(script: &mut Script) -> Result<bool, Error> {
+    two_cell_cmp(script, |a,b| a >= b)
+}
+
+fn small_equal(script: &mut Script) -> Result<bool, Error> {
+    two_cell_cmp(script, |a,b| a <= b)
 }
 
 fn two_logic_op(stack: &mut Stack, op_bool: fn(bool, bool) -> bool, op_int: fn(IntegerType, IntegerType) -> IntegerType) -> Result<bool, Error> {

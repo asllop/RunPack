@@ -24,11 +24,11 @@ fn main() {
         ( num inc ) def num
         num print
         ---
-        { = ! } def !=
         10 1 != print
         10 10 != print
         10 1 > print
         10 10 > print
+        10 10 >= print
         10 1 - print
         print_stack
         ---
