@@ -147,6 +147,9 @@ fn main() {
     script.exec("num").expect("Failed exec");
     script.exec("print").expect("Failed exec");
     script.exec("---").expect("Failed exec");
+
+    script.append("{ } print_stack");
+    script.run().expect("Failed run");
 }
 
 fn print(script: &mut Script) -> Result<bool, RPError> {
@@ -158,7 +161,9 @@ fn print(script: &mut Script) -> Result<bool, RPError> {
             Cell::Symbol(s) => println!("{}", s),
             Cell::String(st) => println!("{}", st),
             Cell::Word(w) => println!("{}", w),
-            _ => println!("<OTHER>")
+            Cell::Empty => println!("<EMPTY>"),
+            Cell::Block(b) => println!("{:?}", b),
+            Cell::Object(o) => println!("{:?}", o),
         }
     }
     else {

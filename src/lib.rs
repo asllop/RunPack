@@ -420,7 +420,7 @@ impl Script {
             Ok(true)
         }
         else {
-            Ok(false)
+            Err(Error::new(format!("Word '{}' doesn't exist in dictionary", word), 0))
         }
     }
 
