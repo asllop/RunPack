@@ -2,32 +2,51 @@
 
 extern crate alloc;
 
+use core::hash::Hash;
+
 use hashbrown::HashMap;
 use alloc::{ vec::Vec, string::String };
 
-#[derive(PartialEq, PartialOrd, Clone, Debug)]
+#[derive(PartialEq, PartialOrd, Eq, Hash, Clone, Debug)]
 /// Block reference type
 pub struct BlockRef {
     pub pos: usize,
     pub len: usize,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Eq, Clone, Debug)]
 /// Custom object type
 pub struct Object {
     pub map: HashMap<Cell, Cell>,
     pub kind: String,
 }
 
+impl Object {
+    pub fn new(kind: &str) -> Self {
+        Self { map: HashMap::new(), kind: kind.into()}
+    }
+}
+
+impl Hash for Object {
+    fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
+        self.map.iter().for_each(|(k, v)| {
+            k.hash(state);
+            v.hash(state)
+        });
+        //self.map.hash(state);
+        self.kind.hash(state);
+    }
+}
+
 impl PartialEq for Object {
     fn eq(&self, other: &Self) -> bool {
-        self.kind == other.kind
+        self.map.len() == other.map.len()
     }
 }
 
 impl PartialOrd for Object {
     fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
-        self.kind.partial_cmp(&other.kind)
+        self.map.len().partial_cmp(&other.map.len())
     }
 }
 
@@ -35,9 +54,13 @@ impl PartialOrd for Object {
 pub type IntegerType = i64;
 
 /// Float type alias
-pub type FloatType = f64;
+pub type FloatAlias = i64;
 
-#[derive(PartialEq, PartialOrd, Clone, Debug)]
+#[derive(PartialEq, PartialOrd, Hash, Eq, Clone, Copy, Debug)]
+/// Float new type
+pub struct FloatType(pub FloatAlias);
+
+#[derive(PartialEq, PartialOrd, Eq, Hash, Clone, Debug)]
 /// Data primitive
 pub enum Cell {
     Empty,  // TODO: once we implement error handling, we won't need an empty variant
@@ -56,8 +79,8 @@ impl Cell {
         if let Ok(int) = token.parse::<IntegerType>() {
             Some(Cell::Integer(int))
         }
-        else if let Ok(flt) = token.parse::<FloatType>() {
-            Some(Cell::Float(flt))
+        else if let Ok(flt) = token.parse::<FloatAlias>() {
+            Some(Cell::Float(FloatType(flt)))
         }
         else {
             None
@@ -248,7 +271,7 @@ impl Script {
         script.def_natives(&[
             ("(", open_parenth), (")", close_parenth), ("{", open_curly), ("}", close_curly), ("def", def), ("+", plus), ("-", minus),
             ("*", star), ("/", slash), ("%", percent), (">", bigger), ("=", equal), ("&", and), ("|", or), ("!", not), ("if", if_word),
-            ("ifelse", ifelse_word), ("while", while_word), ("lex", lex), ("[", open_bracket),
+            ("ifelse", ifelse_word), ("while", while_word), ("lex", lex), ("[", open_bracket), ("new", new_obj),
         ]);
         script
     }
@@ -516,23 +539,23 @@ fn two_num_op(stack: &mut Stack, int_op: fn(IntegerType, IntegerType) -> Integer
 }
 
 fn plus(script: &mut Script) {
-    two_num_op(&mut script.stack, |a, b| a + b, |a, b| a + b);
+    two_num_op(&mut script.stack, |a, b| a + b, |a, b| FloatType(a.0 + b.0));
 }
 
 fn minus(script: &mut Script) {
-    two_num_op(&mut script.stack, |a, b| a - b, |a, b| a - b);
+    two_num_op(&mut script.stack, |a, b| a - b, |a, b| FloatType(a.0 - b.0));
 }
 
 fn star(script: &mut Script) {
-    two_num_op(&mut script.stack, |a, b| a * b, |a, b| a * b);
+    two_num_op(&mut script.stack, |a, b| a * b, |a, b| FloatType(a.0 * b.0));
 }
 
 fn slash(script: &mut Script) {
-    two_num_op(&mut script.stack, |a, b| a / b, |a, b| a / b);
+    two_num_op(&mut script.stack, |a, b| a / b, |a, b| FloatType(a.0 / b.0));
 }
 
 fn percent(script: &mut Script) {
-    two_num_op(&mut script.stack, |a, b| a % b, |a, b| a % b);
+    two_num_op(&mut script.stack, |a, b| a % b, |a, b| FloatType(a.0 % b.0));
 }
 
 fn bigger(script: &mut Script) {
@@ -668,3 +691,16 @@ fn open_bracket(script: &mut Script) {
 }
 
 //TODO: Object lexicon
+
+fn new_obj(script: &mut Script) {
+    if script.stack.size() % 2 == 0 && script.stack.size() > 0 {
+        let mut obj = Object::new("obj");
+        while let (Some(val), Some(key)) = (script.stack.pop(), script.stack.pop()) {
+            obj.map.insert(key, val);
+        }
+        script.stack.push(Cell::Object(obj));
+    }
+    else {
+        panic!("Stack must contain key-value pairs");
+    }
+}

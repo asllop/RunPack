@@ -106,6 +106,9 @@ fn main() {
         [ a b c d : ] "4 drops"
         print_stack
         ---
+        ( 'name' 'Andreu','age' 39 new )
+        print_stack
+        ---
     "#;
 
     println!("Program = {}", program);
@@ -146,7 +149,7 @@ fn print(script: &mut Script) {
     if let Some(cell) = script.stack.pop() {
         match cell {
             Cell::Integer(i) => println!("{}", i),
-            Cell::Float(f) => println!("{}", f),
+            Cell::Float(f) => println!("{}", f.0),
             Cell::Boolean(b) => println!("{}", b),
             Cell::Symbol(s) => println!("{}", s),
             Cell::String(st) => println!("{}", st),
