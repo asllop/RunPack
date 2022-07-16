@@ -267,7 +267,7 @@ impl Script {
             ("(", open_parenth), (")", close_parenth), ("{", open_curly), ("}", close_curly), ("def", def), ("+", plus), ("-", minus),
             ("*", star), ("/", slash), ("%", percent), (">", bigger), ("=", equal), ("&", and), ("|", or), ("!", not), ("if", if_word),
             ("ifelse", ifelse_word), ("while", while_word), ("lex", lex), ("[", open_bracket), ("new", new_obj), ("set", set_obj),
-            ("get", get_obj),
+            ("get", get_obj), ("key?", key_obj),
         ]);
         script
     }
@@ -732,4 +732,18 @@ fn get_obj(script: &mut Script) {
     }
 }
 
-//TODO: object check: find if a key exists
+fn key_obj(script: &mut Script) {
+    if let (Some(key), Some(Cell::Word(w))) = (script.stack.pop(), script.concat.next()) {
+        if let Some(DictEntry::Data(Cell::Object(obj))) = script.dictionary.dict.get(w) {
+            script.stack.push(Cell::Boolean(obj.map.contains_key(&key)));
+        }
+        else {
+            panic!("key: dictionary doesn't contain an Object for word '{}'", w);
+        }
+    }
+    else {
+        panic!("key: Couldn't get a value and a word");
+    }
+}
+
+//TODO: implement error callback, to be called instaed of a panic when an error happens

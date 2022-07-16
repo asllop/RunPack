@@ -110,6 +110,8 @@ fn main() {
         'name' get my_obj print
         'name','Joe' set my_obj
         'name' get my_obj print
+        'name' key? my_obj print
+        'anything' key? my_obj print
         ---
     "#;
 
