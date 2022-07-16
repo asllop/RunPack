@@ -227,6 +227,7 @@ impl Stack {
     }
 }
 
+#[derive(Default)]
 /// RunPack script interpreter
 pub struct Script {
     pub stack: Stack,
@@ -239,14 +240,8 @@ pub struct Script {
 
 impl Script {
     pub fn new(reader: &str) -> Self {
-        let mut script = Self {
-            stack: Stack::default(),
-            dictionary: Dictionary::default(),
-            ret: RetStack::default(),
-            concat: Concat::default(),
-            reader: reader.into(),
-            pos: 0,
-        };
+        let mut script = Script::default();
+        script.reader = reader.into();
         script.tokenize();
         script.def_natives(&[
             ("(", open_parenth), (")", close_parenth), ("{", open_curly), ("}", close_curly), ("def", def), ("+", plus), ("-", minus),
