@@ -106,8 +106,10 @@ fn main() {
         [ a b c d : ] "4 drops"
         print_stack
         ---
-        ( 'name' 'Andreu','age' 39 new )
-        print_stack
+        ( 'name' 'Andreu','age' 39 new ) def my_obj
+        'name' get my_obj print
+        'name','Joe' set my_obj
+        'name' get my_obj print
         ---
     "#;
 

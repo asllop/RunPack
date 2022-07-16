@@ -7,7 +7,7 @@ use core::hash::Hash;
 use hashbrown::HashMap;
 use alloc::{ vec::Vec, string::String };
 
-#[derive(PartialEq, PartialOrd, Eq, Hash, Clone, Debug)]
+#[derive(PartialEq, PartialOrd, Eq, Hash, Clone, Copy, Debug)]
 /// Block reference type
 pub struct BlockRef {
     pub pos: usize,
@@ -266,7 +266,8 @@ impl Script {
         script.def_natives(&[
             ("(", open_parenth), (")", close_parenth), ("{", open_curly), ("}", close_curly), ("def", def), ("+", plus), ("-", minus),
             ("*", star), ("/", slash), ("%", percent), (">", bigger), ("=", equal), ("&", and), ("|", or), ("!", not), ("if", if_word),
-            ("ifelse", ifelse_word), ("while", while_word), ("lex", lex), ("[", open_bracket), ("new", new_obj),
+            ("ifelse", ifelse_word), ("while", while_word), ("lex", lex), ("[", open_bracket), ("new", new_obj), ("set", set_obj),
+            ("get", get_obj),
         ]);
         script
     }
@@ -397,7 +398,7 @@ impl Script {
                     func(self);
                 },
                 DictEntry::Defined(block_ref) => {
-                    let block = block_ref.clone();
+                    let block = *block_ref;
                     self.run_block(&block);
                 },
                 //TODO: if Cell is an Object, put in the stack a ref to that object
@@ -685,8 +686,6 @@ fn open_bracket(script: &mut Script) {
     }
 }
 
-//TODO: Object lexicon
-
 fn new_obj(script: &mut Script) {
     if script.stack.size() % 2 == 0 && script.stack.size() > 0 {
         let mut obj = Object::new("obj");
@@ -696,6 +695,41 @@ fn new_obj(script: &mut Script) {
         script.stack.push(Cell::Object(obj));
     }
     else {
-        panic!("Stack must contain key-value pairs");
+        panic!("new: Stack must contain key-value pairs");
     }
 }
+
+fn set_obj(script: &mut Script) {
+    if let (Some(val), Some(key), Some(Cell::Word(w))) = (script.stack.pop(), script.stack.pop(), script.concat.next()) {
+        if let Some(DictEntry::Data(Cell::Object(obj))) = script.dictionary.dict.get_mut(w) {
+            obj.map.insert(key, val);
+        }
+        else {
+            panic!("set: dictionary doesn't contain an Object for word '{}'", w);
+        }
+    }
+    else {
+        panic!("set: Couldn't get a key-value pair and a word");
+    }
+}
+
+fn get_obj(script: &mut Script) {
+    if let (Some(key), Some(Cell::Word(w))) = (script.stack.pop(), script.concat.next()) {
+        if let Some(DictEntry::Data(Cell::Object(obj))) = script.dictionary.dict.get(w) {
+            if let Some(val) = obj.map.get(&key) {
+                script.stack.push(val.clone());
+            }
+            else {
+                panic!("get: key doesn't exist in object");
+            }
+        }
+        else {
+            panic!("get: dictionary doesn't contain an Object for word '{}'", w);
+        }
+    }
+    else {
+        panic!("set: Couldn't get a value and a word");
+    }
+}
+
+//TODO: object check: find if a key exists
