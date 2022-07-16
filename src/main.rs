@@ -1,4 +1,4 @@
-use runpack::{Script, Cell};
+use runpack::{Script, Cell, Error as RPError};
 
 fn main() {
     println!("Run Pack!\n");
@@ -123,11 +123,11 @@ fn main() {
 
     script.dictionary.native("print", print);
     script.dictionary.native("print_stack", print_stack);
-    script.run();
+    script.run().expect("Failed run");
 
     script.append("newline");
     script.append("50 twice_plus");
-    script.run();
+    script.run().expect("Failed run");
     if let Some(Cell::Integer(num)) = script.stack.pop() {
         println!("Got value from exec script = {}", num);
     }
@@ -136,20 +136,20 @@ fn main() {
     }
 
     if let Some(Cell::Block(blk)) = script.stack.pop() {
-        script.run_block(&blk);
+        script.run_block(&blk).expect("Failed run block");
     }
     else {
         println!("Couldn't get block");
     }
 
-    script.exec("---");
-    script.exec("hi");
-    script.exec("num");
-    script.exec("print");
-    script.exec("---");
+    script.exec("---").expect("Failed exec");
+    script.exec("hi").expect("Failed exec");
+    script.exec("num").expect("Failed exec");
+    script.exec("print").expect("Failed exec");
+    script.exec("---").expect("Failed exec");
 }
 
-fn print(script: &mut Script) {
+fn print(script: &mut Script) -> Result<bool, RPError> {
     if let Some(cell) = script.stack.pop() {
         match cell {
             Cell::Integer(i) => println!("{}", i),
@@ -162,10 +162,12 @@ fn print(script: &mut Script) {
         }
     }
     else {
-        panic!("prints: couldn't get data from stack");
+        return Err(RPError::new("prints: couldn't get data from stack".into(), 1000));
     }
+    Ok(true)
 }
 
-fn print_stack(script: &mut Script) {
+fn print_stack(script: &mut Script) -> Result<bool, RPError>  {
     println!("{:?}", script.stack);
+    Ok(true)
 }

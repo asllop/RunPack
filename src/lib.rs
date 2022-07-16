@@ -2,10 +2,22 @@
 
 extern crate alloc;
 
+use hashbrown::HashMap;
+use alloc::{ vec::Vec, string::String, format };
 use core::hash::Hash;
 
-use hashbrown::HashMap;
-use alloc::{ vec::Vec, string::String };
+#[derive(Debug)]
+/// Error type
+pub struct Error {
+    pub msg: String,
+    pub code: u16
+}
+
+impl Error {
+    pub fn new(msg: String, code: u16) -> Self {
+        Self { msg, code }
+    }
+}
 
 #[derive(PartialEq, PartialOrd, Eq, Hash, Clone, Copy, Debug)]
 /// Block reference type
@@ -58,7 +70,7 @@ pub type FloatType = i64;
 #[derive(PartialEq, PartialOrd, Eq, Hash, Clone, Debug)]
 /// Data primitive
 pub enum Cell {
-    Empty,  // TODO: once we implement error handling, we won't need an empty variant
+    Empty,
     Integer(IntegerType),
     Float(FloatType),
     Boolean(bool),
@@ -105,7 +117,7 @@ impl Cell {
 }
 
 enum DictEntry {
-    Native(fn(&mut Script)),
+    Native(fn(&mut Script) -> Result<bool, Error>),
     Defined(BlockRef),
     Data(Cell),
 }
@@ -113,7 +125,7 @@ enum DictEntry {
 /// Dictionary of words
 pub struct Dictionary {
     dict: HashMap<String, DictEntry>,
-    lex: String,
+    pub lex: String,
 }
 
 impl Dictionary {
@@ -122,7 +134,7 @@ impl Dictionary {
     }
 
     /// Define a native word
-    pub fn native(&mut self, word: &str, func: fn(&mut Script)) {
+    pub fn native(&mut self, word: &str, func: fn(&mut Script) -> Result<bool, Error>) {
         let lex = self.lex.clone();
         self.dict.insert(lex + word, DictEntry::Native(func));
     }
@@ -384,32 +396,31 @@ impl Script {
     }
 
     /// Define a batch of native functions
-    pub fn def_natives(&mut self, list: &[(&str, fn(&mut Script))]) {
+    pub fn def_natives(&mut self, list: &[(&str, fn(&mut Script) -> Result<bool, Error>)]) {
         list.iter().for_each(|(word_name, function)| {
             self.dictionary.native(word_name, *function);
         });
     }
     
     /// Execute a word from the dictionary
-    pub fn exec(&mut self, word: &str) -> bool {
+    pub fn exec(&mut self, word: &str) -> Result<bool, Error> {
         if let Some(dict_entry) = self.dictionary.dict.get(word) {
             match dict_entry {
                 DictEntry::Native(func) => {
-                    func(self);
+                    return func(self);
                 },
                 DictEntry::Defined(block_ref) => {
                     let block = *block_ref;
-                    self.run_block(&block);
+                    return self.run_block(&block);
                 },
-                //TODO: if Cell is an Object, put in the stack a ref to that object
                 DictEntry::Data(data_cell) => {
                     self.stack.push(data_cell.clone());
                 },
             }
-            true
+            Ok(true)
         }
         else {
-            false
+            Ok(false)
         }
     }
 
@@ -421,55 +432,68 @@ impl Script {
     }
 
     /// Run the script
-    pub fn run(&mut self) {
-        while self.one_step() {}
+    pub fn run(&mut self) -> Result<bool, Error> {
+        loop {
+            match self.one_step() {
+                Ok(false) => return Ok(true),
+                Err(e) => return Err(e),
+                _ => {}
+            }
+        }
     }
     
     /// Run a block
-    pub fn run_block(&mut self, block: &BlockRef) {
+    pub fn run_block(&mut self, block: &BlockRef) -> Result<bool, Error> {
         let init_pointer = self.concat.pointer;
         self.ret.push(self.concat.pointer);
         self.concat.pointer = block.pos;
-        while self.one_step() {
-            if self.concat.pointer == init_pointer {
-                break;
+        loop {
+            match self.one_step() {
+                Ok(true) => {
+                    if self.concat.pointer == init_pointer {
+                        return Ok(true);
+                    }
+                },
+                Err(e) => return Err(e),
+                _ => return Ok(false)
             }
         }
     }
 
     /// Run one cell of the Concat
-    pub fn one_step(&mut self) -> bool {
+    pub fn one_step(&mut self) -> Result<bool, Error> {
         if let Some(cell) = self.concat.next() {
-            //TODO: if Cell is an Object, we need an ref to that object, not a clone
             let cell = cell.clone();
             match cell {
                 Cell::Integer(_) | Cell::Float(_) | Cell::Boolean(_) | Cell::Symbol(_) | Cell::String(_) => self.stack.push(cell),
-                Cell::Word(w) => {
-                    self.exec(&w);
-                },
-                _ => panic!("Found an invalid cell value in the Concat: {:?}", cell)
+                Cell::Word(w) => return self.exec(&w),
+                _ => return Err(Error::new(format!("Found an invalid cell value in the Concat: {:?}", cell), 1))
             }
-            true
+            Ok(true)
         }
         else {
-            false
+            Ok(false)
         }
     }
 }
 
 // Primitives
 
-fn open_parenth(script: &mut Script) {
+fn open_parenth(script: &mut Script) -> Result<bool, Error> {
     script.stack.start_stack();
+    Ok(true)
 }
 
-fn close_parenth(script: &mut Script) {
+fn close_parenth(script: &mut Script) -> Result<bool, Error> {
     if let None = script.stack.end_stack() {
-        panic!("close_parenth: Stack level undeflow");
+        Err(Error::new("close_parenth: Stack level undeflow".into(), 2))
+    }
+    else {
+        Ok(true)
     }
 }
 
-fn open_curly(script: &mut Script) {
+fn open_curly(script: &mut Script) -> Result<bool, Error> {
     let pos = script.concat.pointer;
     let mut level = 1;
     loop {
@@ -489,21 +513,23 @@ fn open_curly(script: &mut Script) {
             }
         }
         else {
-            panic!("open_curly: Reached the end and didn't find a closing block");
+            return Err(Error::new("open_curly: Reached the end and didn't find a closing block".into(), 3));
         }
     }
+    Ok(true)
 }
 
-fn close_curly(script: &mut Script) {
+fn close_curly(script: &mut Script) -> Result<bool, Error> {
     if let Some(pos) = script.ret.pop() {
         script.concat.pointer = pos;
+        Ok(true)
     }
     else {
-        panic!("close_curly: Return stack underflow");
+        Err(Error::new("close_curly: Return stack underflow".into(), 4))
     }
 }
 
-fn def(script: &mut Script) {
+fn def(script: &mut Script) -> Result<bool, Error> {
     let (data, word) = (script.stack.pop(), script.concat.next());
     if let Some(Cell::Word(word)) = word {
         if let Some(Cell::Block(block)) = data {
@@ -513,15 +539,16 @@ fn def(script: &mut Script) {
             script.dictionary.data(word, cell);
         }
         else {
-            panic!("def: Expecting a block or a cell");
+            return Err(Error::new("def: Expecting a block or a cell".into(), 5));
         }
     }
     else {
-        panic!("def: Expecting a word in the Concat");
+        return Err(Error::new("def: Expecting a word in the Concat".into(), 6));
     }
+    Ok(true)
 }
 
-fn two_num_op(stack: &mut Stack, int_op: fn(IntegerType, IntegerType) -> IntegerType, flt_op: fn(FloatType, FloatType) -> FloatType) {
+fn two_num_op(stack: &mut Stack, int_op: fn(IntegerType, IntegerType) -> IntegerType, flt_op: fn(FloatType, FloatType) -> FloatType) -> Result<bool, Error> {
     let (cell_b, cell_a) = (stack.pop(), stack.pop());
     if let (Some(Cell::Integer(int_a)), Some(Cell::Integer(int_b))) = (&cell_a, &cell_b) {
         stack.push(Cell::Integer(int_op(*int_a, *int_b)));
@@ -530,41 +557,44 @@ fn two_num_op(stack: &mut Stack, int_op: fn(IntegerType, IntegerType) -> Integer
         stack.push(Cell::Float(flt_op(*flt_a, *flt_b)));
     }
     else {
-        panic!("two_num_op: Expecting two numbers of the same type");
+        return Err(Error::new("two_num_op: Expecting two numbers of the same type".into(), 7));
     }
+    Ok(true)
 }
 
-fn plus(script: &mut Script) {
-    two_num_op(&mut script.stack, |a, b| a + b, |a, b| a + b);
+fn plus(script: &mut Script) -> Result<bool, Error> {
+    two_num_op(&mut script.stack, |a, b| a + b, |a, b| a + b)
 }
 
-fn minus(script: &mut Script) {
-    two_num_op(&mut script.stack, |a, b| a - b, |a, b| a - b);
+fn minus(script: &mut Script) -> Result<bool, Error> {
+    two_num_op(&mut script.stack, |a, b| a - b, |a, b| a - b)
 }
 
-fn star(script: &mut Script) {
-    two_num_op(&mut script.stack, |a, b| a * b, |a, b| a * b);
+fn star(script: &mut Script) -> Result<bool, Error> {
+    two_num_op(&mut script.stack, |a, b| a * b, |a, b| a * b)
 }
 
-fn slash(script: &mut Script) {
-    two_num_op(&mut script.stack, |a, b| a / b, |a, b| a / b);
+fn slash(script: &mut Script) -> Result<bool, Error> {
+    two_num_op(&mut script.stack, |a, b| a / b, |a, b| a / b)
 }
 
-fn percent(script: &mut Script) {
-    two_num_op(&mut script.stack, |a, b| a % b, |a, b| a % b);
+fn percent(script: &mut Script) -> Result<bool, Error> {
+    two_num_op(&mut script.stack, |a, b| a % b, |a, b| a % b)
 }
 
-fn bigger(script: &mut Script) {
+fn bigger(script: &mut Script) -> Result<bool, Error> {
     let (cell_b, cell_a) = (script.stack.pop(), script.stack.pop());
     script.stack.push(Cell::Boolean(cell_a > cell_b));
+    Ok(true)
 }
 
-fn equal(script: &mut Script) {
+fn equal(script: &mut Script) -> Result<bool, Error> {
     let (cell_b, cell_a) = (script.stack.pop(), script.stack.pop());
     script.stack.push(Cell::Boolean(cell_a == cell_b));
+    Ok(true)
 }
 
-fn two_logic_op(stack: &mut Stack, op_bool: fn(bool, bool) -> bool, op_int: fn(IntegerType, IntegerType) -> IntegerType) {
+fn two_logic_op(stack: &mut Stack, op_bool: fn(bool, bool) -> bool, op_int: fn(IntegerType, IntegerType) -> IntegerType) -> Result<bool, Error> {
     let (cell_b, cell_a) = (stack.pop(), stack.pop());
     if let (Some(Cell::Boolean(bool_a)), Some(Cell::Boolean(bool_b))) = (&cell_a, &cell_b) {
         stack.push(Cell::Boolean(op_bool(*bool_a, *bool_b)));
@@ -573,19 +603,20 @@ fn two_logic_op(stack: &mut Stack, op_bool: fn(bool, bool) -> bool, op_int: fn(I
         stack.push(Cell::Integer(op_int(*int_a, *int_b)));
     }
     else {
-        panic!("two_logic_op: Expecting two booleans or two integers");
+        return Err(Error::new("two_logic_op: Expecting two booleans or two integers".into(), 8));
     }
+    Ok(true)
 }
 
-fn and(script: &mut Script) {
-    two_logic_op(&mut script.stack, |a, b| a & b, |a, b| a & b);
+fn and(script: &mut Script) -> Result<bool, Error> {
+    two_logic_op(&mut script.stack, |a, b| a & b, |a, b| a & b)
 }
 
-fn or(script: &mut Script) {
-    two_logic_op(&mut script.stack, |a, b| a | b, |a, b| a | b);
+fn or(script: &mut Script) -> Result<bool, Error> {
+    two_logic_op(&mut script.stack, |a, b| a | b, |a, b| a | b)
 }
 
-fn not(script: &mut Script) {
+fn not(script: &mut Script) -> Result<bool, Error> {
     let cell = script.stack.pop();
     if let Some(Cell::Boolean(a)) = cell {
         script.stack.push(Cell::Boolean(!a));
@@ -594,68 +625,72 @@ fn not(script: &mut Script) {
         script.stack.push(Cell::Integer(!a));
     }
     else {
-        panic!("not: Expecting a boolean or an integer");
+        return Err(Error::new("not: Expecting a boolean or an integer".into(), 9));
     }
+    Ok(true)
 }
 
-fn if_word(script: &mut Script) {
+fn if_word(script: &mut Script) -> Result<bool, Error> {
     if let (Some(Cell::Boolean(cond)), Some(Cell::Block(blk))) = (script.stack.pop(), script.stack.pop()) {
         if cond {
-            script.run_block(&blk);
+            script.run_block(&blk)?;
         }
     }
     else {
-        panic!("ifelse: couldn't find condition and 1 block");
+        return Err(Error::new("ifelse: couldn't find condition and 1 block".into(), 10));
     }
+    Ok(true)
 }
 
-fn ifelse_word(script: &mut Script) {
+fn ifelse_word(script: &mut Script) -> Result<bool, Error> {
     if let (Some(Cell::Boolean(cond)), Some(Cell::Block(false_blk)), Some(Cell::Block(true_blk))) = (script.stack.pop(), script.stack.pop(), script.stack.pop()) {
         script.ret.push(script.concat.pointer);
         if cond {
-            script.run_block(&true_blk);
+            script.run_block(&true_blk)
         }
         else {
-            script.run_block(&false_blk);
+            script.run_block(&false_blk)
         }
     }
     else {
-        panic!("ifelse: couldn't find condition and 2 blocks");
+        Err(Error::new("ifelse: couldn't find condition and 2 blocks".into(), 11))
     }
 }
 
-fn while_word(script: &mut Script) {
+fn while_word(script: &mut Script) -> Result<bool, Error> {
     if let (Some(Cell::Block(cond_blk)), Some(Cell::Block(loop_blk))) = (script.stack.pop(), script.stack.pop()) {
         loop {
-            script.run_block(&cond_blk);
+            script.run_block(&cond_blk)?;
             if let Some(Cell::Boolean(cond)) = script.stack.pop() {
                 if cond {
-                    script.run_block(&loop_blk);
+                    script.run_block(&loop_blk)?;
                 }
                 else {
                     break;
                 }
             }
             else {
-                panic!("while: condition didn't produce a bool");
+                return Err(Error::new("while: condition didn't produce a bool".into(), 12));
             }
         }
     }
     else {
-        panic!("while: couldn't find 2 blocks");
+        return Err(Error::new("while: couldn't find 2 blocks".into(), 13));
     }
+    Ok(true)
 }
 
-fn lex(script: &mut Script) {
+fn lex(script: &mut Script) -> Result<bool, Error> {
     if let Some(Cell::String(lex_name)) = script.concat.next() {
         script.dictionary.lex = lex_name.clone();
+        Ok(true)
     }
     else {
-        panic!("lex: couldn't find string");
+        return Err(Error::new("lex: couldn't find string".into(), 14));
     }
 }
 
-fn open_bracket(script: &mut Script) {
+fn open_bracket(script: &mut Script) -> Result<bool, Error> {
     let mut vars: HashMap<String, Cell> = HashMap::with_capacity(16);
     while let Some(Cell::Word(w)) = script.concat.next() {
         if w == ":" {
@@ -666,7 +701,7 @@ fn open_bracket(script: &mut Script) {
                 vars.insert(w.clone(), cell);
             }
             else {
-                panic!("open_bracket: stack is empty");
+                return Err(Error::new("open_bracket: stack is empty".into(), 15));
             }
         }
     }
@@ -676,17 +711,17 @@ fn open_bracket(script: &mut Script) {
         }
         else {
             if let Some(k) = vars.get(w) {
-                //TODO: if Cell is an Object, put in the stack a ref to that object
                 script.stack.push(k.clone());
             }
             else {
-                panic!("open_bracket: Couldn't find variable name");
+                return Err(Error::new("open_bracket: Couldn't find variable name".into(), 16));
             }
         }
     }
+    Ok(true)
 }
 
-fn new_obj(script: &mut Script) {
+fn new_obj(script: &mut Script) -> Result<bool, Error> {
     if script.stack.size() % 2 == 0 && script.stack.size() > 0 {
         let mut obj = Object::new("obj");
         while let (Some(val), Some(key)) = (script.stack.pop(), script.stack.pop()) {
@@ -695,55 +730,57 @@ fn new_obj(script: &mut Script) {
         script.stack.push(Cell::Object(obj));
     }
     else {
-        panic!("new: Stack must contain key-value pairs");
+        return Err(Error::new("new: Stack must contain key-value pairs".into(), 17));
     }
+    Ok(true)
 }
 
-fn set_obj(script: &mut Script) {
+fn set_obj(script: &mut Script) -> Result<bool, Error> {
     if let (Some(val), Some(key), Some(Cell::Word(w))) = (script.stack.pop(), script.stack.pop(), script.concat.next()) {
         if let Some(DictEntry::Data(Cell::Object(obj))) = script.dictionary.dict.get_mut(w) {
             obj.map.insert(key, val);
         }
         else {
-            panic!("set: dictionary doesn't contain an Object for word '{}'", w);
+            return Err(Error::new(format!("set: dictionary doesn't contain an Object for word '{}'", w), 18));
         }
     }
     else {
-        panic!("set: Couldn't get a key-value pair and a word");
+        return Err(Error::new("set: Couldn't get a key-value pair and a word".into(), 19));
     }
+    Ok(true)
 }
 
-fn get_obj(script: &mut Script) {
+fn get_obj(script: &mut Script) -> Result<bool, Error> {
     if let (Some(key), Some(Cell::Word(w))) = (script.stack.pop(), script.concat.next()) {
         if let Some(DictEntry::Data(Cell::Object(obj))) = script.dictionary.dict.get(w) {
             if let Some(val) = obj.map.get(&key) {
                 script.stack.push(val.clone());
             }
             else {
-                panic!("get: key doesn't exist in object");
+                return Err(Error::new("get: key doesn't exist in object".into(), 20));
             }
         }
         else {
-            panic!("get: dictionary doesn't contain an Object for word '{}'", w);
+            return Err(Error::new(format!("get: dictionary doesn't contain an Object for word '{}'", w), 21));
         }
     }
     else {
-        panic!("set: Couldn't get a value and a word");
+        return Err(Error::new("get: Couldn't get a value and a word".into(), 22));
     }
+    Ok(true)
 }
 
-fn key_obj(script: &mut Script) {
+fn key_obj(script: &mut Script) -> Result<bool, Error> {
     if let (Some(key), Some(Cell::Word(w))) = (script.stack.pop(), script.concat.next()) {
         if let Some(DictEntry::Data(Cell::Object(obj))) = script.dictionary.dict.get(w) {
             script.stack.push(Cell::Boolean(obj.map.contains_key(&key)));
         }
         else {
-            panic!("key: dictionary doesn't contain an Object for word '{}'", w);
+            return Err(Error::new(format!("key: dictionary doesn't contain an Object for word '{}'", w), 23));
         }
     }
     else {
-        panic!("key: Couldn't get a value and a word");
+        return Err(Error::new("key: Couldn't get a value and a word".into(), 24));
     }
+    Ok(true)
 }
-
-//TODO: implement error callback, to be called instaed of a panic when an error happens
