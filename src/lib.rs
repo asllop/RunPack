@@ -57,9 +57,9 @@ impl PartialOrd for Object {
 pub type IntegerType = i64;
 
 /// Float type alias
-pub type FloatType = i64;
+pub type FloatType = f64;
 
-#[derive(PartialEq, PartialOrd, Eq, Hash, Clone, Debug)]
+#[derive(PartialEq, PartialOrd, Clone, Debug)]
 /// Data primitive
 pub enum Cell {
     Empty,
@@ -107,6 +107,14 @@ impl Cell {
         }
     }
 }
+
+impl Hash for Cell {
+    fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
+        core::mem::discriminant(self).hash(state);
+    }
+}
+
+impl Eq for Cell {}
 
 enum DictEntry {
     Native(fn(&mut Script) -> Result<bool, Error>),

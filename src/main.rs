@@ -112,6 +112,8 @@ fn main() {
         'name' get my_obj print
         'name' key? my_obj print
         'anything' key? my_obj print
+        ( 0 'Andreu', 1 #you, 2 123.5 new ) def arr
+        2 get arr print
         ---
     "#;
 
