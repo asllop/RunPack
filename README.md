@@ -24,7 +24,7 @@ Then use it:
 use runpack::{Pack, Cell};
 
 let script = r#"
-    "Add two numbers and leave the result in the stack"
+    "Add two numbers, leaving the result in the stack"
     10 20 +
 "#;
 let mut pack = Pack::new(script);
@@ -64,7 +64,7 @@ And it's also very easy to call a word defined in RunPack from Rust:
 use runpack::{self, Pack, Cell};
 
 let script = r#"
-    "Define word 'pi' that puts the number π in the stack"
+    "Define the word 'pi' that puts the number π in the stack"
     3.14159 def pi
 "#;
 let mut pack = Pack::new(script);
