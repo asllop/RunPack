@@ -3,7 +3,7 @@
 extern crate alloc;
 
 use hashbrown::HashMap;
-use alloc::{ vec::Vec, string::String, format };
+use alloc::{ vec::Vec, string::String, format, str };
 use core::hash::Hash;
 
 #[derive(Debug)]
@@ -53,6 +53,14 @@ impl PartialOrd for Object {
     }
 }
 
+//TODO: create a word type that's not alloc: struct Word { data: [u8; 31], len: u8] }
+//      this will limit the length of a word to 31 bytes, that is enough
+#[derive(PartialEq, PartialOrd, Eq, Hash, Clone, Copy, Debug)]
+pub struct Word {
+    pub data: [u8; 31],
+    pub len: u8
+}
+
 /// Integer type alias
 pub type IntegerType = i64;
 
@@ -68,6 +76,7 @@ pub enum Cell {
     Boolean(bool),
     String(String),
     Word(String),
+    NewWord(Word),
     Block(BlockRef),
     Object(Object),
 }
@@ -107,7 +116,7 @@ impl Hash for Cell {
 impl Eq for Cell {}
 
 enum DictEntry {
-    Native(fn(&mut Script) -> Result<bool, Error>),
+    Native(fn(&mut Pack) -> Result<bool, Error>),
     Defined(BlockRef),
     Data(Cell),
 }
@@ -121,7 +130,7 @@ pub struct Dictionary {
 
 impl Dictionary {
     /// Define a native word
-    pub fn native(&mut self, word: &str, func: fn(&mut Script) -> Result<bool, Error>) {
+    pub fn native(&mut self, word: &str, func: fn(&mut Pack) -> Result<bool, Error>) {
         let lex = self.lex.clone();
         self.dict.insert(lex + word, DictEntry::Native(func));
     }
@@ -226,8 +235,8 @@ impl Stack {
 }
 
 #[derive(Default)]
-/// RunPack script interpreter
-pub struct Script {
+/// RunPack interpreter
+pub struct Pack {
     pub stack: Stack,
     pub dictionary: Dictionary,
     pub ret: RetStack,
@@ -236,9 +245,9 @@ pub struct Script {
     pos: usize,
 }
 
-impl Script {
+impl Pack {
     pub fn new(reader: &str) -> Self {
-        let mut script = Script::default();
+        let mut script = Pack::default();
         script.reader = reader.into();
         script.tokenize();
         script.def_natives(&[
@@ -360,7 +369,7 @@ impl Script {
     }
 
     /// Define a batch of native functions
-    pub fn def_natives(&mut self, list: &[(&str, fn(&mut Script) -> Result<bool, Error>)]) {
+    pub fn def_natives(&mut self, list: &[(&str, fn(&mut Pack) -> Result<bool, Error>)]) {
         list.iter().for_each(|(word_name, function)| {
             self.dictionary.native(word_name, *function);
         });
@@ -443,13 +452,13 @@ impl Script {
 
 // Primitives
 
-fn open_parenth(script: &mut Script) -> Result<bool, Error> {
-    script.stack.start_stack();
+fn open_parenth(pack: &mut Pack) -> Result<bool, Error> {
+    pack.stack.start_stack();
     Ok(true)
 }
 
-fn close_parenth(script: &mut Script) -> Result<bool, Error> {
-    if let None = script.stack.end_stack() {
+fn close_parenth(pack: &mut Pack) -> Result<bool, Error> {
+    if let None = pack.stack.end_stack() {
         Err(Error::new("close_parenth: Stack level undeflow".into(), 2))
     }
     else {
@@ -457,17 +466,17 @@ fn close_parenth(script: &mut Script) -> Result<bool, Error> {
     }
 }
 
-fn open_curly(script: &mut Script) -> Result<bool, Error> {
-    let pos = script.concat.pointer;
+fn open_curly(pack: &mut Pack) -> Result<bool, Error> {
+    let pos = pack.concat.pointer;
     let mut level = 1;
     loop {
-        if let Some(cell) = script.concat.next() {
+        if let Some(cell) = pack.concat.next() {
             if let Cell::Word(w) = cell {
                 if w == "}" {
                     level -= 1;
                     if level == 0 {
-                        let len = script.concat.pointer - pos;
-                        script.stack.push(Cell::Block(BlockRef { pos, len }));
+                        let len = pack.concat.pointer - pos;
+                        pack.stack.push(Cell::Block(BlockRef { pos, len }));
                         break;
                     }
                 }
@@ -483,9 +492,9 @@ fn open_curly(script: &mut Script) -> Result<bool, Error> {
     Ok(true)
 }
 
-fn close_curly(script: &mut Script) -> Result<bool, Error> {
-    if let Some(pos) = script.ret.pop() {
-        script.concat.pointer = pos;
+fn close_curly(pack: &mut Pack) -> Result<bool, Error> {
+    if let Some(pos) = pack.ret.pop() {
+        pack.concat.pointer = pos;
         Ok(true)
     }
     else {
@@ -493,14 +502,14 @@ fn close_curly(script: &mut Script) -> Result<bool, Error> {
     }
 }
 
-fn def(script: &mut Script) -> Result<bool, Error> {
-    let (data, word) = (script.stack.pop(), script.concat.next());
+fn def(pack: &mut Pack) -> Result<bool, Error> {
+    let (data, word) = (pack.stack.pop(), pack.concat.next());
     if let Some(Cell::Word(word)) = word {
         if let Some(Cell::Block(block)) = data {
-            script.dictionary.block(word, block);
+            pack.dictionary.block(word, block);
         }
         else if let Some(cell) = data {
-            script.dictionary.data(word, cell);
+            pack.dictionary.data(word, cell);
         }
         else {
             return Err(Error::new("def: Expecting a block or a cell".into(), 5));
@@ -512,9 +521,9 @@ fn def(script: &mut Script) -> Result<bool, Error> {
     Ok(true)
 }
 
-fn at(script: &mut Script) -> Result<bool, Error> {
-    if let Some(Cell::Word(w)) = script.concat.next() {
-        script.stack.push(Cell::Word(w.clone()));
+fn at(pack: &mut Pack) -> Result<bool, Error> {
+    if let Some(Cell::Word(w)) = pack.concat.next() {
+        pack.stack.push(Cell::Word(w.clone()));
         Ok(true)
     }
     else {
@@ -536,29 +545,29 @@ fn two_num_op(stack: &mut Stack, int_op: fn(IntegerType, IntegerType) -> Integer
     Ok(true)
 }
 
-fn plus(script: &mut Script) -> Result<bool, Error> {
-    two_num_op(&mut script.stack, |a, b| a + b, |a, b| a + b)
+fn plus(pack: &mut Pack) -> Result<bool, Error> {
+    two_num_op(&mut pack.stack, |a, b| a + b, |a, b| a + b)
 }
 
-fn minus(script: &mut Script) -> Result<bool, Error> {
-    two_num_op(&mut script.stack, |a, b| a - b, |a, b| a - b)
+fn minus(pack: &mut Pack) -> Result<bool, Error> {
+    two_num_op(&mut pack.stack, |a, b| a - b, |a, b| a - b)
 }
 
-fn star(script: &mut Script) -> Result<bool, Error> {
-    two_num_op(&mut script.stack, |a, b| a * b, |a, b| a * b)
+fn star(pack: &mut Pack) -> Result<bool, Error> {
+    two_num_op(&mut pack.stack, |a, b| a * b, |a, b| a * b)
 }
 
-fn slash(script: &mut Script) -> Result<bool, Error> {
-    two_num_op(&mut script.stack, |a, b| a / b, |a, b| a / b)
+fn slash(pack: &mut Pack) -> Result<bool, Error> {
+    two_num_op(&mut pack.stack, |a, b| a / b, |a, b| a / b)
 }
 
-fn percent(script: &mut Script) -> Result<bool, Error> {
-    two_num_op(&mut script.stack, |a, b| a % b, |a, b| a % b)
+fn percent(pack: &mut Pack) -> Result<bool, Error> {
+    two_num_op(&mut pack.stack, |a, b| a % b, |a, b| a % b)
 }
 
-fn two_cell_cmp(script: &mut Script, op: fn(Cell, Cell) -> bool) -> Result<bool, Error> {
-    if let (Some(cell_b), Some(cell_a)) = (script.stack.pop(), script.stack.pop()) {
-        script.stack.push(Cell::Boolean(op(cell_a, cell_b)));
+fn two_cell_cmp(pack: &mut Pack, op: fn(Cell, Cell) -> bool) -> Result<bool, Error> {
+    if let (Some(cell_b), Some(cell_a)) = (pack.stack.pop(), pack.stack.pop()) {
+        pack.stack.push(Cell::Boolean(op(cell_a, cell_b)));
         Ok(true)
     }
     else {
@@ -566,28 +575,28 @@ fn two_cell_cmp(script: &mut Script, op: fn(Cell, Cell) -> bool) -> Result<bool,
     }
 }
 
-fn bigger(script: &mut Script) -> Result<bool, Error> {
-    two_cell_cmp(script, |a,b| a > b)
+fn bigger(pack: &mut Pack) -> Result<bool, Error> {
+    two_cell_cmp(pack, |a,b| a > b)
 }
 
-fn smaller(script: &mut Script) -> Result<bool, Error> {
-    two_cell_cmp(script, |a,b| a < b)
+fn smaller(pack: &mut Pack) -> Result<bool, Error> {
+    two_cell_cmp(pack, |a,b| a < b)
 }
 
-fn equal(script: &mut Script) -> Result<bool, Error> {
-    two_cell_cmp(script, |a,b| a == b)
+fn equal(pack: &mut Pack) -> Result<bool, Error> {
+    two_cell_cmp(pack, |a,b| a == b)
 }
 
-fn not_equal(script: &mut Script) -> Result<bool, Error> {
-    two_cell_cmp(script, |a,b| a != b)
+fn not_equal(pack: &mut Pack) -> Result<bool, Error> {
+    two_cell_cmp(pack, |a,b| a != b)
 }
 
-fn big_equal(script: &mut Script) -> Result<bool, Error> {
-    two_cell_cmp(script, |a,b| a >= b)
+fn big_equal(pack: &mut Pack) -> Result<bool, Error> {
+    two_cell_cmp(pack, |a,b| a >= b)
 }
 
-fn small_equal(script: &mut Script) -> Result<bool, Error> {
-    two_cell_cmp(script, |a,b| a <= b)
+fn small_equal(pack: &mut Pack) -> Result<bool, Error> {
+    two_cell_cmp(pack, |a,b| a <= b)
 }
 
 fn two_logic_op(stack: &mut Stack, op_bool: fn(bool, bool) -> bool, op_int: fn(IntegerType, IntegerType) -> IntegerType) -> Result<bool, Error> {
@@ -604,21 +613,21 @@ fn two_logic_op(stack: &mut Stack, op_bool: fn(bool, bool) -> bool, op_int: fn(I
     Ok(true)
 }
 
-fn and(script: &mut Script) -> Result<bool, Error> {
-    two_logic_op(&mut script.stack, |a, b| a & b, |a, b| a & b)
+fn and(pack: &mut Pack) -> Result<bool, Error> {
+    two_logic_op(&mut pack.stack, |a, b| a & b, |a, b| a & b)
 }
 
-fn or(script: &mut Script) -> Result<bool, Error> {
-    two_logic_op(&mut script.stack, |a, b| a | b, |a, b| a | b)
+fn or(pack: &mut Pack) -> Result<bool, Error> {
+    two_logic_op(&mut pack.stack, |a, b| a | b, |a, b| a | b)
 }
 
-fn not(script: &mut Script) -> Result<bool, Error> {
-    let cell = script.stack.pop();
+fn not(pack: &mut Pack) -> Result<bool, Error> {
+    let cell = pack.stack.pop();
     if let Some(Cell::Boolean(a)) = cell {
-        script.stack.push(Cell::Boolean(!a));
+        pack.stack.push(Cell::Boolean(!a));
     }
     else if let Some(Cell::Integer(a)) = cell {
-        script.stack.push(Cell::Integer(!a));
+        pack.stack.push(Cell::Integer(!a));
     }
     else {
         return Err(Error::new("not: Expecting a boolean or an integer".into(), 9));
@@ -626,10 +635,10 @@ fn not(script: &mut Script) -> Result<bool, Error> {
     Ok(true)
 }
 
-fn if_word(script: &mut Script) -> Result<bool, Error> {
-    if let (Some(Cell::Boolean(cond)), Some(Cell::Block(blk))) = (script.stack.pop(), script.stack.pop()) {
+fn if_word(pack: &mut Pack) -> Result<bool, Error> {
+    if let (Some(Cell::Boolean(cond)), Some(Cell::Block(blk))) = (pack.stack.pop(), pack.stack.pop()) {
         if cond {
-            script.run_block(&blk)?;
+            pack.run_block(&blk)?;
         }
     }
     else {
@@ -638,14 +647,14 @@ fn if_word(script: &mut Script) -> Result<bool, Error> {
     Ok(true)
 }
 
-fn ifelse_word(script: &mut Script) -> Result<bool, Error> {
-    if let (Some(Cell::Boolean(cond)), Some(Cell::Block(false_blk)), Some(Cell::Block(true_blk))) = (script.stack.pop(), script.stack.pop(), script.stack.pop()) {
-        script.ret.push(script.concat.pointer);
+fn ifelse_word(pack: &mut Pack) -> Result<bool, Error> {
+    if let (Some(Cell::Boolean(cond)), Some(Cell::Block(false_blk)), Some(Cell::Block(true_blk))) = (pack.stack.pop(), pack.stack.pop(), pack.stack.pop()) {
+        pack.ret.push(pack.concat.pointer);
         if cond {
-            script.run_block(&true_blk)
+            pack.run_block(&true_blk)
         }
         else {
-            script.run_block(&false_blk)
+            pack.run_block(&false_blk)
         }
     }
     else {
@@ -653,13 +662,13 @@ fn ifelse_word(script: &mut Script) -> Result<bool, Error> {
     }
 }
 
-fn while_word(script: &mut Script) -> Result<bool, Error> {
-    if let (Some(Cell::Block(cond_blk)), Some(Cell::Block(loop_blk))) = (script.stack.pop(), script.stack.pop()) {
+fn while_word(pack: &mut Pack) -> Result<bool, Error> {
+    if let (Some(Cell::Block(cond_blk)), Some(Cell::Block(loop_blk))) = (pack.stack.pop(), pack.stack.pop()) {
         loop {
-            script.run_block(&cond_blk)?;
-            if let Some(Cell::Boolean(cond)) = script.stack.pop() {
+            pack.run_block(&cond_blk)?;
+            if let Some(Cell::Boolean(cond)) = pack.stack.pop() {
                 if cond {
-                    script.run_block(&loop_blk)?;
+                    pack.run_block(&loop_blk)?;
                 }
                 else {
                     break;
@@ -676,9 +685,9 @@ fn while_word(script: &mut Script) -> Result<bool, Error> {
     Ok(true)
 }
 
-fn lex(script: &mut Script) -> Result<bool, Error> {
-    if let Some(Cell::String(lex_name)) = script.concat.next() {
-        script.dictionary.lex = lex_name.clone();
+fn lex(pack: &mut Pack) -> Result<bool, Error> {
+    if let Some(Cell::String(lex_name)) = pack.concat.next() {
+        pack.dictionary.lex = lex_name.clone();
         Ok(true)
     }
     else {
@@ -686,14 +695,14 @@ fn lex(script: &mut Script) -> Result<bool, Error> {
     }
 }
 
-fn open_bracket(script: &mut Script) -> Result<bool, Error> {
+fn open_bracket(pack: &mut Pack) -> Result<bool, Error> {
     let mut vars: HashMap<String, Cell> = HashMap::with_capacity(16);
-    while let Some(Cell::Word(w)) = script.concat.next() {
+    while let Some(Cell::Word(w)) = pack.concat.next() {
         if w == ":" {
             break;
         }
         else {
-            if let Some(cell) = script.stack.pop() {
+            if let Some(cell) = pack.stack.pop() {
                 vars.insert(w.clone(), cell);
             }
             else {
@@ -701,13 +710,13 @@ fn open_bracket(script: &mut Script) -> Result<bool, Error> {
             }
         }
     }
-    while let Some(Cell::Word(w)) = script.concat.next() {
+    while let Some(Cell::Word(w)) = pack.concat.next() {
         if w == "]" {
             break;
         }
         else {
             if let Some(k) = vars.get(w) {
-                script.stack.push(k.clone());
+                pack.stack.push(k.clone());
             }
             else {
                 return Err(Error::new("open_bracket: Couldn't find variable name".into(), 16));
@@ -717,13 +726,13 @@ fn open_bracket(script: &mut Script) -> Result<bool, Error> {
     Ok(true)
 }
 
-fn new_obj(script: &mut Script) -> Result<bool, Error> {
-    if script.stack.size() % 2 == 0 && script.stack.size() > 0 {
+fn new_obj(pack: &mut Pack) -> Result<bool, Error> {
+    if pack.stack.size() % 2 == 0 && pack.stack.size() > 0 {
         let mut obj = Object::default();
-        while let (Some(val), Some(key)) = (script.stack.pop(), script.stack.pop()) {
+        while let (Some(val), Some(key)) = (pack.stack.pop(), pack.stack.pop()) {
             obj.map.insert(key, val);
         }
-        script.stack.push(Cell::Object(obj));
+        pack.stack.push(Cell::Object(obj));
     }
     else {
         return Err(Error::new("new: Stack must contain key-value pairs".into(), 17));
@@ -731,9 +740,9 @@ fn new_obj(script: &mut Script) -> Result<bool, Error> {
     Ok(true)
 }
 
-fn set_obj(script: &mut Script) -> Result<bool, Error> {
-    if let (Some(Cell::Word(w)), Some(val), Some(key)) = (script.stack.pop(), script.stack.pop(), script.stack.pop()) {
-        if let Some(DictEntry::Data(Cell::Object(obj))) = script.dictionary.dict.get_mut(&w) {
+fn set_obj(pack: &mut Pack) -> Result<bool, Error> {
+    if let (Some(Cell::Word(w)), Some(val), Some(key)) = (pack.stack.pop(), pack.stack.pop(), pack.stack.pop()) {
+        if let Some(DictEntry::Data(Cell::Object(obj))) = pack.dictionary.dict.get_mut(&w) {
             obj.map.insert(key, val);
         }
         else {
@@ -746,11 +755,11 @@ fn set_obj(script: &mut Script) -> Result<bool, Error> {
     Ok(true)
 }
 
-fn get_obj(script: &mut Script) -> Result<bool, Error> {
-    if let (Some(Cell::Word(w)), Some(key)) = (script.stack.pop(), script.stack.pop()) {
-        if let Some(DictEntry::Data(Cell::Object(obj))) = script.dictionary.dict.get(&w) {
+fn get_obj(pack: &mut Pack) -> Result<bool, Error> {
+    if let (Some(Cell::Word(w)), Some(key)) = (pack.stack.pop(), pack.stack.pop()) {
+        if let Some(DictEntry::Data(Cell::Object(obj))) = pack.dictionary.dict.get(&w) {
             if let Some(val) = obj.map.get(&key) {
-                script.stack.push(val.clone());
+                pack.stack.push(val.clone());
             }
             else {
                 return Err(Error::new("get: key doesn't exist in object".into(), 20));
@@ -766,10 +775,10 @@ fn get_obj(script: &mut Script) -> Result<bool, Error> {
     Ok(true)
 }
 
-fn key_obj(script: &mut Script) -> Result<bool, Error> {
-    if let (Some(Cell::Word(w)), Some(key)) = (script.stack.pop(), script.stack.pop()) {
-        if let Some(DictEntry::Data(Cell::Object(obj))) = script.dictionary.dict.get(&w) {
-            script.stack.push(Cell::Boolean(obj.map.contains_key(&key)));
+fn key_obj(pack: &mut Pack) -> Result<bool, Error> {
+    if let (Some(Cell::Word(w)), Some(key)) = (pack.stack.pop(), pack.stack.pop()) {
+        if let Some(DictEntry::Data(Cell::Object(obj))) = pack.dictionary.dict.get(&w) {
+            pack.stack.push(Cell::Boolean(obj.map.contains_key(&key)));
         }
         else {
             return Err(Error::new(format!("key: dictionary doesn't contain an Object for word '{}'", w), 23));

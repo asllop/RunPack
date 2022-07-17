@@ -1,4 +1,6 @@
-use runpack::{Script, Cell, Error as RPError};
+use runpack::{Pack, Cell, Error as RPError, Word};
+
+use std::time::Instant;
 
 fn main() {
     println!("Run Pack!\n");
@@ -122,52 +124,74 @@ fn main() {
 
     println!("Program = {}", program);
 
-    let mut script = Script::new(program);
+    let mut pack = Pack::new(program);
 
-    println!("Tokens =\n{:?}\n", script.concat);
+    println!("Tokens =\n{:?}\n", pack.concat);
 
-    script.dictionary.native("print", print);
-    script.dictionary.native("print_stack", print_stack);
-    script.run().expect("Failed run");
+    pack.dictionary.native("print", print);
+    pack.dictionary.native("print_stack", print_stack);
+    pack.run().expect("Failed run");
 
-    script.append("newline");
-    script.append("50 twice_plus");
-    script.run().expect("Failed run");
-    if let Some(Cell::Integer(num)) = script.stack.pop() {
+    pack.append("newline");
+    pack.append("50 twice_plus");
+    pack.run().expect("Failed run");
+    if let Some(Cell::Integer(num)) = pack.stack.pop() {
         println!("Got value from exec script = {}", num);
     }
     else {
         println!("Couldn't get value");
     }
 
-    if let Some(Cell::Block(blk)) = script.stack.pop() {
-        script.run_block(&blk).expect("Failed run block");
+    if let Some(Cell::Block(blk)) = pack.stack.pop() {
+        pack.run_block(&blk).expect("Failed run block");
     }
     else {
         println!("Couldn't get block");
     }
 
-    script.exec("---").expect("Failed exec");
-    script.exec("hi").expect("Failed exec");
-    script.exec("num").expect("Failed exec");
-    script.exec("print").expect("Failed exec");
-    script.exec("---").expect("Failed exec");
+    pack.exec("---").expect("Failed exec");
+    pack.exec("hi").expect("Failed exec");
+    pack.exec("num").expect("Failed exec");
+    pack.exec("print").expect("Failed exec");
+    pack.exec("---").expect("Failed exec");
 
-    script.append("{ } print_stack");
-    script.run().expect("Failed run");
+    pack.append("{ } print_stack");
+    pack.run().expect("Failed run");
+
+    // Benchmark strings vs arrays
+
+    let x = String::from("12345678901234567890123456789012"); //32 bytes string
+    let y =  Word { data: [0u8; 31], len: 0 };
+
+    let start = Instant::now();
+    for _ in 0..100000000 {
+        pack.stack.push(Cell::String(x.clone()));
+        pack.stack.pop();
+    }
+    let duration = start.elapsed();
+    println!("Time elapsed in cloning strings is: {:?}", duration);
+
+    let start = Instant::now();
+    for _ in 0..100000000 {
+        pack.stack.push(Cell::NewWord(y));
+        pack.stack.pop();
+    }
+    let duration = start.elapsed();
+    println!("Time elapsed in cloning arrays is: {:?}", duration);
 }
 
-fn print(script: &mut Script) -> Result<bool, RPError> {
-    if let Some(cell) = script.stack.pop() {
+fn print(pack: &mut Pack) -> Result<bool, RPError> {
+    if let Some(cell) = pack.stack.pop() {
         match cell {
+            Cell::Empty => println!("<EMPTY>"),
             Cell::Integer(i) => println!("{}", i),
             Cell::Float(f) => println!("{}", f),
             Cell::Boolean(b) => println!("{}", b),
             Cell::String(st) => println!("{}", st),
             Cell::Word(w) => println!("{}", w),
-            Cell::Empty => println!("<EMPTY>"),
             Cell::Block(b) => println!("{:?}", b),
             Cell::Object(o) => println!("{:?}", o),
+            _ => {}
         }
     }
     else {
@@ -176,7 +200,7 @@ fn print(script: &mut Script) -> Result<bool, RPError> {
     Ok(true)
 }
 
-fn print_stack(script: &mut Script) -> Result<bool, RPError>  {
-    println!("{:?}", script.stack);
+fn print_stack(pack: &mut Pack) -> Result<bool, RPError>  {
+    println!("{:?}", pack.stack);
     Ok(true)
 }
