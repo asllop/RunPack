@@ -21,13 +21,17 @@ runpack = "0.1.0"
 Then use it:
 
 ```rust
-use runpack::{Pack};
+use runpack::{Pack, Cell};
 
 let script = r#"
+    "Add two numbers and leave the result in the stack"
     10 20 +
 "#;
 let mut pack = Pack::new(script);
 pack.run().expect("Error running the script");
+if let Some(Cell::Integer(n)) = pack.stack.pop() {
+    println!("Result is {}", n);
+}
 ```
 
 <!-- ## TODO: Coding -->
