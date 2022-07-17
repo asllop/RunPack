@@ -40,6 +40,7 @@ It's easy to define new words in Rust and then call them from a script in RunPac
 use runpack::{self, Pack, Cell};
 
 let script = r#"
+    "Put a string in the stack and then execute the 'hi' word"
     'Andreu' hi
 "#;
 let mut pack = Pack::new(script);
