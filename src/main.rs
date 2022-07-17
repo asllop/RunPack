@@ -1,4 +1,4 @@
-use runpack::{Pack, Cell, Error as RPError, Word};
+use runpack::{Pack, Cell, Word, self};
 
 use std::time::Instant;
 
@@ -180,7 +180,7 @@ fn main() {
     println!("Time elapsed in cloning arrays is: {:?}", duration);
 }
 
-fn print(pack: &mut Pack) -> Result<bool, RPError> {
+fn print(pack: &mut Pack) -> Result<bool, runpack::Error> {
     if let Some(cell) = pack.stack.pop() {
         match cell {
             Cell::Empty => println!("<EMPTY>"),
@@ -195,12 +195,12 @@ fn print(pack: &mut Pack) -> Result<bool, RPError> {
         }
     }
     else {
-        return Err(RPError::new("prints: couldn't get data from stack".into(), 1000));
+        return Err(runpack::Error::new("prints: couldn't get data from stack".into(), 1000));
     }
     Ok(true)
 }
 
-fn print_stack(pack: &mut Pack) -> Result<bool, RPError>  {
+fn print_stack(pack: &mut Pack) -> Result<bool, runpack::Error>  {
     println!("{:?}", pack.stack);
     Ok(true)
 }
