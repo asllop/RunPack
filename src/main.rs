@@ -8,7 +8,6 @@ fn main() {
         { '--------------' print } def ---
         
         'This is a \'string\' with \ \\scape \stuff' print
-        #hello_world print
 
         { 2 * inc } def twice_plus
         { 1 + } def inc
@@ -107,13 +106,17 @@ fn main() {
         print_stack
         ---
         ( 'name' 'Andreu','age' 39 new ) def my_obj
-        'name' get my_obj print
-        'name','Joe' set my_obj
-        'name' get my_obj print
-        'name' key? my_obj print
-        'anything' key? my_obj print
-        ( 0 'Andreu', 1 #you, 2 123.5 new ) def arr
-        2 get arr print
+        'name' @ my_obj get print
+        'name','Joe' @ my_obj set
+        'name' @ my_obj get print
+        'name' @ my_obj key? print
+        'anything' @ my_obj key? print
+        '--- Arrays ---' print
+        ( 0 'Zero', 1 555, 2 123.5 3 ( 'name' 'Andreu' new ) new ) def arr
+        0 @ arr get print
+        1 @ arr get print
+        2 @ arr get print
+        3 @ arr get print
         ---
     "#;
 
@@ -160,7 +163,6 @@ fn print(script: &mut Script) -> Result<bool, RPError> {
             Cell::Integer(i) => println!("{}", i),
             Cell::Float(f) => println!("{}", f),
             Cell::Boolean(b) => println!("{}", b),
-            Cell::Symbol(s) => println!("{}", s),
             Cell::String(st) => println!("{}", st),
             Cell::Word(w) => println!("{}", w),
             Cell::Empty => println!("<EMPTY>"),

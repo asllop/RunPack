@@ -66,7 +66,6 @@ pub enum Cell {
     Integer(IntegerType),
     Float(FloatType),
     Boolean(bool),
-    Symbol(String),
     String(String),
     Word(String),
     Block(BlockRef),
@@ -80,15 +79,6 @@ impl Cell {
         }
         else if let Ok(flt) = token.parse::<FloatType>() {
             Some(Cell::Float(flt))
-        }
-        else {
-            None
-        }
-    }
-
-    fn symbol(token: &str) -> Option<Self> {
-        if token.starts_with("#") {
-            Some(Cell::Symbol(token.into()))
         }
         else {
             None
@@ -252,10 +242,11 @@ impl Script {
         script.reader = reader.into();
         script.tokenize();
         script.def_natives(&[
-            ("(", open_parenth), (")", close_parenth), ("{", open_curly), ("}", close_curly), ("def", def), ("+", plus), ("-", minus),
-            ("*", star), ("/", slash), ("%", percent), (">", bigger), ("<", smaller), ("=", equal), ("!=", not_equal), (">=", big_equal),
-            ("<=", small_equal), ("&", and), ("|", or), ("!", not), ("if", if_word), ("ifelse", ifelse_word), ("while", while_word),
-            ("lex", lex), ("[", open_bracket), ("new", new_obj), ("set", set_obj), ("get", get_obj), ("key?", key_obj),
+            ("(", open_parenth), (")", close_parenth), ("{", open_curly), ("}", close_curly), ("def", def), ("@", at), ("+", plus),
+            ("-", minus), ("*", star), ("/", slash), ("%", percent), (">", bigger), ("<", smaller), ("=", equal), ("!=", not_equal),
+            (">=", big_equal), ("<=", small_equal), ("&", and), ("|", or), ("!", not), ("if", if_word), ("ifelse", ifelse_word),
+            ("while", while_word), ("lex", lex), ("[", open_bracket), ("new", new_obj), ("set", set_obj), ("get", get_obj),
+            ("key?", key_obj),
         ]);
         script
     }
@@ -341,9 +332,6 @@ impl Script {
         if let Ok(token) = String::from_utf8(token) {
             if let Some(num_cell) = Cell::number(&token) {
                 num_cell
-            }
-            else if let Some(sym_cell) = Cell::symbol(&token) {
-                sym_cell
             }
             else if let Some(bool_cell) = Cell::boolean(&token) {
                 bool_cell
@@ -441,7 +429,7 @@ impl Script {
         if let Some(cell) = self.concat.next() {
             let cell = cell.clone();
             match cell {
-                Cell::Integer(_) | Cell::Float(_) | Cell::Boolean(_) | Cell::Symbol(_) | Cell::String(_) => self.stack.push(cell),
+                Cell::Integer(_) | Cell::Float(_) | Cell::Boolean(_) | Cell::String(_) => self.stack.push(cell),
                 Cell::Word(w) => return self.exec(&w),
                 _ => return Err(Error::new(format!("Found an invalid cell value in the Concat: {:?}", cell), 1))
             }
@@ -522,6 +510,16 @@ fn def(script: &mut Script) -> Result<bool, Error> {
         return Err(Error::new("def: Expecting a word in the Concat".into(), 6));
     }
     Ok(true)
+}
+
+fn at(script: &mut Script) -> Result<bool, Error> {
+    if let Some(Cell::Word(w)) = script.concat.next() {
+        script.stack.push(Cell::Word(w.clone()));
+        Ok(true)
+    }
+    else {
+        return Err(Error::new("at: Expecting a word in the Concat".into(), 25));
+    }
 }
 
 fn two_num_op(stack: &mut Stack, int_op: fn(IntegerType, IntegerType) -> IntegerType, flt_op: fn(FloatType, FloatType) -> FloatType) -> Result<bool, Error> {
@@ -734,8 +732,8 @@ fn new_obj(script: &mut Script) -> Result<bool, Error> {
 }
 
 fn set_obj(script: &mut Script) -> Result<bool, Error> {
-    if let (Some(val), Some(key), Some(Cell::Word(w))) = (script.stack.pop(), script.stack.pop(), script.concat.next()) {
-        if let Some(DictEntry::Data(Cell::Object(obj))) = script.dictionary.dict.get_mut(w) {
+    if let (Some(Cell::Word(w)), Some(val), Some(key)) = (script.stack.pop(), script.stack.pop(), script.stack.pop()) {
+        if let Some(DictEntry::Data(Cell::Object(obj))) = script.dictionary.dict.get_mut(&w) {
             obj.map.insert(key, val);
         }
         else {
@@ -749,8 +747,8 @@ fn set_obj(script: &mut Script) -> Result<bool, Error> {
 }
 
 fn get_obj(script: &mut Script) -> Result<bool, Error> {
-    if let (Some(key), Some(Cell::Word(w))) = (script.stack.pop(), script.concat.next()) {
-        if let Some(DictEntry::Data(Cell::Object(obj))) = script.dictionary.dict.get(w) {
+    if let (Some(Cell::Word(w)), Some(key)) = (script.stack.pop(), script.stack.pop()) {
+        if let Some(DictEntry::Data(Cell::Object(obj))) = script.dictionary.dict.get(&w) {
             if let Some(val) = obj.map.get(&key) {
                 script.stack.push(val.clone());
             }
@@ -769,8 +767,8 @@ fn get_obj(script: &mut Script) -> Result<bool, Error> {
 }
 
 fn key_obj(script: &mut Script) -> Result<bool, Error> {
-    if let (Some(key), Some(Cell::Word(w))) = (script.stack.pop(), script.concat.next()) {
-        if let Some(DictEntry::Data(Cell::Object(obj))) = script.dictionary.dict.get(w) {
+    if let (Some(Cell::Word(w)), Some(key)) = (script.stack.pop(), script.stack.pop()) {
+        if let Some(DictEntry::Data(Cell::Object(obj))) = script.dictionary.dict.get(&w) {
             script.stack.push(Cell::Boolean(obj.map.contains_key(&key)));
         }
         else {
