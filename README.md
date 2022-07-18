@@ -24,13 +24,15 @@ Then use it:
 use runpack::{Pack, Cell};
 
 let script = r#"
-    "Add two numbers, leaving the result in the stack"
-    10 20 +
+    "Put an integer and a boolean in the stack"
+    10 true
 "#;
+
 let mut pack = Pack::new(script);
 pack.run().expect("Error running the script");
-if let Some(Cell::Integer(n)) = pack.stack.pop() {
-    println!("Result is {}", n);
+
+if let (Some(Cell::Boolean(b)), Some(Cell::Integer(i))) = (pack.stack.pop(), pack.stack.pop()) {
+    println!("Integer = {}, Boolean = {}", i, b);
 }
 ```
 
@@ -43,6 +45,7 @@ let script = r#"
     "Put a string in the stack and then execute the 'hi' word"
     'Andreu' hi
 "#;
+
 let mut pack = Pack::new(script);
 pack.dictionary.native("hi", hi_word);
 pack.run().expect("Error running the script");
@@ -67,9 +70,11 @@ let script = r#"
     "Define the word 'pi' that puts the number π in the stack"
     3.14159 def pi
 "#;
+
 let mut pack = Pack::new(script);
 pack.run().expect("Error running the script");
 pack.exec("pi").expect("Failed executing 'pi'");
+
 if let Some(Cell::Float(f)) = pack.stack.pop() {
     println!("The number π is {}", f);
 }
