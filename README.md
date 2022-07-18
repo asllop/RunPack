@@ -4,7 +4,7 @@ _Extremely simple, yet practical, scripting language_
 
 ## Introduction
 
-RunPack is a small and modular scripting language written in ~800 lines of Rust code (the core), designed to be embedded into other applications.
+RunPack is a small and modular scripting language written in ~800 lines of Rust code, designed to be embedded into other applications.
 
 It is a [stack-based](https://en.wikipedia.org/wiki/Stack-oriented_programming), [concatenative](https://en.wikipedia.org/wiki/Concatenative_programming_language), [homoiconic](https://en.wikipedia.org/wiki/Homoiconicity) programming language, strongly inspired by [Forth](https://en.wikipedia.org/wiki/Forth_(programming_language)), and to a lesser extent by [Lua](https://en.wikipedia.org/wiki/Lua_(programming_language)), [Factor](https://en.wikipedia.org/wiki/Factor_(programming_language)) and [Racket](https://en.wikipedia.org/wiki/Racket_(programming_language)).
 
@@ -56,7 +56,7 @@ fn hi_word(pack: &mut Pack) -> Result<bool, runpack::Error> {
         Ok(true)
     }
     else {
-        Err(runpack::Error::new("Couldn't get a string".into(), 1000));
+        Err(runpack::Error::new("Couldn't get a string".into(), 1000))
     }
 }
 ```

@@ -1,6 +1,4 @@
-use runpack::{Pack, Cell, Word, self};
-
-use std::time::Instant;
+use runpack::{Pack, Cell, self};
 
 fn main() {
     println!("Run Pack!\n");
@@ -157,27 +155,6 @@ fn main() {
 
     pack.append("{ } print_stack");
     pack.run().expect("Failed run");
-
-    // Benchmark strings vs arrays
-
-    let x = String::from("12345678901234567890123456789012"); //32 bytes string
-    let y =  Word { data: [0u8; 31], len: 0 };
-
-    let start = Instant::now();
-    for _ in 0..100000000 {
-        pack.stack.push(Cell::String(x.clone()));
-        pack.stack.pop();
-    }
-    let duration = start.elapsed();
-    println!("Time elapsed in cloning strings is: {:?}", duration);
-
-    let start = Instant::now();
-    for _ in 0..100000000 {
-        pack.stack.push(Cell::NewWord(y));
-        pack.stack.pop();
-    }
-    let duration = start.elapsed();
-    println!("Time elapsed in cloning arrays is: {:?}", duration);
 }
 
 fn print(pack: &mut Pack) -> Result<bool, runpack::Error> {
@@ -188,10 +165,9 @@ fn print(pack: &mut Pack) -> Result<bool, runpack::Error> {
             Cell::Float(f) => println!("{}", f),
             Cell::Boolean(b) => println!("{}", b),
             Cell::String(st) => println!("{}", st),
-            Cell::Word(w) => println!("{}", w),
+            Cell::Word(w) => println!("{:?}", w),
             Cell::Block(b) => println!("{:?}", b),
             Cell::Object(o) => println!("{:?}", o),
-            _ => {}
         }
     }
     else {
