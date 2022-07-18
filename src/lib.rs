@@ -1,3 +1,6 @@
+//! # RunPack
+//! 
+
 #![no_std]
 
 mod core;

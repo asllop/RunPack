@@ -111,17 +111,20 @@ fn main() {
         'name' @ my_obj get print
         'name' @ my_obj key? print
         'anything' @ my_obj key? print
+        print_stack
         '--- Arrays ---' print
         ( 0 'Zero', 1 555, 2 123.5 3 ( 'name' 'Andreu' new ) new ) def arr
         0 @ arr get print
         1 @ arr get print
         2 @ arr get print
         3 @ arr get print
-        ---
+        print_stack
+        '--- Object with executable blocks ---' print
         ( 'hola' { 'Hola!!' print } , 'adeu' { 'Adéu!!' print } new ) def foo_obj
         ( 'hola' @ foo_obj get ) exe
         ( 'adeu' @ foo_obj get ) exe
         'Final' @ print exe
+        print_stack
         ---
     "#;
 
@@ -158,8 +161,8 @@ fn main() {
     pack.exec("print").expect("Failed exec");
     pack.exec("---").expect("Failed exec");
 
-    pack.append("{ } print_stack");
-    pack.run().expect("Failed run");
+    println!("Stack = {:?}", pack.stack);
+    println!("Ret stack = {:?}", pack.ret);
 }
 
 fn print(pack: &mut Pack) -> Result<bool, runpack::Error> {

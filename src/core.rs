@@ -73,6 +73,7 @@ pub enum Cell {
 
 impl Cell {
     fn number(token: &str) -> Option<Self> {
+        //TODO: support hex and binary integers (https://doc.rust-lang.org/std/primitive.i64.html#method.from_str_radix)
         if let Ok(int) = token.parse::<IntegerType>() {
             Some(Cell::Integer(int))
         }

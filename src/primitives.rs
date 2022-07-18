@@ -221,7 +221,6 @@ fn if_word(pack: &mut Pack) -> Result<bool, Error> {
 
 fn ifelse_word(pack: &mut Pack) -> Result<bool, Error> {
     if let (Some(Cell::Boolean(cond)), Some(Cell::Block(false_blk)), Some(Cell::Block(true_blk))) = (pack.stack.pop(), pack.stack.pop(), pack.stack.pop()) {
-        pack.ret.push(pack.concat.pointer);
         if cond {
             pack.run_block(&true_blk)
         }
