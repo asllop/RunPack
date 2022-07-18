@@ -118,6 +118,11 @@ fn main() {
         2 @ arr get print
         3 @ arr get print
         ---
+        ( 'hola' { 'Hola!!' print } , 'adeu' { 'Adéu!!' print } new ) def foo_obj
+        ( 'hola' @ foo_obj get ) exe
+        ( 'adeu' @ foo_obj get ) exe
+        'Final' @ print exe
+        ---
     "#;
 
     println!("Program = {}", program);

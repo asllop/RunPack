@@ -10,7 +10,7 @@ pub fn register_primitives(pack: &mut Pack) {
         ("+", plus), ("-", minus), ("*", star), ("/", slash), ("%", percent), (">", bigger), ("<", smaller), ("=", equal),
         ("!=", not_equal), (">=", big_equal), ("<=", small_equal), ("&", and), ("|", or), ("!", not), ("if", if_word),
         ("ifelse", ifelse_word), ("while", while_word), ("[", open_bracket), ("new", new_obj), ("set", set_obj), ("get", get_obj),
-        ("key?", key_obj),
+        ("key?", key_obj), ("exe", exe),
     ]);
 }
 
@@ -350,4 +350,12 @@ fn key_obj(pack: &mut Pack) -> Result<bool, Error> {
         return Err(Error::new("key: Couldn't get a value and a word".into(), 24));
     }
     Ok(true)
+}
+
+fn exe(pack: &mut Pack) -> Result<bool, Error> {
+    match pack.stack.pop() {
+        Some(Cell::Block(blk)) => pack.run_block(&blk),
+        Some(Cell::Word(w)) => pack.exec(&w),
+        _ => Err(Error::new("exe: Couldn't get a word".into(), 50)),
+    }
 }
