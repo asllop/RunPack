@@ -10,7 +10,7 @@ pub fn register_primitives(pack: &mut Pack) {
         ("+", plus), ("-", minus), ("*", star), ("/", slash), ("%", percent), (">", bigger), ("<", smaller), ("=", equal),
         ("!=", not_equal), (">=", big_equal), ("<=", small_equal), ("&", and), ("|", or), ("!", not), ("if", if_word),
         ("ifelse", ifelse_word), ("while", while_word), ("[", open_bracket), ("new", new_obj), ("set", set_obj), ("get", get_obj),
-        ("key?", key_obj), ("exe", exe),
+        ("key?", key_obj), ("exe", exe), ("int", int), ("float", float), ("type", type_word),
     ]);
 }
 
@@ -356,5 +356,45 @@ fn exe(pack: &mut Pack) -> Result<bool, Error> {
         Some(Cell::Block(blk)) => pack.run_block(&blk),
         Some(Cell::Word(w)) => pack.exec(&w),
         _ => Err(Error::new("exe: Couldn't get a word".into(), 50)),
+    }
+}
+
+fn int(pack: &mut Pack) -> Result<bool, Error> {
+    if let Some(Cell::Float(f)) = pack.stack.pop() {
+        pack.stack.push(Cell::Integer(f as IntegerType));
+        Ok(true)
+    }
+    else {
+        Err(Error::new("int: Coulnd't get a float".into(), 55))
+    }
+}
+
+fn float(pack: &mut Pack) -> Result<bool, Error> {
+    if let Some(Cell::Integer(i)) = pack.stack.pop() {
+        pack.stack.push(Cell::Float(i as FloatType));
+        Ok(true)
+    }
+    else {
+        Err(Error::new("int: Coulnd't get an int".into(), 56))
+    }
+}
+
+fn type_word(pack: &mut Pack) -> Result<bool, Error> {
+    if let Some(cell) = pack.stack.last() {
+        let type_str = match cell {
+            Cell::Empty => "empty",
+            Cell::Integer(_) => "integer",
+            Cell::Float(_) => "float",
+            Cell::Boolean(_) => "boolean",
+            Cell::String(_) => "string",
+            Cell::Word(_) => "word",
+            Cell::Block(_) => "block",
+            Cell::Object(_) => "object",
+        };
+        pack.stack.push(Cell::String(type_str.into()));
+        Ok(true)
+    }
+    else {
+        Err(Error::new("type: Coulnd't get an int".into(), 56))
     }
 }

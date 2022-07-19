@@ -126,6 +126,10 @@ fn main() {
         'Final' @ print exe
         print_stack
         ---
+        "Get fractional part of a float"
+        { dup int float - } def fract
+        13.5 fract type
+        print_stack [ a b : ]
     "#;
 
     println!("Program = {}", program);

@@ -220,6 +220,11 @@ impl Stack {
         }
     }
 
+    /// Last cell.
+    pub fn last(&self) -> Option<&Cell> {
+        self.stack.last()
+    }
+
     /// Size of current stack
     pub fn size(&self) -> usize {
         self.stack.len() - self.base
