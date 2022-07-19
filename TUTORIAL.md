@@ -136,10 +136,10 @@ Output:
 Stack { stack: [String("B"), String("A")], base: 0, nested: [] }
 ```
 
-## Stack transfer
+### Stack transfer
 
 TODO
 
-## Nested stacks
+### Nested stacks
 
 TODO
