@@ -249,6 +249,8 @@ impl Pack {
         register_primitives(&mut pack);
         pack.reader = reader.into();
         pack.tokenize();
+        pack.reader = String::new();
+        pack.pos = 0;
         pack
     }
 
@@ -398,8 +400,9 @@ impl Pack {
     /// Append literal code to the end of the Concat.
     pub fn append(&mut self, code: &str) {
         self.reader = code.into();
-        self.pos = 0;
         self.tokenize();
+        self.reader = String::new();
+        self.pos = 0;
     }
 
     /// Run the script
