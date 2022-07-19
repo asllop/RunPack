@@ -5,6 +5,7 @@
 
 mod core;
 mod primitives;
+mod prelude;
 
 pub use self::core::*;
 

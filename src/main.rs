@@ -9,18 +9,13 @@ fn main() {
         
         'This is a \'string\' with \ \\scape \stuff' print
 
-        { 2 * inc } def twice_plus
-        { 1 + } def inc
-        { 1 - } def dec
-        { [ a : ] } def drop
-        { [ a : a a ] } def dup
-        { [ a b : a b ] } def swap
+        { 2 * ++ } def twice_plus
         ---
-        66 inc print
+        66 ++ print
         10 twice_plus print
         ---
         100 def num
-        ( num inc ) def num
+        ( num ++ ) def num
         num print
         ---
         10 1 != print
@@ -85,12 +80,8 @@ fn main() {
         10 math.dec print
         hi
         ---
-        "Puts a block in the stack"
-        { 'Hello from block' print }
-        'This is a test' print
-        ---
         10 def num
-        { num print, ( num dec ) def num } { num -1 > } while
+        { num print, ( num -- ) def num } { num -1 > } while
         print_stack
         ---
         10 20 30 40 [ a b c d : b d ]
@@ -127,7 +118,6 @@ fn main() {
         print_stack
         ---
         "Get fractional part of a float"
-        { dup int float - } def fract
         13.5 fract type
         print_stack [ a b : ]
         ---
@@ -135,45 +125,20 @@ fn main() {
         'hola' 'hola' = print
         'Hello ' 'World!' + print
         ---
-        ( 1 2 3 4 size print [ a b c : ] )
+        55 ( 1 2 3 4 flush ) print_stack
         ---
     "#;
 
     println!("Program = {}", program);
 
-    let mut pack = Pack::new(program);
+    let mut pack = Pack::new_with_prelude(program);
 
     println!("Tokens =\n{:?}\n", pack.concat);
 
     pack.dictionary.native("print", print);
     pack.dictionary.native("print_stack", print_stack);
+
     pack.run().expect("Failed run");
-
-    pack.append("newline");
-    pack.append("50 twice_plus");
-    pack.run().expect("Failed run");
-    if let Some(Cell::Integer(num)) = pack.stack.pop() {
-        println!("Got value from exec script = {}", num);
-    }
-    else {
-        println!("Couldn't get value");
-    }
-
-    if let Some(Cell::Block(blk)) = pack.stack.pop() {
-        pack.run_block(&blk).expect("Failed run block");
-    }
-    else {
-        println!("Couldn't get block");
-    }
-
-    pack.exec("---").expect("Failed exec");
-    pack.exec("hi").expect("Failed exec");
-    pack.exec("num").expect("Failed exec");
-    pack.exec("print").expect("Failed exec");
-    pack.exec("---").expect("Failed exec");
-
-    println!("Stack = {:?}", pack.stack);
-    println!("Ret stack = {:?}", pack.ret);
 }
 
 fn print(pack: &mut Pack) -> Result<bool, runpack::Error> {

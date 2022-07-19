@@ -4,6 +4,7 @@ use hashbrown::HashMap;
 use alloc::{vec::Vec, string::String, format, str};
 use core::hash::Hash;
 use super::primitives::register_primitives;
+use super::prelude::PRELUDE;
 
 #[derive(Debug)]
 /// Error type
@@ -245,9 +246,15 @@ pub struct Pack {
 impl Pack {
     pub fn new(reader: &str) -> Self {
         let mut pack = Pack::default();
+        register_primitives(&mut pack);
         pack.reader = reader.into();
         pack.tokenize();
-        register_primitives(&mut pack);
+        pack
+    }
+
+    pub fn new_with_prelude(reader: &str) -> Self {
+        let mut pack = Pack::new(PRELUDE);
+        pack.append(reader);
         pack
     }
 
