@@ -431,7 +431,7 @@ impl Pack {
         }
     }
 
-    /// Run one cell of the Concat
+    /// Run one cell from the Concat
     pub fn one_step(&mut self) -> Result<bool, Error> {
         if let Some(cell) = self.concat.next() {
             let cell = cell.clone();
