@@ -5,7 +5,7 @@ fn main() {
 
     // YOUR CODE GOES HERE
     let script = r#"
-        10 -5.5 true 'Hello' print_stack
+    10 ( 20 print_stack ) print_stack
     "#;
 
     let mut pack = Pack::new_with_prelude(script);
@@ -34,7 +34,10 @@ fn print(pack: &mut Pack) -> Result<bool, runpack::Error> {
 }
 
 fn print_stack(pack: &mut Pack) -> Result<bool, runpack::Error>  {
-    println!("{:?}", pack.stack);
+    println!("Stack:");
+    for n in (0..pack.stack.size()).rev() {
+        println!("\t{} : {:?}", n, pack.stack.get(n).unwrap());
+    }
     Ok(true)
 }
 
