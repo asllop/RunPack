@@ -135,6 +135,8 @@ fn main() {
         'hola' 'hola' = print
         'Hello ' 'World!' + print
         ---
+        ( 1 2 3 4 size print [ a b c : ] )
+        ---
     "#;
 
     println!("Program = {}", program);

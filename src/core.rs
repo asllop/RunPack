@@ -1,7 +1,7 @@
 extern crate alloc;
 
 use hashbrown::HashMap;
-use alloc::{ vec::Vec, string::String, format, str };
+use alloc::{vec::Vec, string::String, format, str};
 use core::hash::Hash;
 use super::primitives::register_primitives;
 

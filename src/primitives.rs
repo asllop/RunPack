@@ -2,7 +2,7 @@ extern crate alloc;
 
 use super::core::{Pack, Cell, Object, DictEntry, BlockRef, Stack, IntegerType, FloatType, Error};
 use hashbrown::HashMap;
-use alloc::{ string::String, format };
+use alloc::{string::String, format};
 
 pub fn register_primitives(pack: &mut Pack) {
     pack.def_natives(&[
@@ -10,7 +10,7 @@ pub fn register_primitives(pack: &mut Pack) {
         ("+", plus), ("-", minus), ("*", star), ("/", slash), ("%", percent), (">", bigger), ("<", smaller), ("=", equal),
         ("!=", not_equal), (">=", big_equal), ("<=", small_equal), ("&", and), ("|", or), ("!", not), ("if", if_word),
         ("ifelse", ifelse_word), ("while", while_word), ("[", open_bracket), ("new", new_obj), ("set", set_obj), ("get", get_obj),
-        ("key?", key_obj), ("exe", exe), ("int", int), ("float", float), ("type", type_word),
+        ("key?", key_obj), ("exe", exe), ("int", int), ("float", float), ("type", type_word), ("size", size),
     ]);
 }
 
@@ -414,4 +414,9 @@ fn type_word(pack: &mut Pack) -> Result<bool, Error> {
     else {
         Err(Error::new("type: Coulnd't get an int".into(), 56))
     }
+}
+
+fn size(pack: &mut Pack) -> Result<bool, Error> {
+    pack.stack.push(Cell::Integer(pack.stack.size() as IntegerType));
+    Ok(true)
 }
