@@ -52,4 +52,40 @@ fn print_stack(pack: &mut Pack) -> Result<bool, runpack::Error>  {
 
 ## 1. Ye Olde Stack
 
+The stack is the most important data structure in RunPack. It's used as an intermediate store to pass data from one word to another. In other language's terminology, we would say that it's used to pass arguments to functions, and to get returned values from them.
+
+To push something to the stack we simply execute:
+
+```
+10
+```
+
+Now the stack contains one element, an integer with value 10. We can check that running the word `print_stack`, that will show the contents of the stack:
+
+```
+10 print_stack
+```
+
+The output will be:
+
+```
+Stack { stack: [Integer(10)], base: 0, nested: [] }
+```
+
+We learned a new thing, to execute a word (the equivalent of a function in other languages), we just need to name it.
+
+Let's try to push more data of different types:
+
+```
+10 -5.5 true 'Hello' print_stack
+```
+
+Output:
+
+```
+Stack { stack: [Integer(10), Float(-5.5), Boolean(true), String("Hello")], base: 0, nested: [] }
+```
+
+All good. Now we want to pop data from the stack, how can we do that?
+
 TODO
