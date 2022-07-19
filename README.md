@@ -10,6 +10,13 @@ It is a [stack-based](https://en.wikipedia.org/wiki/Stack-oriented_programming),
 
 Language and implementation are designed to be extensible, providing a lightweight and powerful Rust API that allows to control any aspect of the language. Many features that in other languages are a core part of the compiler, like if/else/while statements, anonymous functions or variables, in RunPack are just words defined using the public API.
 
+RunPack is what you are looking for, if you...
+
+1. Need a scripting language for your Rust application.
+2. Want it to be simple, and with a small memory footprint.
+3. Look for something fully customizable and hackable.
+4. Appreciate concatenative programming languages.
+
 ## Embedding
 
 To embed RunPack start by including the dependencies in your cargo file:

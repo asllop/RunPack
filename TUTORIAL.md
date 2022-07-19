@@ -4,6 +4,8 @@ To follow this tutorial, some programming skills are assumed. At least a basic l
 
 This tutorial is designed to be read sequentially, but feel free to skip the parts you already now.
 
+And one final note: it may take time to get used to a stack-based language, with its idiosyncratic [reverse polish notation](https://en.wikipedia.org/wiki/Reverse_Polish_notation). But once you do, you will absolutely love it.
+
 ## 0. Setup
 
 All RunPack scripts in this tutorial are supposed to be executed in a program like the following:
@@ -136,10 +138,69 @@ Output:
 Stack { stack: [String("B"), String("A")], base: 0, nested: [] }
 ```
 
-### Stack transfer
+### Stack transfers
+
+Sometimes it can be hard to work with the stack. Our word needs the arguments in the stack in a certain way, but the current stack state left by the previous words is far from what we want. For these cases we have the stack transfer operator.
+
+Let's imagine our current stack state is as follows:
+
+```
+0.5 'A string' 100.0 false
+```
+
+And we have to multiply the two floats, so we need them to be consecutive in the stack, right at the top of it. That's the perfect fit for the stack transfer operator:
+
+```
+0.5 'A string' 100.0 false
+[ a, flt_a, b, flt_b : b, a, flt_b, flt_a ] * print
+print_stack
+```
+
+Output:
+
+```
+50
+Stack { stack: [Boolean(false), String("A string")], base: 0, nested: [] }
+```
+
+First of all, note that in RunPack, the comma is just a word separator, like the space. It has no other meaning and it's used to improve readability.
+
+The stack transfer has the following format:
+
+```
+[ pop_1 pop_2 ... pop_N : push_1 push_2 ... push_N ]
+```
+
+The variables at the left of `:` are popped from the stack in the order they appear. The variables at the right of `:` are pushed into the stack in the order they appear. In the example of the two floats, we popped the following variables: `a` getting the value `false`, `flt_a` getting `100.0`, `b` getting `'A string'`, and `flt_b` getting `0.5`. Then we pushed them in the order we see: `b`(`'A string'`), `a`(`false`), `flt_b`(`0.5`) and `flt_a`(`100.0`). As a result, the `*` word will find the two floats in the stack to multiply them, and the other two data cells will remain untouched.
+
+The variable in the left side can't be repeaded, but they can appear multiple times in the right side, or don't appear at all. For example, if we have 3 cells and want to remove the one in the middle, we could do:
+
+```
+1 2 3 [ a b c : c a ] print_stack
+```
+
+Output:
+
+```
+Stack { stack: [Integer(1), Integer(3)], base: 0, nested: [] }
+```
+
+Or maybe we want to triple a cell:
+
+```
+100 [ a : a a a ] print_stack
+```
+
+Output:
+
+```
+Stack { stack: [Integer(1), Integer(1), Integer(1)], base: 0, nested: [] }
+```
+
+### Nested stacks
 
 TODO
 
-### Nested stacks
+## 2. Math and Logic
 
 TODO
