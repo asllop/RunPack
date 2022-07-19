@@ -117,8 +117,25 @@ fn two_num_op(stack: &mut Stack, int_op: fn(IntegerType, IntegerType) -> Integer
     Ok(true)
 }
 
+fn two_num_or_str_op(stack: &mut Stack, int_op: fn(IntegerType, IntegerType) -> IntegerType, flt_op: fn(FloatType, FloatType) -> FloatType, str_op: fn(&String, &String) -> String) -> Result<bool, Error> {
+    let (cell_b, cell_a) = (stack.pop(), stack.pop());
+    if let (Some(Cell::Integer(int_a)), Some(Cell::Integer(int_b))) = (&cell_a, &cell_b) {
+        stack.push(Cell::Integer(int_op(*int_a, *int_b)));
+    }
+    else if let (Some(Cell::Float(flt_a)), Some(Cell::Float(flt_b))) = (&cell_a, &cell_b) {
+        stack.push(Cell::Float(flt_op(*flt_a, *flt_b)));
+    }
+    else if let (Some(Cell::String(str_a)), Some(Cell::String(str_b))) = (&cell_a, &cell_b) {
+        stack.push(Cell::String(str_op(str_a, str_b)));
+    }
+    else {
+        return Err(Error::new("two_num_op: Expecting two numbers of the same type".into(), 7));
+    }
+    Ok(true)
+}
+
 fn plus(pack: &mut Pack) -> Result<bool, Error> {
-    two_num_op(&mut pack.stack, |a, b| a + b, |a, b| a + b)
+    two_num_or_str_op(&mut pack.stack, |a, b| a + b, |a, b| a + b, |a, b| a.clone() + &b)
 }
 
 fn minus(pack: &mut Pack) -> Result<bool, Error> {

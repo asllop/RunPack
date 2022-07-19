@@ -130,6 +130,11 @@ fn main() {
         { dup int float - } def fract
         13.5 fract type
         print_stack [ a b : ]
+        ---
+        'Are the two strings equal?' print
+        'hola' 'hola' = print
+        'Hello ' 'World!' + print
+        ---
     "#;
 
     println!("Program = {}", program);
