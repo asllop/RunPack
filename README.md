@@ -80,4 +80,6 @@ if let Some(Cell::Float(f)) = pack.stack.pop() {
 }
 ```
 
-<!-- ## TODO: Coding -->
+## Learn RunPack
+
+Learning is easy, you only need 1 hour of your time and this [tutorial](TUTORIAL.md). Enjoy the trip!
