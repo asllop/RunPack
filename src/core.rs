@@ -221,9 +221,14 @@ impl Stack {
         }
     }
 
-    /// Last cell.
-    pub fn last(&self) -> Option<&Cell> {
-        self.stack.last()
+    /// Get cell. Position is referenced to the top.
+    pub fn get(&self, pos: usize) -> Option<&Cell> {
+        if pos < self.size() {
+            self.stack.get(self.stack.len() - 1 - pos)
+        }
+        else {
+            None
+        }
     }
 
     /// Size of current stack

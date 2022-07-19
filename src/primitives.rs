@@ -399,7 +399,7 @@ fn float(pack: &mut Pack) -> Result<bool, Error> {
 }
 
 fn type_word(pack: &mut Pack) -> Result<bool, Error> {
-    if let Some(cell) = pack.stack.last() {
+    if let Some(cell) = pack.stack.get(0) {
         let type_str = match cell {
             Cell::Empty => "empty",
             Cell::Integer(_) => "integer",
