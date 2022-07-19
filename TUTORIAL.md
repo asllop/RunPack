@@ -1,6 +1,6 @@
 # RunPack Tutorial
 
-To follow this tutorial, some programming skills are assumed. At least a basic level of Rust, and essential data structures like stacks, and hash maps.
+To follow this tutorial, some programming skills are assumed. At least a basic level of Rust, and understanding of the essential data structures like stacks, and hash maps.
 
 This tutorial is designed to be read sequentially, but feel free to skip the parts you already now.
 
@@ -47,7 +47,10 @@ fn print(pack: &mut Pack) -> Result<bool, runpack::Error> {
 }
 
 fn print_stack(pack: &mut Pack) -> Result<bool, runpack::Error>  {
-    println!("{:?}", pack.stack);
+    println!("Stack:");
+    for n in (0..pack.stack.size()).rev() {
+        println!("\t{} : {:?}", n, pack.stack.get(n).unwrap());
+    }
     Ok(true)
 }
 ```
@@ -56,7 +59,7 @@ fn print_stack(pack: &mut Pack) -> Result<bool, runpack::Error>  {
 
 The stack is the most important data structure in RunPack. It's used as an intermediate store to pass data from one word to another. In other language's terminology, we would say that it's used to pass arguments to functions, and to get returned values from them.
 
-To push something to the stack we simply execute:
+To push something into the stack we simply execute:
 
 ```
 10
@@ -71,7 +74,8 @@ Now the stack contains one element, an integer with value 10. We can check that 
 The output will be:
 
 ```
-Stack { stack: [Integer(10)], base: 0, nested: [] }
+Stack:
+	0 : Integer(10)
 ```
 
 We learned a new thing, to execute a word (the equivalent of a function in other languages), we just need to name it.
@@ -85,7 +89,11 @@ Let's try to push more data of different types:
 Output:
 
 ```
-Stack { stack: [Integer(10), Float(-5.5), Boolean(true), String("Hello")], base: 0, nested: [] }
+Stack:
+	3 : Integer(10)
+	2 : Float(-5.5)
+	1 : Boolean(true)
+	0 : String("Hello")
 ```
 
 All good. Now we want to pop data out from the stack, how can we do that?
@@ -97,7 +105,8 @@ All good. Now we want to pop data out from the stack, how can we do that?
 Output:
 
 ```
-Stack { stack: [Integer(30)], base: 0, nested: [] }
+Stack:
+	0 : Integer(30)
 ```
 
 Interesting. We put two integers in the stack, then we called the word `+` and now the stack contains one integer with value 30. What happened here is that, the word `+` popped two integers from the stack, performed an addition, and finally pushed the resulting integer into the stack. And this is how RunPack works, the way we execute subroutines and pass arguments to them.
@@ -111,7 +120,7 @@ There are other basic operations we can perform on the stack. We can remove one 
 Output:
 
 ```
-Stack { stack: [], base: 0, nested: [] }
+Stack:
 ```
 
 Duplicate it with `dup`:
@@ -123,19 +132,26 @@ Duplicate it with `dup`:
 Output:
 
 ```
-Stack { stack: [Integer(123), Integer(123)], base: 0, nested: [] }
+Stack:
+	1 : Integer(123)
+	0 : Integer(123)
 ```
 
 Or `swap` positions:
 
 ```
-'A' 'B' swap print_stack
+'A' 'B' print_stack swap print_stack
 ```
 
 Output:
 
 ```
-Stack { stack: [String("B"), String("A")], base: 0, nested: [] }
+Stack:
+	1 : String("A")
+	0 : String("B")
+Stack:
+	1 : String("B")
+	0 : String("A")
 ```
 
 ### Stack transfers
@@ -160,7 +176,9 @@ Output:
 
 ```
 50
-Stack { stack: [Boolean(false), String("A string")], base: 0, nested: [] }
+Stack:
+	1 : String("A string")
+	0 : Boolean(false)
 ```
 
 First of all, note that in RunPack, the comma is just a word separator, like the space. It has no other meaning and it's used to improve readability.
@@ -182,7 +200,9 @@ The variable in the left side can't be repeaded, but they can appear multiple ti
 Output:
 
 ```
-Stack { stack: [Integer(1), Integer(3)], base: 0, nested: [] }
+Stack:
+	1 : Integer(1)
+	0 : Integer(3)
 ```
 
 Or maybe we want to triple a cell:
@@ -194,12 +214,35 @@ Or maybe we want to triple a cell:
 Output:
 
 ```
-Stack { stack: [Integer(1), Integer(1), Integer(1)], base: 0, nested: [] }
+Stack:
+	2 : Integer(100)
+	1 : Integer(100)
+	0 : Integer(100)
 ```
 
 ### Nested stacks
 
-TODO
+The way we have used the stack until now is linear, we push and pop data into the stack. But the RunPack stack is more powerful than that, and it's actually a stack of stacks.
+
+We can create a new stack, nested into the current stack, and this one will become our new current stack. We do that with the words `(` and `)`:
+
+```
+10 ( 20 print_stack ) print_stack
+```
+
+Output:
+
+```
+Stack:
+	0 : Integer(20)
+Stack:
+	1 : Integer(10)
+	0 : Integer(20)
+```
+
+Explanation: The word `(` opens a new stack nested inside the current one. From now on, this new stack will be our current. When we push `20` we are pushing into the nested stack, and thus, this cell doesn't live in the same stack as the `10` we pushed before, because it's located in the previous stack. That's why in the first `print_stack` we only see the `20`. Then we run the word `)`, that closes a nested stack. When this happens, all data in the current stack goes to the parent stack, in our case, the `20`. that's why the second `print_stack` shoes both, the `10` and the `20`.
+
+Nested stacks are useful for operations that use all data from the stack, because it allows us to demarcate the limits of these operations. For example, the word `flush`, that removes all cells from the stack. We will see more usage examples in the following chapters.
 
 ## 2. Math and Logic
 
