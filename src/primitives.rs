@@ -4,6 +4,8 @@ use super::core::{Pack, Cell, Object, DictEntry, BlockRef, Stack, IntegerType, F
 use hashbrown::HashMap;
 use alloc::{string::String, format};
 
+//TODO: review error codes
+
 pub fn register_primitives(pack: &mut Pack) {
     pack.def_natives(&[
         ("(", open_parenth), (")", close_parenth), ("{", open_curly), ("}", close_curly), ("lex", lex), ("def", def), ("@", at),
@@ -412,7 +414,7 @@ fn type_word(pack: &mut Pack) -> Result<bool, Error> {
         Ok(true)
     }
     else {
-        Err(Error::new("type: Coulnd't get an int".into(), 56))
+        Err(Error::new("type: Stack is empty".into(), 56))
     }
 }
 
