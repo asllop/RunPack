@@ -14,8 +14,9 @@ use runpack::{Pack, Cell, self};
 fn main() {
     println!("RunPack Tutorial\n");
 
+    // YOUR CODE GOES HERE
     let script = r#"
-        "YOUR CODE GOES HERE..."
+        'Hello, World!' print
     "#;
 
     let mut pack = Pack::new_with_prelude(script);
