@@ -86,6 +86,60 @@ Output:
 Stack { stack: [Integer(10), Float(-5.5), Boolean(true), String("Hello")], base: 0, nested: [] }
 ```
 
-All good. Now we want to pop data from the stack, how can we do that?
+All good. Now we want to pop data out from the stack, how can we do that?
+
+```
+10 20 + print_stack
+```
+
+Output:
+
+```
+Stack { stack: [Integer(30)], base: 0, nested: [] }
+```
+
+Interesting. We put two integers in the stack, then we called the word `+` and now the stack contains one integer with value 30. What happened here is that, the word `+` popped two integers from the stack, performed an addition, and finally pushed the resulting integer into the stack. And this is how RunPack works, the way we execute subroutines and pass arguments to them.
+
+There are other basic operations we can perform on the stack. We can remove one data cell calling `drop`:
+
+```
+'hello' drop print_stack
+```
+
+Output:
+
+```
+Stack { stack: [], base: 0, nested: [] }
+```
+
+Duplicate it with `dup`:
+
+```
+123 dup print_stack
+```
+
+Output:
+
+```
+Stack { stack: [Integer(123), Integer(123)], base: 0, nested: [] }
+```
+
+Or `swap` positions:
+
+```
+'A' 'B' swap print_stack
+```
+
+Output:
+
+```
+Stack { stack: [String("B"), String("A")], base: 0, nested: [] }
+```
+
+## Stack transfer
+
+TODO
+
+## Nested stacks
 
 TODO
