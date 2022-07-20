@@ -8,7 +8,7 @@ And one final note: it may take time to get used to a stack-based language, with
 
 ## 0. Setup
 
-All RunPack scripts in this tutorial are supposed to be executed in a program like the following:
+All RunPack scripts in this tutorial have been executed in the following program:
 
 ```rust
 use runpack::{Pack, Cell, self};
@@ -59,7 +59,7 @@ fn print_stack(pack: &mut Pack) -> Result<bool, runpack::Error>  {
 
 The stack is the most important data structure in RunPack. It's used as an intermediate store to pass data from one word to another. In other language's terminology, we would say that it's used to pass arguments to functions, and to get returned values from them.
 
-To push something into the stack we simply execute:
+To push something into the stack we simply do:
 
 ```
 10
@@ -96,7 +96,7 @@ Stack:
 	0 : String("Hello")
 ```
 
-All good. Now we want to pop data out from the stack, how can we do that?
+All good. Now we want to pop data out from the stack. How can we do that?
 
 ```
 10 20 + print_stack
@@ -109,7 +109,7 @@ Stack:
 	0 : Integer(30)
 ```
 
-Interesting. We put two integers in the stack, then we called the word `+` and now the stack contains one integer with value 30. What happened here is that, the word `+` popped two integers from the stack, performed an addition, and finally pushed the resulting integer into the stack. And this is how RunPack works, the way we execute subroutines and pass arguments to them.
+Interesting. We put two integers in the stack, then we called the word `+` and now the stack contains one integer with value 30. The word `+` popped two integers from the stack, performed an addition, and finally pushed the resulting integer into the stack. And this is how RunPack works, the way we execute subroutines and pass arguments to them.
 
 There are other basic operations we can perform on the stack. We can remove one data cell calling `drop`:
 
@@ -154,7 +154,7 @@ Stack:
 	0 : String("A")
 ```
 
-### Stack transfers
+### Stack Transfers
 
 Sometimes it can be hard to work with the stack. Our word needs the arguments in the stack in a certain way, but the current stack state left by the previous words is far from what we want. For these cases we have the stack transfer operator.
 
@@ -181,7 +181,9 @@ Stack:
 	0 : Boolean(false)
 ```
 
-First of all, note that in RunPack, the comma is just a word separator, like the space. It has no other meaning and it's used to improve readability.
+**Beware of the spaces!** In RunPack, the space is the word delimiter. Writing "`[ a`" is totally diferent than writing "`[a`". In the former case we have 2 words, `[` and `a`. In the latter, we have one single word, identified as `[a`.
+
+Also, note that in RunPack, the comma is just a word separator, like the space. It has no other meaning, it's only used to improve readability, and it totally optional.
 
 The stack transfer has the following format:
 
@@ -220,7 +222,7 @@ Stack:
 	0 : Integer(100)
 ```
 
-### Nested stacks
+### Nested Stacks
 
 The way we have used the stack until now is linear, we push and pop data into the stack. But the RunPack stack is more powerful than that, and it's actually a stack of stacks.
 
@@ -240,10 +242,92 @@ Stack:
 	0 : Integer(20)
 ```
 
-Explanation: The word `(` opens a new stack nested inside the current one. From now on, this new stack will be our current. When we push `20` we are pushing into the nested stack, and thus, this cell doesn't live in the same stack as the `10` we pushed before, because it's located in the previous stack. That's why in the first `print_stack` we only see the `20`. Then we run the word `)`, that closes a nested stack. When this happens, all data in the current stack goes to the parent stack, in our case, the `20`. that's why the second `print_stack` shoes both, the `10` and the `20`.
+Explanation: The word `(` opens a new stack nested inside the current one. From now on, this new stack will be our current. When we push `20` we are pushing into the nested stack, and thus, this cell doesn't live in the same stack as the `10` we pushed before, because it's located in the previous stack. That's why in the first `print_stack` we only see the `20`. Then we run the word `)`, that closes a nested stack. When this happens, all data in the current stack goes to the parent stack, in our case, the `20`. that's why the second `print_stack` shows both, the `10` and the `20`.
 
-Nested stacks are useful for operations that use all data from the stack, because it allows us to demarcate the limits of these operations. For example, the word `flush`, that removes all cells from the stack. We will see more usage examples in the following chapters.
+Nested stacks are useful for operations that use all the data from the stack, because it allows us to demarcate the limits of these operations. For example, the word `flush`, that removes all cells from the stack. We will see more usage examples in the following chapters.
 
-## 2. Math and Logic
+## 2. Arithmetic & Logic operations
 
-TODO
+We have already seen some of them. Arithmetic operations can work either with integers or floats, but can't mix them. There are 5, addition, subtraction, multiplication, division, and remainder of a division:
+
+```
+5 2 + print
+5 2 - print
+5 2 * print
+5 2 / print
+5 2 % print
+```
+
+Output:
+
+```
+7
+3
+10
+2
+1
+```
+
+If we need, we can convert between float and integer:
+
+```
+19 float 0.5 + print
+5.5 int print
+```
+
+Output:
+
+```
+19.5
+5
+```
+
+Sometimes an arithmetic operation that is big and complicated can look messy when implemented using these operators. Just look how we would implement `(1+2+3)*(4+5+6)*(7+8+9)`:
+
+```
+1 2 + 3 + 4 5 + 6 + 7 8 + 9 + * *
+```
+
+Pretty ugly, uh?
+
+For this kind of cases we have the sequence operations: `sum` and `prod`:
+
+```
+( ( 1 2 3 sum ) ( 4 5 6 sum ) ( 7 8 9 sum ) prod )
+```
+
+Pretty neat, uh?
+
+This is practical application of the [nested stacks](#nested-stacks). The `sum` word gets all numbers in the stack and add them. Same for `prod`, but with multiplication. Because we want to limit the data available for each operation, we use the words `(` and `)` to create a stack, where we put the data and finally call the operation we want.
+
+Yet again, beware of the spaces!
+
+Finally, the logic operators are pretty simple: `and`, `or`, and `not`. They operate on integers or booleans and the result is either an integer or a boolen:
+
+```
+-1 0 or print
+-1 0 and print
+-1 not print
+true false or print
+true false and print
+true not print
+```
+
+Output:
+
+```
+-1
+0
+0
+true
+false
+false
+```
+
+## 3. Words
+
+TODO: create variables, the block type
+
+## 4. Conditions & Control Flow
+
+TODO: comparation operations, if/else/while

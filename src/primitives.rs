@@ -10,7 +10,7 @@ pub fn register_primitives(pack: &mut Pack) {
     pack.def_natives(&[
         ("(", open_parenth), (")", close_parenth), ("{", open_curly), ("}", close_curly), ("lex", lex), ("def", def), ("@", at),
         ("+", plus), ("-", minus), ("*", star), ("/", slash), ("%", percent), (">", bigger), ("<", smaller), ("=", equal),
-        ("!=", not_equal), (">=", big_equal), ("<=", small_equal), ("&", and), ("|", or), ("!", not), ("if", if_word),
+        ("!=", not_equal), (">=", big_equal), ("<=", small_equal), ("and", and), ("or", or), ("not", not), ("if", if_word),
         ("ifelse", ifelse_word), ("while", while_word), ("[", open_bracket), ("new", new_obj), ("set", set_obj), ("get", get_obj),
         ("key?", key_obj), ("exe", exe), ("int", int), ("float", float), ("type", type_word), ("size", size),
     ]);
