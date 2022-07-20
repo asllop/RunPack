@@ -227,7 +227,7 @@ fn not(pack: &mut Pack) -> Result<bool, Error> {
 }
 
 fn if_word(pack: &mut Pack) -> Result<bool, Error> {
-    if let (Some(Cell::Boolean(cond)), Some(Cell::Block(blk))) = (pack.stack.pop(), pack.stack.pop()) {
+    if let (Some(Cell::Block(blk)), Some(Cell::Boolean(cond))) = (pack.stack.pop(), pack.stack.pop()) {
         if cond {
             pack.run_block(&blk)?;
         }
@@ -239,7 +239,7 @@ fn if_word(pack: &mut Pack) -> Result<bool, Error> {
 }
 
 fn ifelse_word(pack: &mut Pack) -> Result<bool, Error> {
-    if let (Some(Cell::Boolean(cond)), Some(Cell::Block(false_blk)), Some(Cell::Block(true_blk))) = (pack.stack.pop(), pack.stack.pop(), pack.stack.pop()) {
+    if let (Some(Cell::Block(false_blk)), Some(Cell::Block(true_blk)), Some(Cell::Boolean(cond))) = (pack.stack.pop(), pack.stack.pop(), pack.stack.pop()) {
         if cond {
             pack.run_block(&true_blk)
         }
@@ -253,7 +253,7 @@ fn ifelse_word(pack: &mut Pack) -> Result<bool, Error> {
 }
 
 fn while_word(pack: &mut Pack) -> Result<bool, Error> {
-    if let (Some(Cell::Block(cond_blk)), Some(Cell::Block(loop_blk))) = (pack.stack.pop(), pack.stack.pop()) {
+    if let (Some(Cell::Block(loop_blk)), Some(Cell::Block(cond_blk))) = (pack.stack.pop(), pack.stack.pop()) {
         loop {
             pack.run_block(&cond_blk)?;
             if let Some(Cell::Boolean(cond)) = pack.stack.pop() {
@@ -369,6 +369,8 @@ fn key_obj(pack: &mut Pack) -> Result<bool, Error> {
     }
     Ok(true)
 }
+
+//TODO: map: traverse object key by key
 
 fn exe(pack: &mut Pack) -> Result<bool, Error> {
     match pack.stack.pop() {

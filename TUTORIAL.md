@@ -181,9 +181,9 @@ Stack:
 	0 : Boolean(false)
 ```
 
-**Beware of the spaces!** In RunPack, the space is the word delimiter. Writing "`[ a`" is totally diferent than writing "`[a`". In the former case we have 2 words, `[` and `a`. In the latter, we have one single word, identified as `[a`.
+**Beware of the spaces!** In RunPack, the space is the word delimiter. Writing "`[ a`" is a totally different thing than writing "`[a`". In the former case we have 2 words, `[` and `a`. In the latter, we have only one word, identified as `[a`.
 
-Also, note that in RunPack, the comma is just a word separator, like the space. It has no other meaning, it's only used to improve readability, and it totally optional.
+Also, note that in RunPack, the comma is just a word separator, like the space. It has no other meaning, it's only used to improve readability, and is optional.
 
 The stack transfer has the following format:
 
@@ -248,7 +248,7 @@ Nested stacks are useful for operations that use all the data from the stack, be
 
 ## 2. Arithmetic & Logic operations
 
-We have already seen some of them. Arithmetic operations can work either with integers or floats, but can't mix them. There are 5, addition, subtraction, multiplication, division, and remainder of a division:
+We have already seen some of them. Arithmetic operations can work either with integers or floats, but can't mix them. There are five: addition, subtraction, multiplication, division, and remainder of a division.
 
 ```
 5 2 + print
@@ -298,7 +298,7 @@ For this kind of cases we have the sequence operations: `sum` and `prod`:
 
 Pretty neat, uh?
 
-This is practical application of the [nested stacks](#nested-stacks). The `sum` word gets all numbers in the stack and add them. Same for `prod`, but with multiplication. Because we want to limit the data available for each operation, we use the words `(` and `)` to create a stack, where we put the data and finally call the operation we want.
+This is the typical case where [nested stacks](#nested-stacks) are useful. The `sum` word gets all numbers in the stack and adds them. Same for `prod`, but with multiplication. Because we want to limit the data available for each operation, we use the words `(` and `)` to create a stack, where we put the data and finally call the operation we want.
 
 Yet again, beware of the spaces!
 
@@ -326,8 +326,102 @@ false
 
 ## 3. Words
 
-TODO: create variables, the block type
+Earlier in this tutorial we said that a word is akin to a function in other programming languages. That is partially true, because a word is more than a function. A word is also a variable, and a reference, and an object. A word is just a word and we will see now how to define and use them.
+
+To define a word we use the word `def` followed by a name:
+
+```
+'Andreu' def name
+555555 def phone
+```
+
+This syntax may look contradictory for a language that uses Reverse Polish Notation, it seems to violate the rules. The word `def` uses an argument that is in the stack, that's good, but then it uses another argument, the word name, that is not in the stack. For now let's leave it, we will understand what's going on once we get into the [Concat](#the-concat).
+
+Now, what happens when we execute these words?
+
+```
+'Andreu' def name
+555555 def phone
+
+name
+phone
+print_stack
+```
+
+Output:
+
+```
+Stack:
+	1 : String("Andreu")
+	0 : Integer(555555)
+```
+
+The values we assigned to these words are now in the stack. These words act as a constant or a variable, executing `name` is equivalent to execute `'Andreu'`.
+
+Before proceeding to the next step, we will talk about a new data type: the Block. To define a block we use the words `{` and `}` (I know I'm being a bit of a nagger, but please, beware of the spaces):
+
+```
+{ 'We are in a block' print }
+print_stack
+```
+
+Output:
+
+```
+Stack:
+	0 : Block(BlockRef { pos: 115, len: 3 })
+```
+
+A block is a piece of code, but is also a data type and can be treated as data. It can be pushed into the stack, sent to other words, and returned by them. And of course, stored in a word definition:
+
+```
+{ 'We are in a block' print } def we_are
+we_are
+```
+
+Output:
+
+```
+We are in a block
+```
+
+And here it is. When we store a block in a word, and then execute this word, we don't get the block in the stack, as it happened with the string and the integer in the previous example. In this case, RunPack executes the code in the block.
+
+See another example, we will define a word to double an integer:
+
+```
+{ 2 * } def double_i
+120 double_i print
+```
+
+Output:
+
+```
+240
+```
 
 ## 4. Conditions & Control Flow
 
 TODO: comparation operations, if/else/while
+
+## 5. Objects
+
+TODO
+
+## 6. Advanced Topics
+
+### The Cell
+
+TODO
+
+### The Dictionary
+
+TODO
+
+### The Concat
+
+TODO
+
+### The Return Stack
+
+TODO
