@@ -473,11 +473,11 @@ RunPack offers a very simple but effective way to define lexicons more easily:
 
 ```
 lex 'countdown.'
-    { dup 0 > } def count_zero?
-    { dup print } def print_count
-    { 1 - } def dec_count
-    { drop } def clean_up
-    { { countdown.count_zero? } { countdown.print_count countdown.dec_count } while countdown.clean_up } def go
+    { dup 0 > } def zero?
+    { dup print } def print
+    { 1 - } def dec
+    { drop } def clean
+    { { countdown.zero? } { countdown.print countdown.dec } while countdown.clean } def go
 lex ''
 
 5 countdown.go
