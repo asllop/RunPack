@@ -400,9 +400,34 @@ Output:
 240
 ```
 
+### Stack Effect Comments
+
+Because of the dynamic nature of RunPack and the use of the stack, there is no way to know the arguments a word takes and the results it produces without insopecting and understending the code. For this reason we have the stack effect comments, to describe in a fast and readable way how a word affects the stack. The format for this comments is:
+
+```
+"word_name a,b,c -> x,y,z"
+{ . . . } def word_name
+```
+
+Where a, b, and c, are the contents of the stack before executing the word, and that are used by it, and x, y, and z, are the contents of the stack after executing the word, and that are produced by it.
+
+Let's take the `x2` word we previously defined:
+
+```
+"x2 a -> b"
+{ 2 * } def x2
+```
+
+This comment is telling us that this word takes an argument, called `a`, and consumes it. And as a results it pushes another element, `b`. We could improve it a bit by specifying the type of the arguments and the calculation performed:
+
+```
+"x2 int -> 2*int"
+{ 2 * } def x2
+```
+
 ## 4. Control Flow
 
-The previous word we implemented to double a number will only work with integers, and that's a problem, because arithmetic operators should accept integers and floats. How could we create a version of it that works with both types?
+The `x2` word we implemented in the previous chapter will only work with integers, and that's a problem, because arithmetic operators should accept integers and floats. How could we create a version of it that works with both types?
 
 ```
 { is_int? { 2 } { 2.0 } ifelse * } def x2
@@ -434,7 +459,7 @@ It's bigger than ten
 
 Here we introduced one more word, the `>`. This word is a comparator, it gets two cells, compares if the first is bigger thant the second, and returns a boolean. There are 6 comparators: `=`, `!=`, `>`, `<`, `>=`, and `<=`.
 
-And the last control flow word is `while`. It works pretty like `if`, but the condition instead of being a boolean, is a block that must return a boolean:
+And the last control flow word is `while`. It works pretty much like `if`, but the condition, instead of being a simple boolean, is a block that must return a boolean:
 
 ```
 { { dup 0 > } { dup print, -- } while drop } def countdown
@@ -451,11 +476,11 @@ Output:
 1
 ```
 
-This word operates over the integer in the stack, that's why we use `dup` before comparing and printing, to avoid consuming the data, that must be used for the next loop iteration. And the final `drop` is to remove the 0 left there after finishing courting down.
+This `countdown` word we just defined, operates over an integer in the stack, that's why we use `dup` before comparing and printing, to avoid consuming the data, that must be used in the next loop iteration. And the final `drop` is to remove the 0 left there after finishing. If you find this code messy or hard to understand, don't worry, it is. In the next section we are going to talk more in depth about it.
 
 ## 5. Lexicons
 
-This section is more about how to structure applications written un RunPack, but it also shows some language features that helps with that. We will start from the `countdown` example in the previous section, and will create an alternative version of it:
+This section is more about how to structure applications written un RunPack. We will start from the `countdown` example used in the previous chapter, and will create an alternative version of it:
 
 ```
 { dup 0 > } def count_zero?
@@ -467,9 +492,13 @@ This section is more about how to structure applications written un RunPack, but
 5 countdown
 ```
 
-Wow, that was pretty verbose, wasn't it? Yes, but look at the `countdown` definition now. Isn't it much more readable? It's almost plain english. We defined four support words before `countdown`. Many, or maybe all, of these words doesn't make sense outside the context of the countdown. They are related, all together compose what Leo Brodie called a *lexicon*, in his indispensable book *"Thinking Forth"* That's the programming style we should use in RunPack. Is the way to create easy to write, read and maintain applications. I like to call it "extreme atomization coding".
+Wow, that was pretty verbose, wasn't it?
 
-RunPack offers a very simple but effective way to define lexicons more easily:
+Yes, but look at the `countdown` definition. Isn't it much more readable now? It's almost plain english. We defined four support words before `countdown`. Many, or maybe all, of these words doesn't make sense outside the context of the countdown. They are related, all together compose what Leo Brodie called a *lexicon*, in his indispensable book *"Thinking Forth"*. 
+
+That's the programming style we should use in RunPack. Is the way to create easy to write, read and maintain applications. We atomize the program into small and simple words with little functionallity, then use these words to create other words with a higher abstraction level, and finally group all them into lexicons.
+
+RunPack offers a really straightforward but effective way to define lexicons:
 
 ```
 lex 'count.'
@@ -483,7 +512,9 @@ lex ''
 5 count.down
 ```
 
-The word `lex` simply defines a prefix that will be added to every word defined with `def`. This way we can avoid name collision, also giving the code the appearance of a hierarchical structure.
+The word `lex` simply sets a prefix that will be added to every word defined with `def`. This way we can avoid name collisions, and also have the appearance of a hierarchical structure in the code.
+
+The most valuable lesson I want you to learn is that a word definition is never too small. Even a word that only contains one word inside it (like `count.clean`), it's worth it if it clarifies the code.
 
 ## 6. Objects
 
