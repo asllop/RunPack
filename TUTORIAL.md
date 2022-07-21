@@ -461,8 +461,8 @@ This section is more about how to structure applications written un RunPack, but
 { dup 0 > } def count_zero?
 { dup print } def print_count
 { 1 - } def dec_count
-{ drop } def clean_up
-{ { count_zero? } { print_count dec_count } while clean_up } def countdown
+{ drop } def count_clean
+{ { count_zero? } { print_count dec_count } while count_clean } def countdown
 
 5 countdown
 ```
@@ -472,15 +472,15 @@ Wow, that was pretty verbose, wasn't it? Yes, but look at the `countdown` defini
 RunPack offers a very simple but effective way to define lexicons more easily:
 
 ```
-lex 'countdown.'
+lex 'count.'
     { dup 0 > } def zero?
     { dup print } def print
     { 1 - } def dec
     { drop } def clean
-    { { countdown.zero? } { countdown.print countdown.dec } while countdown.clean } def go
+    { { count.zero? } { count.print count.dec } while count.clean } def down
 lex ''
 
-5 countdown.go
+5 count.down
 ```
 
 The word `lex` simply defines a prefix that will be added to every word defined with `def`. This way we can avoid name collision, also giving the code the appearance of a hierarchical structure.
