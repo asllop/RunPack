@@ -387,11 +387,11 @@ We are in a block
 
 And here it is. When we store a block in a word, and then execute this word, we don't get the block in the stack, as it happened with the string and the integer in the previous example. In this case, RunPack executes the code in the block.
 
-See another example, we will define a word to double an integer:
+See another example, we will define a word to double a number:
 
 ```
-{ 2 * } def double_i
-120 double_i print
+{ 2 * } def x2
+120 x2 print
 ```
 
 Output:
@@ -400,15 +400,96 @@ Output:
 240
 ```
 
-## 4. Conditions & Control Flow
+## 4. Control Flow
 
-TODO: comparation operations, if/else/while
+The previous word we implemented to double a number will only work with integers, and that's a problem, because arithmetic operators should accept integers and floats. How could we create a version of it that works with both types?
 
-## 5. Objects
+```
+{ is_int? { 2 } { 2.0 } ifelse * } def x2
+5 x2 print
+5.2 x2 print
+```
+
+Output:
+
+```
+10
+10.4
+```
+
+We introduced multiple new things here. First, the `is_int?` word, checks if the type of the next cell in the stack is an integer, and puts a boolean with the result. Then we have the `ifelse`. This words gets from the stack a boolean, and two blocks, the first block will be executed if the boolean is `true`, and the second if it's `false`.
+
+There is a simplified version that only has the true block:
+
+```
+{ 10 > { 'It\'s bigger than ten' print } if } def >10
+100 >10
+```
+
+Output:
+
+```
+It's bigger than ten
+```
+
+Here we introduced one more word, the `>`. This word is a comparator, it gets two cells, compares if the first is bigger thant the second, and returns a boolean. There are 6 comparators: `=`, `!=`, `>`, `<`, `>=`, and `<=`.
+
+And the last control flow word is `while`. It works pretty like `if`, but the condition instead of being a boolean, is a block that must return a boolean:
+
+```
+{ { dup 0 > } { dup print, -- } while drop } def countdown
+5 countdown
+```
+
+Output:
+
+```
+5
+4
+3
+2
+1
+```
+
+This word operates over the integer in the stack, that's why we use `dup` before comparing and printing, to avoid consuming the data, that must be used for the next loop iteration. And the final `drop` is to remove the 0 left there after finishing courting down.
+
+## 5. Lexicons
+
+This section is more about how to structure applications written un RunPack, but it also shows some language features that helps with that. We will start from the `countdown` example in the previous section, and will create an alternative version of it:
+
+```
+{ dup 0 > } def count_zero?
+{ dup print } def print_count
+{ 1 - } def dec_count
+{ drop } def clean_up
+{ { count_zero? } { print_count dec_count } while clean_up } def countdown
+
+5 countdown
+```
+
+Wow, that was pretty verbose, wasn't it? Yes, but look at the `countdown` definition now. Isn't it much more readable? It's almost plain english. We defined four support words before `countdown`. Many, or maybe all, of these words doesn't make sense outside the context of the countdown. They are related, all together compose what Leo Brodie called a *lexicon*, in his indispensable book *"Thinking Forth"* That's the programming style we should use in RunPack. Is the way to create easy to write, read and maintain applications. I like to call it "extreme atomization coding".
+
+RunPack offers a very simple but effective way to define lexicons more easily:
+
+```
+lex 'countdown.'
+    { dup 0 > } def count_zero?
+    { dup print } def print_count
+    { 1 - } def dec_count
+    { drop } def clean_up
+    { { countdown.count_zero? } { countdown.print_count countdown.dec_count } while countdown.clean_up } def go
+lex ''
+
+5 countdown.go
+```
+
+The word `lex` simply defines a prefix that will be added to every word defined with `def`. This way we can avoid name collision, also giving the code the appearance of a hierarchical structure.
+
+## 6. Objects
 
 TODO
 
-## 6. Advanced Topics
+## 7. Advanced Topics
 
 ### The Cell
 

@@ -370,6 +370,30 @@ fn key_obj(pack: &mut Pack) -> Result<bool, Error> {
     Ok(true)
 }
 
+/*
+Podem executar blocs de codi dins un objecte:
+
+( 'hola' { 'Hola!!' print } , 'adeu' { 'Adéu!!' print } new ) def foos
+'hola' @ foos get exe
+'adeu' @ foos get exe
+
+Fins i tot fer servir paraules com a claus:
+
+( @ + { 'Suma' print } , @ - { 'Resta' print } new ) def math
+@ + @ math get exe
+@ - @ math get exe
+
+Per la sintaxi és engorrosa. Seria millor crear una paraula nadiua '.' per a poder fer:
+
+    @ foos . 'hola'
+    @ foos . 'adeu'
+    @ math . +
+    @ math . -
+
+Aquesta paraula podria passar a la pila la ref de l'objecte, així seria com executar mètodes d'un objecte.
+Si no és bloc, en comptes d'executar ho fica a la pila.
+*/
+
 //TODO: map: traverse object key by key
 
 fn exe(pack: &mut Pack) -> Result<bool, Error> {
