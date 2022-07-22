@@ -486,8 +486,8 @@ This section is more about how to structure applications written un RunPack. We 
 { dup 0 > } def count_zero?
 { dup print } def print_count
 { 1 - } def dec_count
-{ drop } def count_clean
-{ { count_zero? } { print_count dec_count } while count_clean } def countdown
+{ drop } def clean_count
+{ { count_zero? } { print_count dec_count } while clean_count } def countdown
 
 5 countdown
 ```
@@ -496,9 +496,9 @@ Wow, that was pretty verbose, wasn't it?
 
 Yes, but look at the `countdown` definition. Isn't it much more readable now? It's almost plain english. We defined four support words before `countdown`. Many, or maybe all, of these words doesn't make sense outside the context of the countdown. They are related, all together compose what Leo Brodie called a *lexicon*, in his indispensable book *"Thinking Forth"*. 
 
-That's the programming style we should use in RunPack. Is the way to create easy to write, read and maintain applications. We atomize the program into small and simple words with little functionallity, then use these words to create other words with a higher abstraction level, and finally group all them into lexicons.
+That's the programming style we should use in RunPack. Is the way to create easy to write, read and maintain applications. We atomize the program into small and simple words with little functionallity, then use these words to create other words with a higher abstraction level, and finally group them into lexicons.
 
-RunPack offers a really straightforward but effective way to define lexicons:
+RunPack offers a really straightforward but effective way to define lexicons, the word `lex`. We can rewrite the countdown program to use it:
 
 ```
 lex 'count.'
@@ -514,17 +514,33 @@ lex ''
 
 The word `lex` simply sets a prefix that will be added to every word defined with `def`. This way we can avoid name collisions, and also have the appearance of a hierarchical structure in the code.
 
-The most valuable lesson I want you to learn is that a word definition is never too small. Even a word that only contains one word inside it (like `count.clean`), it's worth it if it clarifies the code.
+One of the most valuable lessons you should learn from these examples is that a word definition is never too small. Even a word that only contains one word inside it (like `count.clean`), it's worth it if it clarifies the code.
 
-## 6. Objects
+This approach is also very flexible. Imagine that, after we finished this countdown program, we decide that we want it to work with a variable, instead of an argument in the stack. We won't need to change the main word, `down`, at all. We only need to adapt the definitions of the support words:
 
-TODO: create, set, get, and exe
+```
+lex 'count.'
+    0 def var
+    { count.var 0 > } def zero?
+    { count.var print } def print
+    { count.var 1 - def count.var } def dec
+    { 0 def count.var } def clean
+    { { count.zero? } { count.print count.dec } while count.clean } def down
+lex ''
 
-### Memory model
+5 def count.var
+count.down
+```
 
-TODO: clone model, why there is no garbage collector
+## 6. Memory Model
 
-## 7. Advanced Topics
+TODO: clone model, references to words, why there is no garbage collector. Introduction to the next section, objects.
+
+## 7. Objects
+
+TODO: create, set, get, etc
+
+## 8. Advanced Topics
 
 ### The Cell
 
