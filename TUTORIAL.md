@@ -483,11 +483,11 @@ This `countdown` word we just defined, operates over an integer in the stack, th
 This section is more about how to structure applications written un RunPack. We will start from the `countdown` example used in the previous chapter, and will create an alternative version of it:
 
 ```
-{ dup 0 > } def count_zero?
+{ dup 0 > } def count_continue?
 { dup print } def print_count
 { 1 - } def dec_count
 { drop } def clean_count
-{ { count_zero? } { print_count dec_count } while clean_count } def countdown
+{ { count_continue? } { print_count dec_count } while clean_count } def countdown
 
 5 countdown
 ```
@@ -502,11 +502,11 @@ RunPack offers a really straightforward but effective way to define lexicons, th
 
 ```
 lex 'count.'
-    { dup 0 > } def zero?
+    { dup 0 > } def continue?
     { dup print } def print
     { 1 - } def dec
     { drop } def clean
-    { { count.zero? } { count.print count.dec } while count.clean } def down
+    { { count.continue? } { count.print count.dec } while count.clean } def down
 lex ''
 
 5 count.down
@@ -516,23 +516,27 @@ The word `lex` simply sets a prefix that will be added to every word defined wit
 
 One of the most valuable lessons you should learn from these examples is that a word definition is never too small. Even a word that only contains one word inside it (like `count.clean`), it's worth it if it clarifies the code.
 
-This approach is also very flexible. Imagine that, after we finished this countdown program, we decide that we want it to work with a variable, instead of an argument in the stack. We won't need to change the main word, `down`, at all. We only need to adapt the definitions of the support words:
+This approach is also very flexible. Imagine that, after we finished this countdown program, we decide that we want it to work with a variable, instead of an argument in the stack:
 
 ```
 lex 'count.'
     0 def var
-    { count.var 0 > } def zero?
+    { count.var 0 > } def continue?
     { count.var print } def print
     { count.var 1 - def count.var } def dec
     { 0 def count.var } def clean
-    { { count.zero? } { count.print count.dec } while count.clean } def down
+    { { count.continue? } { count.print count.dec } while count.clean } def down
 lex ''
 
 5 def count.var
 count.down
 ```
 
+Note that we didn't change the main word, `down`, at all. We only adapted the definitions of the support words, but the main part, the first thing one will read to understand what does the module "countdown" do, remains the same.
+
 ## 6. Memory Model
+
+This section is a bit tedious, but is necessary and will be short, I promise.
 
 TODO: clone model, references to words, why there is no garbage collector. Introduction to the next section, objects.
 
