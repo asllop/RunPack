@@ -4,7 +4,6 @@ use super::core::{Pack, Cell, Object, DictEntry, BlockRef, Stack, IntegerType, F
 use hashbrown::HashMap;
 use alloc::{string::String, format};
 
-//TODO: review error codes: instead of a code for each error, a code for a category of errors.
 // Error codes in the primitives are 1XXX.
 // - Stack underflow (1000)
 // - Couldn't find a closing block (1001)
@@ -31,7 +30,7 @@ fn open_parenth(pack: &mut Pack) -> Result<bool, Error> {
 
 fn close_parenth(pack: &mut Pack) -> Result<bool, Error> {
     if let None = pack.stack.end_stack() {
-        Err(Error::new("close_parenth: Stack level undeflow".into(), 2))
+        Err(Error::new("close_parenth: Stack level undeflow".into(), 1000))
     }
     else {
         Ok(true)
@@ -58,7 +57,7 @@ fn open_curly(pack: &mut Pack) -> Result<bool, Error> {
             }
         }
         else {
-            return Err(Error::new("open_curly: Reached the end and didn't find a closing block".into(), 3));
+            return Err(Error::new("open_curly: Reached the end and didn't find a closing block".into(), 1001));
         }
     }
     Ok(true)
@@ -70,7 +69,7 @@ fn close_curly(pack: &mut Pack) -> Result<bool, Error> {
         Ok(true)
     }
     else {
-        Err(Error::new("close_curly: Return stack underflow".into(), 4))
+        Err(Error::new("close_curly: Return stack underflow".into(), 1000))
     }
 }
 
@@ -80,7 +79,7 @@ fn lex(pack: &mut Pack) -> Result<bool, Error> {
         Ok(true)
     }
     else {
-        return Err(Error::new("lex: couldn't find string".into(), 14));
+        return Err(Error::new("lex: couldn't find string".into(), 1003));
     }
 }
 
@@ -94,11 +93,11 @@ fn def(pack: &mut Pack) -> Result<bool, Error> {
             pack.dictionary.data(word, cell);
         }
         else {
-            return Err(Error::new("def: Expecting a block or a cell".into(), 5));
+            return Err(Error::new("def: Expecting a block or a cell".into(), 1005));
         }
     }
     else {
-        return Err(Error::new("def: Expecting a word in the Concat".into(), 6));
+        return Err(Error::new("def: Expecting a word in the Concat".into(), 1003));
     }
     Ok(true)
 }
@@ -109,7 +108,7 @@ fn at(pack: &mut Pack) -> Result<bool, Error> {
         Ok(true)
     }
     else {
-        return Err(Error::new("at: Expecting a word in the Concat".into(), 25));
+        return Err(Error::new("at: Expecting a word in the Concat".into(), 1003));
     }
 }
 
@@ -122,7 +121,7 @@ fn two_num_op(stack: &mut Stack, int_op: fn(IntegerType, IntegerType) -> Integer
         stack.push(Cell::Float(flt_op(*flt_a, *flt_b)));
     }
     else {
-        return Err(Error::new("two_num_op: Expecting two numbers of the same type".into(), 7));
+        return Err(Error::new("two_num_op: Expecting two numbers of the same type".into(), 1002));
     }
     Ok(true)
 }
@@ -139,7 +138,7 @@ fn two_num_or_str_op(stack: &mut Stack, int_op: fn(IntegerType, IntegerType) -> 
         stack.push(Cell::String(str_op(str_a, str_b)));
     }
     else {
-        return Err(Error::new("two_num_op: Expecting two numbers of the same type".into(), 7));
+        return Err(Error::new("two_num_op: Expecting two numbers of the same type".into(), 1002));
     }
     Ok(true)
 }
@@ -170,7 +169,7 @@ fn two_cell_cmp(pack: &mut Pack, op: fn(Cell, Cell) -> bool) -> Result<bool, Err
         Ok(true)
     }
     else {
-        Err(Error::new("two_cell_cmp: Couldn't get two cells".into(), 25))
+        Err(Error::new("two_cell_cmp: Couldn't get two cells".into(), 1002))
     }
 }
 
@@ -207,7 +206,7 @@ fn two_logic_op(stack: &mut Stack, op_bool: fn(bool, bool) -> bool, op_int: fn(I
         stack.push(Cell::Integer(op_int(*int_a, *int_b)));
     }
     else {
-        return Err(Error::new("two_logic_op: Expecting two booleans or two integers".into(), 8));
+        return Err(Error::new("two_logic_op: Expecting two booleans or two integers".into(), 1002));
     }
     Ok(true)
 }
@@ -229,7 +228,7 @@ fn not(pack: &mut Pack) -> Result<bool, Error> {
         pack.stack.push(Cell::Integer(!a));
     }
     else {
-        return Err(Error::new("not: Expecting a boolean or an integer".into(), 9));
+        return Err(Error::new("not: Expecting a boolean or an integer".into(), 1002));
     }
     Ok(true)
 }
@@ -241,7 +240,7 @@ fn if_word(pack: &mut Pack) -> Result<bool, Error> {
         }
     }
     else {
-        return Err(Error::new("ifelse: couldn't find condition and 1 block".into(), 10));
+        return Err(Error::new("ifelse: couldn't find condition and 1 block".into(), 1002));
     }
     Ok(true)
 }
@@ -256,7 +255,7 @@ fn ifelse_word(pack: &mut Pack) -> Result<bool, Error> {
         }
     }
     else {
-        Err(Error::new("ifelse: couldn't find condition and 2 blocks".into(), 11))
+        Err(Error::new("ifelse: couldn't find condition and 2 blocks".into(), 1002))
     }
 }
 
@@ -273,12 +272,12 @@ fn while_word(pack: &mut Pack) -> Result<bool, Error> {
                 }
             }
             else {
-                return Err(Error::new("while: condition didn't produce a bool".into(), 12));
+                return Err(Error::new("while: condition didn't produce a bool".into(), 1005));
             }
         }
     }
     else {
-        return Err(Error::new("while: couldn't find 2 blocks".into(), 13));
+        return Err(Error::new("while: couldn't find 2 blocks".into(), 1002));
     }
     Ok(true)
 }
@@ -294,7 +293,7 @@ fn open_bracket(pack: &mut Pack) -> Result<bool, Error> {
                 vars.insert(w.clone(), cell);
             }
             else {
-                return Err(Error::new("open_bracket: stack is empty".into(), 15));
+                return Err(Error::new("open_bracket: stack is empty".into(), 1002));
             }
         }
     }
@@ -307,7 +306,7 @@ fn open_bracket(pack: &mut Pack) -> Result<bool, Error> {
                 pack.stack.push(k.clone());
             }
             else {
-                return Err(Error::new("open_bracket: Couldn't find variable name".into(), 16));
+                return Err(Error::new("open_bracket: Couldn't find variable name".into(), 1002));
             }
         }
     }
@@ -323,7 +322,7 @@ fn new_obj(pack: &mut Pack) -> Result<bool, Error> {
         pack.stack.push(Cell::Object(obj));
     }
     else {
-        return Err(Error::new("new: Stack must contain key-value pairs".into(), 17));
+        return Err(Error::new("new: Stack must contain key-value pairs".into(), 1002));
     }
     Ok(true)
 }
@@ -334,11 +333,11 @@ fn set_obj(pack: &mut Pack) -> Result<bool, Error> {
             obj.map.insert(key, val);
         }
         else {
-            return Err(Error::new(format!("set: dictionary doesn't contain an Object for word '{}'", w), 18));
+            return Err(Error::new(format!("set: dictionary doesn't contain an Object for word '{}'", w), 1006));
         }
     }
     else {
-        return Err(Error::new("set: Couldn't get a key-value pair and a word".into(), 19));
+        return Err(Error::new("set: Couldn't get a key-value pair and a word".into(), 1002));
     }
     Ok(true)
 }
@@ -350,15 +349,15 @@ fn get_obj(pack: &mut Pack) -> Result<bool, Error> {
                 pack.stack.push(val.clone());
             }
             else {
-                return Err(Error::new("get: key doesn't exist in object".into(), 20));
+                return Err(Error::new("get: key doesn't exist in object".into(), 1006));
             }
         }
         else {
-            return Err(Error::new(format!("get: dictionary doesn't contain an Object for word '{}'", w), 21));
+            return Err(Error::new(format!("get: dictionary doesn't contain an Object for word '{}'", w), 1006));
         }
     }
     else {
-        return Err(Error::new("get: Couldn't get a value and a word".into(), 22));
+        return Err(Error::new("get: Couldn't get a value and a word".into(), 1002));
     }
     Ok(true)
 }
@@ -369,11 +368,11 @@ fn key_obj(pack: &mut Pack) -> Result<bool, Error> {
             pack.stack.push(Cell::Boolean(obj.map.contains_key(&key)));
         }
         else {
-            return Err(Error::new(format!("key: dictionary doesn't contain an Object for word '{}'", w), 23));
+            return Err(Error::new(format!("key: dictionary doesn't contain an Object for word '{}'", w), 1006));
         }
     }
     else {
-        return Err(Error::new("key: Couldn't get a value and a word".into(), 24));
+        return Err(Error::new("key: Couldn't get a value and a word".into(), 1002));
     }
     Ok(true)
 }
@@ -439,7 +438,7 @@ fn exe(pack: &mut Pack) -> Result<bool, Error> {
     match pack.stack.pop() {
         Some(Cell::Block(blk)) => pack.run_block(&blk),
         Some(Cell::Word(w)) => pack.exec(&w),
-        _ => Err(Error::new("exe: Couldn't get a word".into(), 50)),
+        _ => Err(Error::new("exe: Couldn't get a word".into(), 1002)),
     }
 }
 
@@ -449,7 +448,7 @@ fn int(pack: &mut Pack) -> Result<bool, Error> {
         Ok(true)
     }
     else {
-        Err(Error::new("int: Coulnd't get a float".into(), 55))
+        Err(Error::new("int: Coulnd't get a float".into(), 1002))
     }
 }
 
@@ -459,7 +458,7 @@ fn float(pack: &mut Pack) -> Result<bool, Error> {
         Ok(true)
     }
     else {
-        Err(Error::new("int: Coulnd't get an int".into(), 56))
+        Err(Error::new("int: Coulnd't get an int".into(), 1002))
     }
 }
 
@@ -479,7 +478,7 @@ fn type_word(pack: &mut Pack) -> Result<bool, Error> {
         Ok(true)
     }
     else {
-        Err(Error::new("type: Stack is empty".into(), 56))
+        Err(Error::new("type: Stack is empty".into(), 1002))
     }
 }
 
