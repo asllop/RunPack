@@ -5,7 +5,22 @@ fn main() {
 
     // YOUR CODE GOES HERE
     let script = r#"
-    10 ( 20 print_stack ) print_stack
+        (
+            @ + { dup : val_a, swap : val_b, + }
+            @ hi { 'Hi!' print }
+            @ val_a 10
+            @ val_b 20
+            'name' 'Andreu'
+            new
+        ) def my_obj
+
+        @ my_obj : hi
+        @ my_obj : val_a print
+        @ my_obj : val_b print
+        @ my_obj : 'name' print
+        "Call + passing my_obj in the stack"
+        @ my_obj . + print
+        print_stack
     "#;
 
     let mut pack = Pack::new_with_prelude(script);
@@ -87,10 +102,10 @@ fn print_stack(pack: &mut Pack) -> Result<bool, runpack::Error>  {
 //         'After comment' print
 //         print_stack
 //         ---
-//         { 'Is true!' print } { 'Is false!' print } ( 10 100 > ) ifelse
-//         { 'Is true!' print } { 'Is false!' print } ( 10 0 > ) ifelse
-//         { 'Is true!' print } ( 10 0 > ) if
-//         { 'Is true!' print } ( 10 1000 > ) if
+//         ( 10 100 > ) { 'Is true!' print } { 'Is false!' print } ifelse
+//         ( 10 0 > ) { 'Is true!' print } { 'Is false!' print } ifelse
+//         ( 10 0 > ) { 'Is true!' print } if
+//         ( 10 1000 > ) { 'Is true!' print } if
 //         ---
 //         'The Guess Game' print
 //         lex 'guess.'
@@ -98,13 +113,13 @@ fn print_stack(pack: &mut Pack) -> Result<bool, runpack::Error>  {
 
 //             "is_correct? ( a:Int b c -- b c d:Bool )"
 //             {
-//                 [ c b a : b c a ] guess.hidden =
+//                 guess.hidden =
 //             }
 //             def is_correct?
 
 //             "try ( a:Int -- )"
 //             {
-//                 { 'You found it!' print } { 'Nope :(' print } guess.is_correct? ifelse
+//                 guess.is_correct? { 'You found it!' print } { 'Nope :(' print } ifelse
 //             }
 //             def try
 //         lex ''
@@ -127,18 +142,19 @@ fn print_stack(pack: &mut Pack) -> Result<bool, runpack::Error>  {
 //         { num print, ( num -- ) def num } { num -1 > } while
 //         print_stack
 //         ---
-//         10 20 30 40 [ a b c d : b d ]
+//         10 20 30 40 [ a b c d | b d ]
 //         print_stack
 //         ---
-//         [ a b : ] "2 drops"
+//         [ a b | ] "2 drops"
 //         print_stack
 //         22 dup
 //         print_stack
 //         1 2 swap
 //         print_stack
-//         [ a b c d : ] "4 drops"
+//         [ a b c d | ] "4 drops"
 //         print_stack
 //         ---
+
 //         ( 'name' 'Andreu','age' 39 new ) def my_obj
 //         'name' @ my_obj get print
 //         'name','Joe' @ my_obj set
@@ -146,6 +162,22 @@ fn print_stack(pack: &mut Pack) -> Result<bool, runpack::Error>  {
 //         'name' @ my_obj key? print
 //         'anything' @ my_obj key? print
 //         print_stack
+
+//         (
+//             @ + { 'Suma' print }
+//             @ - { 'Resta' print }
+//             @ val_a 10
+//             @ val_b 20
+//             'name' 'Andreu'
+//             new
+//         ) def my_obj
+
+//         @ my_obj : +
+//         @ my_obj : -
+//         @ my_obj : val_a print
+//         @ my_obj : val_b print
+//         @ my_obj : 'name' print
+
 //         '--- Arrays ---' print
 //         ( 0 'Zero', 1 555, 2 123.5 3 ( 'name' 'Andreu' new ) new ) def arr
 //         0 @ arr get print
@@ -162,7 +194,7 @@ fn print_stack(pack: &mut Pack) -> Result<bool, runpack::Error>  {
 //         ---
 //         "Get fractional part of a float"
 //         13.5 fract type
-//         print_stack [ a b : ]
+//         print_stack [ a b | ]
 //         ---
 //         'Are the two strings equal?' print
 //         'hola' 'hola' = print

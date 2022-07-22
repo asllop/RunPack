@@ -1,11 +1,11 @@
 pub const PRELUDE: &str = r#"
     "--- Stack ---"
     "drop a -> "
-    { [ a : ] } def drop
+    { [ a | ] } def drop
     "dup a -> a,a"
-    { [ a : a a ] } def dup
+    { [ a | a a ] } def dup
     "swap a,b -> b,a"
-    { [ a b : a b ] } def swap
+    { [ a b | a b ] } def swap
     "flush a,b,c,..,N -> "
     { { size 0 > } { drop } while } def flush
 

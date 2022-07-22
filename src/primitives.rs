@@ -4,7 +4,15 @@ use super::core::{Pack, Cell, Object, DictEntry, BlockRef, Stack, IntegerType, F
 use hashbrown::HashMap;
 use alloc::{string::String, format};
 
-//TODO: review error codes
+//TODO: review error codes: instead of a code for each error, a code for a category of errors.
+// Error codes in the primitives are 1XXX.
+// - Stack underflow (1000)
+// - Couldn't find a closing block (1001)
+// - Coulodnt get arguments from the stack (1002)
+// - Coulodnt get arguments from the concat (1003)
+// - Couldn't get arguments from stack and concat (1004)
+// - Expected a different data type (1005)
+// - Element not found (1006)
 
 pub fn register_primitives(pack: &mut Pack) {
     pack.def_natives(&[
@@ -12,7 +20,7 @@ pub fn register_primitives(pack: &mut Pack) {
         ("+", plus), ("-", minus), ("*", star), ("/", slash), ("%", percent), (">", bigger), ("<", smaller), ("=", equal),
         ("!=", not_equal), (">=", big_equal), ("<=", small_equal), ("and", and), ("or", or), ("not", not), ("if", if_word),
         ("ifelse", ifelse_word), ("while", while_word), ("[", open_bracket), ("new", new_obj), ("set", set_obj), ("get", get_obj),
-        ("key?", key_obj), ("exe", exe), ("int", int), ("float", float), ("type", type_word), ("size", size),
+        ("key?", key_obj), (":", colon), (".", period), ("exe", exe), ("int", int), ("float", float), ("type", type_word), ("size", size),
     ]);
 }
 
@@ -278,7 +286,7 @@ fn while_word(pack: &mut Pack) -> Result<bool, Error> {
 fn open_bracket(pack: &mut Pack) -> Result<bool, Error> {
     let mut vars: HashMap<String, Cell> = HashMap::with_capacity(16);
     while let Some(Cell::Word(w)) = pack.concat.next() {
-        if w == ":" {
+        if w == "|" {
             break;
         }
         else {
@@ -370,29 +378,60 @@ fn key_obj(pack: &mut Pack) -> Result<bool, Error> {
     Ok(true)
 }
 
+fn colon(pack: &mut Pack) -> Result<bool, Error> {
+    if let (Some(Cell::Word(w)), Some(key)) = (pack.stack.pop(), pack.concat.next()) {
+        if let Some(DictEntry::Data(Cell::Object(obj))) = pack.dictionary.dict.get(&w) {
+            if let Some(val) = obj.map.get(&key) {
+                match val {
+                    Cell::Integer(_) | Cell::Float(_) | Cell::Boolean(_) | Cell::String(_) | Cell::Object(_) => pack.stack.push(val.clone()),
+                    Cell::Word(word) => {
+                        let word = word.clone();
+                        return pack.exec(&word)
+                    },
+                    Cell::Block(blk) => {
+                        let blk = blk.clone();
+                        return pack.run_block(&blk);
+                    },
+                    Cell::Empty => return Err(Error::new("period: cell is empty".into(), 1005)),
+                }
+            }
+            else {
+                return Err(Error::new("period: key doesn't exist in object".into(), 1006));
+            }
+        }
+        else {
+            return Err(Error::new(format!("period: dictionary doesn't contain an Object for word '{}'", w), 1006));
+        }
+    }
+    else {
+        return Err(Error::new("period: Couldn't get an object and a key".into(), 1004));
+    }
+    Ok(true)
+}
+
+fn period(pack: &mut Pack) -> Result<bool, Error> {
+    if let Some(cell) = pack.stack.pop() {
+        pack.stack.push(cell.clone());
+        pack.stack.push(cell);
+        colon(pack)
+    }
+    else {
+        return Err(Error::new("period: Couldn't get a cell".into(), 1004));
+    }
+}
+
 /*
-Podem executar blocs de codi dins un objecte:
+PROPOSAL: Create a word (&) to exec a key from an object in the stack, popping it before exec, and then pushing it again after exec:
+    (
+        @ + { & val_a, & val_b, drop + }
+        @ val_a 10
+        @ val_b 20
+        new
+    ) def my_obj
 
-( 'hola' { 'Hola!!' print } , 'adeu' { 'Adéu!!' print } new ) def foos
-'hola' @ foos get exe
-'adeu' @ foos get exe
-
-Fins i tot fer servir paraules com a claus:
-
-( @ + { 'Suma' print } , @ - { 'Resta' print } new ) def math
-@ + @ math get exe
-@ - @ math get exe
-
-Per la sintaxi és engorrosa. Seria millor crear una paraula nadiua '.' per a poder fer:
-
-    @ foos . 'hola'
-    @ foos . 'adeu'
-    @ math . +
-    @ math . -
-
-Aquesta paraula podria passar a la pila la ref de l'objecte, així seria com executar mètodes d'un objecte.
-Si no és bloc, en comptes d'executar ho fica a la pila.
-*/
+    @ my_obj . + print
+Will this really simplify things?
+ */
 
 //TODO: map: traverse object key by key
 

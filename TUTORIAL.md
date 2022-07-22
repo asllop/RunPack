@@ -168,7 +168,7 @@ And we have to multiply the two floats, so we need them to be consecutive in the
 
 ```
 0.5 'A string' 100.0 false
-[ a, flt_a, b, flt_b : b, a, flt_b, flt_a ] * print
+[ a, flt_a, b, flt_b | b, a, flt_b, flt_a ] * print
 print_stack
 ```
 
@@ -188,15 +188,15 @@ Also, note that in RunPack, the comma is just a word separator, like the space. 
 The stack transfer has the following format:
 
 ```
-[ pop_1 pop_2 ... pop_N : push_1 push_2 ... push_N ]
+[ pop_1 pop_2 ... pop_N | push_1 push_2 ... push_N ]
 ```
 
-The variables at the left of `:` are popped from the stack in the order they appear. The variables at the right of `:` are pushed into the stack in the order they appear. In the example of the two floats, we popped the following variables: `a` getting the value `false`, `flt_a` getting `100.0`, `b` getting `'A string'`, and `flt_b` getting `0.5`. Then we pushed them in the order we see: `b`(`'A string'`), `a`(`false`), `flt_b`(`0.5`) and `flt_a`(`100.0`). As a result, the `*` word will find the two floats in the stack to multiply them, and the other two data cells will remain untouched.
+The variables at the left of `|` are popped from the stack in the order they appear. The variables at the right of `|` are pushed into the stack in the order they appear. In the example of the two floats, we popped the following variables: `a` getting the value `false`, `flt_a` getting `100.0`, `b` getting `'A string'`, and `flt_b` getting `0.5`. Then we pushed them in the order we see: `b`(`'A string'`), `a`(`false`), `flt_b`(`0.5`) and `flt_a`(`100.0`). As a result, the `*` word will find the two floats in the stack to multiply them, and the other two data cells will remain untouched.
 
 The variable in the left side can't be repeaded, but they can appear multiple times in the right side, or don't appear at all. For example, if we have 3 cells and want to remove the one in the middle, we could do:
 
 ```
-1 2 3 [ a b c : c a ] print_stack
+1 2 3 [ a b c | c a ] print_stack
 ```
 
 Output:
@@ -210,7 +210,7 @@ Stack:
 Or maybe we want to triple a cell:
 
 ```
-100 [ a : a a a ] print_stack
+100 [ a | a a a ] print_stack
 ```
 
 Output:
@@ -518,7 +518,11 @@ The most valuable lesson I want you to learn is that a word definition is never 
 
 ## 6. Objects
 
-TODO
+TODO: create, set, get, and exe
+
+### Memory model
+
+TODO: clone model, why there is no garbage collector
 
 ## 7. Advanced Topics
 

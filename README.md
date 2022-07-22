@@ -13,7 +13,7 @@ Language and implementation are designed to be extensible, providing a lightweig
 RunPack is what you are looking for, if you...
 
 1. Need a scripting language for your Rust application.
-2. Want it to be simple, and with a small memory footprint.
+2. Want it to be small and simple.
 3. Look for something fully customizable and hackable.
 4. Appreciate concatenative programming languages.
 
