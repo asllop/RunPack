@@ -1,10 +1,8 @@
 # RunPack Tutorial
 
-To follow this tutorial, some programming skills are assumed. At least a basic level of Rust, and understanding of the essential data structures like stacks, and hash maps.
+This tutorial should be read sequentially. Some programming skills are assumed, at least a basic level of Rust, and understanding of the essential data structures like stacks, and hash maps.
 
-This tutorial is designed to be read sequentially, but feel free to skip the parts you already now.
-
-And one final note: it may take time to get used to a stack-based language, with its idiosyncratic [reverse polish notation](https://en.wikipedia.org/wiki/Reverse_Polish_notation). But once you do, you will absolutely love it.
+If you are not used to [reverse polish notation](https://en.wikipedia.org/wiki/Reverse_Polish_notation) it can be shocking at first. Take your time to understand and test the examples.
 
 ## 0. Setup
 
@@ -534,11 +532,35 @@ count.down
 
 Note that we didn't change the main word, `down`, at all. We only adapted the definitions of the support words, but the main part, the first thing one will read to understand what does the module "countdown" do, remains the same.
 
-## 6. Memory Model
+## 6. Word References
 
-This section is a bit tedious, but is necessary and will be short, I promise.
+RunPack doesn't have a garbage collector, nor automatic reference counting, or any other built-in memory manager. It uses the Rust memory handling mechanisms. The reason why it's possible is simple: every time you send something from one place to another, you are cloning it. There are no pointers, memory references or shared buffers. You duplicate a string in the stack, RunPack clones the string. You drop it from the stack, RunPack deallocates it. So simple. Everything is passed by value in RunPack. But that doesn't sound too performant, right? What if I have a large string stored in a variable, and I want to pass it to a word to operate? For these kind of cases we have word references. You can create a word reference using the `@` word:
 
-TODO: clone model, references to words, why there is no garbage collector. Introduction to the next section, objects.
+```
+@ print
+print_stack
+```
+
+Output:
+
+```
+Stack:
+	0 : Word("print")
+```
+
+This code puts into the stack a reference to the `print` word. We could execute this reference with the `exe` word:
+
+```
+'Hello' @ print exe
+```
+
+Output:
+
+```
+Hello
+```
+
+Some words accept word references instead of values. We will see it in the following chapter.
 
 ## 7. Objects
 
