@@ -26,19 +26,19 @@ pub const PRELUDE: &str = r#"
     { type 'object' = } def is_obj?
     
     "--- Math ---"
-    "++ a -> a+1"
+    "++ a_i_f -> b_i_f"
     { is_int? { 1 } { 1.0 } ifelse + } def ++
-    "-- a -> a-1"
+    "-- a_i_f -> b_i_f"
     { is_int? { 1 } { 1.0 } ifelse - } def --
-    "fract a.x -> 0.x"
+    "fract a_f -> b_f"
     { dup int float - } def fract
-    "sum a,b,c,..,N -> a+b+c.."
+    "sum a_i,b_i,c_i,..,N -> z_i"
     { { size 1 > } { + } while } def sum
-    "sub a,b,c,..,N -> a-b-c.."
+    "sub a_i,b_i,c_i,..,N -> z_i"
     { { size 1 > } { - } while } def sub
-    "prod a,b,c,..,N -> a*b*c.."
+    "prod a,b,c,..,N -> z_i"
     { { size 1 > } { * } while } def prod
-    "div a,b,c,..,N -> a/b/c.."
+    "div a,b,c,..,N -> z_i"
     { { size 1 > } { / } while } def div
 
     "TODO: Vectors"

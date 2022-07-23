@@ -400,27 +400,35 @@ Output:
 
 ### Stack Effect Comments
 
-Because of the dynamic nature of RunPack and the use of the stack, there is no way to know the arguments a word takes and the results it produces without insopecting and understending the code. For this reason we have the stack effect comments, to describe in a fast and readable way how a word affects the stack. The format for this comments is:
+Because of the dynamic nature of RunPack and the use of the stack, there is no way to know the arguments a word takes and the results it produces without inspecting and understending the code. For this reason we have the stack effect comments, to describe in a fast and readable way how a word affects the stack. The format for this comments is:
 
 ```
 "word_name a,b,c -> x,y,z"
 { . . . } def word_name
 ```
 
-Where a, b, and c, are the contents of the stack before executing the word, and that are used by it, and x, y, and z, are the contents of the stack after executing the word, and that are produced by it.
+Where a, b, and c, are the contents of the stack before executing the word, and that are used by it, and x, y, and z, are the contents of the stack after executing the word, and that are produced by it. Optionally we can also include, underneath, a description of what the word does.
 
 Let's take the `x2` word we previously defined:
 
 ```
 "x2 a -> b"
+" Description: Takes an integer and doubles it."
 { 2 * } def x2
 ```
 
-This comment is telling us that this word takes an argument, called `a`, and consumes it. And as a results it pushes another element, `b`. We could improve it a bit by specifying the type of the arguments and the calculation performed:
+This comment is telling us that this word takes an argument, called `a`, and consumes it. And as a results it pushes another element, `b`. We could also specify the data types:
 
 ```
-"x2 int -> 2*int"
+"x2 a_i -> b_i"
+" Description: Takes an integer and doubles it."
 { 2 * } def x2
+```
+
+The abreviations for the types are: i (integer), f (float), s (string), b (boolean), o (object), w (word), and k (block). If the word accepts multiple data types we can concatenate multiple type abreviations:
+
+```
+"my_word a_i_f -> b_i_f"
 ```
 
 ## 4. Control Flow
@@ -530,7 +538,7 @@ lex ''
 count.down
 ```
 
-Note that we didn't change the main word, `down`, at all. We only adapted the definitions of the support words, but the main part, the first thing one will read to understand what does the module "countdown" do, remains the same.
+Note that we didn't change the word `count.down` at all. We only adapted the definitions of the support words, but the main part, what contains the core logic of the module, remains the same.
 
 ## 6. Word References
 
@@ -560,7 +568,7 @@ Output:
 Hello
 ```
 
-Some words accept word references instead of values. We will see it in the following chapter.
+Some words accept word references instead of values. We will see some examples in the following chapter.
 
 ## 7. Objects
 
