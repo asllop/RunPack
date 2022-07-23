@@ -25,8 +25,8 @@ pub fn register_primitives(pack: &mut Pack) {
         ("(", open_parenth), (")", close_parenth), ("{", open_curly), ("}", close_curly), ("lex", lex), ("def", def), ("@", at),
         ("+", plus), ("-", minus), ("*", star), ("/", slash), ("%", percent), (">", bigger), ("<", smaller), ("=", equal),
         ("!=", not_equal), (">=", big_equal), ("<=", small_equal), ("and", and), ("or", or), ("not", not), ("if", if_word),
-        ("ifelse", ifelse_word), ("while", while_word), ("[", open_bracket), ("new", new_word), ("vec", vec_word), ("set", set_obj), ("get", get_obj),
-        ("key?", key_obj), (":", colon), (".", period), ("exe", exe), ("int", int), ("float", float), ("type", type_word), ("size", size),
+        ("ifelse", ifelse_word), ("while", while_word), ("[", open_bracket), ("new", new_word), ("vec", vec_word), ("set", set_word), ("get", get_word),
+        ("key?", key_word), ("len", len_word), (":", colon), (".", period), ("exe", exe), ("int", int), ("float", float), ("type", type_word), ("size", size),
     ]);
 }
 
@@ -345,7 +345,7 @@ fn vec_word(pack: &mut Pack) -> Result<bool, Error> {
     Ok(true)
 }
 
-fn set_obj(pack: &mut Pack) -> Result<bool, Error> {
+fn set_word(pack: &mut Pack) -> Result<bool, Error> {
     if let (Some(Cell::Word(w)), Some(val), Some(key)) = (pack.stack.pop(), pack.stack.pop(), pack.stack.pop()) {
         if let Some(DictEntry::Data(Cell::Object(obj))) = pack.dictionary.dict.get_mut(&w) {
             obj.map.insert(key, val);
@@ -360,7 +360,7 @@ fn set_obj(pack: &mut Pack) -> Result<bool, Error> {
     Ok(true)
 }
 
-fn get_obj(pack: &mut Pack) -> Result<bool, Error> {
+fn get_word(pack: &mut Pack) -> Result<bool, Error> {
     if let (Some(Cell::Word(w)), Some(key)) = (pack.stack.pop(), pack.stack.pop()) {
         if let Some(DictEntry::Data(Cell::Object(obj))) = pack.dictionary.dict.get(&w) {
             if let Some(val) = obj.map.get(&key) {
@@ -380,10 +380,25 @@ fn get_obj(pack: &mut Pack) -> Result<bool, Error> {
     Ok(true)
 }
 
-fn key_obj(pack: &mut Pack) -> Result<bool, Error> {
+fn key_word(pack: &mut Pack) -> Result<bool, Error> {
     if let (Some(Cell::Word(w)), Some(key)) = (pack.stack.pop(), pack.stack.pop()) {
         if let Some(DictEntry::Data(Cell::Object(obj))) = pack.dictionary.dict.get(&w) {
             pack.stack.push(Cell::Boolean(obj.map.contains_key(&key)));
+        }
+        else {
+            return Err(Error::new(format!("key: dictionary doesn't contain an Object for word '{}'", w), PrimitiveErr::WrongType.into()));
+        }
+    }
+    else {
+        return Err(Error::new("key: Couldn't get a value and a word".into(), PrimitiveErr::NoArgsStack.into()));
+    }
+    Ok(true)
+}
+
+fn len_word(pack: &mut Pack) -> Result<bool, Error> {
+    if let Some(Cell::Word(w)) = pack.stack.pop() {
+        if let Some(DictEntry::Data(Cell::Object(obj))) = pack.dictionary.dict.get(&w) {
+            pack.stack.push(Cell::Integer(obj.map.len() as IntegerType));
         }
         else {
             return Err(Error::new(format!("key: dictionary doesn't contain an Object for word '{}'", w), PrimitiveErr::WrongType.into()));
