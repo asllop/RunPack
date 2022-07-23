@@ -25,7 +25,7 @@ pub fn register_primitives(pack: &mut Pack) {
         ("(", open_parenth), (")", close_parenth), ("{", open_curly), ("}", close_curly), ("lex", lex), ("def", def), ("@", at),
         ("+", plus), ("-", minus), ("*", star), ("/", slash), ("%", percent), (">", bigger), ("<", smaller), ("=", equal),
         ("!=", not_equal), (">=", big_equal), ("<=", small_equal), ("and", and), ("or", or), ("not", not), ("if", if_word),
-        ("ifelse", ifelse_word), ("while", while_word), ("[", open_bracket), ("new", new_obj), ("set", set_obj), ("get", get_obj),
+        ("ifelse", ifelse_word), ("while", while_word), ("[", open_bracket), ("new", new_word), ("vec", vec_word), ("set", set_obj), ("get", get_obj),
         ("key?", key_obj), (":", colon), (".", period), ("exe", exe), ("int", int), ("float", float), ("type", type_word), ("size", size),
     ]);
 }
@@ -320,8 +320,8 @@ fn open_bracket(pack: &mut Pack) -> Result<bool, Error> {
     Ok(true)
 }
 
-fn new_obj(pack: &mut Pack) -> Result<bool, Error> {
-    if pack.stack.size() % 2 == 0 && pack.stack.size() > 0 {
+fn new_word(pack: &mut Pack) -> Result<bool, Error> {
+    if pack.stack.size() % 2 == 0 {
         let mut obj = Object::default();
         while let (Some(val), Some(key)) = (pack.stack.pop(), pack.stack.pop()) {
             obj.map.insert(key, val);
@@ -331,6 +331,17 @@ fn new_obj(pack: &mut Pack) -> Result<bool, Error> {
     else {
         return Err(Error::new("new: Stack must contain key-value pairs".into(), PrimitiveErr::NoArgsStack.into()));
     }
+    Ok(true)
+}
+
+fn vec_word(pack: &mut Pack) -> Result<bool, Error> {
+    let mut obj = Object::default();
+    let mut size = pack.stack.size();
+    while let Some(val) = pack.stack.pop() {
+        obj.map.insert(Cell::Integer((size - 1) as IntegerType), val);
+        size -= 1;
+    }
+    pack.stack.push(Cell::Object(obj));
     Ok(true)
 }
 
