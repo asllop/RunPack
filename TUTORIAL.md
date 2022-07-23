@@ -482,27 +482,27 @@ Output:
 1
 ```
 
-This `countdown` word we just defined, operates over an integer in the stack, that's why we use `dup` before comparing and printing, to avoid consuming the data, that must be used in the next loop iteration. And the final `drop` is to remove the 0 left there after finishing. If you find this code messy or hard to understand, don't worry, it is. In the next section we are going to talk more in depth about it.
+This `countdown` word we just defined operates over an integer in the stack. That's why we use `dup` before comparing and printing, to avoid consuming the data, that must be used in the next loop iteration. And the final `drop` is to remove the 0 left there after finishing. If you find this code messy or hard to understand, don't worry, it is. In the next section we are going to talk more in depth about it.
 
 ## 5. Lexicons
 
 This section is more about how to structure applications written un RunPack. We will start from the `countdown` example used in the previous chapter, and will create an alternative version of it:
 
 ```
-{ dup 0 > } def count_continue?
+{ dup 0 > } def continue_count?
 { dup print } def print_count
 { 1 - } def dec_count
 { drop } def clean_count
-{ { count_continue? } { print_count dec_count } while clean_count } def countdown
+{ { continue_count? } { print_count dec_count } while clean_count } def countdown
 
 5 countdown
 ```
 
 Wow, that was pretty verbose, wasn't it?
 
-Yes, but look at the `countdown` definition. Isn't it much more readable now? It's almost plain english. We defined four support words before `countdown`. Many, or maybe all, of these words doesn't make sense outside the context of the countdown. They are related, all together compose what Leo Brodie called a *lexicon*, in his indispensable book *"Thinking Forth"*. 
+Yes, but look at the `countdown` definition. Isn't it much more readable now? It's almost plain english. We defined four support words before `countdown`. Many, or maybe all, of these words doesn't make sense outside the context of the countdown. They are closely related, all together form what Leo Brodie called a *lexicon*, in his indispensable book *"Thinking Forth"*. 
 
-That's the programming style we should use in RunPack. Is the way to create easy to write, read and maintain applications. We atomize the program into small and simple words with little functionallity, then use these words to create other words with a higher abstraction level, and finally group them into lexicons.
+That's the programming style we should use in RunPack. Is the way to create easy to write, read and maintain applications. We atomize the program into small and simple words, then use these words to create other words with a higher abstraction level, and finally group them into lexicons.
 
 RunPack offers a really straightforward but effective way to define lexicons, the word `lex`. We can rewrite the countdown program to use it:
 
@@ -522,7 +522,7 @@ The word `lex` simply sets a prefix that will be added to every word defined wit
 
 One of the most valuable lessons you should learn from these examples is that a word definition is never too small. Even a word that only contains one word inside it (like `count.clean`), it's worth it if it clarifies the code.
 
-This approach is also very flexible. Imagine that, after we finished this countdown program, we decide that we want it to work with a variable, instead of an argument in the stack:
+This approach is also very flexible. Imagine that, after we finished the program, we decide that we want it to work with a variable, instead of an argument in the stack:
 
 ```
 lex 'count.'
@@ -572,7 +572,107 @@ Some words accept word references instead of values. We will see some examples i
 
 ## 7. Objects
 
-TODO: create, set, get, etc
+There is still one data type we haven't covered yet: the object. In RunPack an object is a set of key-value pairs, internally implemented with a hash map. Key and value can be of any type, integer, float, string, boolean, word, block, even another object.
+
+To define an object, we use the `new` word:
+
+```
+( 'name' 'Joe'
+  'phone' 5555555 new )
+print_stack
+```
+
+Output:
+
+```
+Stack:
+	0 : Object(Object { map: {String("phone"): Integer(5555555), String("name"): String("Joe")} })
+```
+
+As always, we can store it in a word using `def`:
+
+```
+( 'name' 'Andreu'
+  'phone' 5555555 new ) def my_obj
+```
+
+We use a pair of words to `set` and `get` values from an object:
+
+```
+( 'name' 'Andreu'
+  'phone' 5555555 new ) def my_obj
+
+'name' @ my_obj get print
+'name' 'Joe' @ my_obj set
+'name' @ my_obj get print
+```
+
+Output:
+
+```
+Andreu
+Joe
+```
+
+These operators use a [word reference](#6-word-references) to acces the object, to avoid cloning it in the stack over and over again.
+
+We can check if a key exists in an object with the `key?` word:
+
+```
+( 'name' 'Andreu'
+  'phone' 5555555 new ) def my_obj
+
+'name' @ my_obj key? print
+'xxxx' @ my_obj key? print
+```
+
+Output:
+
+```
+true
+false
+```
+
+There is also an operator to "run" keys, the `:` word:
+
+```
+(
+    'name' 'Andreu'
+    'hi' { 'Hello, World!' print }
+    new
+) def my_obj
+
+@ my_obj : 'hi'
+@ my_obj : 'name' print
+```
+
+Output:
+
+```
+Hello, World!
+Andreu
+```
+
+And an operator to run keys is if they were methods, passing a reference to the object in the stack:
+
+```
+(
+    @ + { dup : val_a, swap : val_b, + }
+    @ val_a 10
+    @ val_b 20
+    new
+) def my_obj
+
+@ my_obj . + print
+```
+
+Output:
+
+```
+30
+```
+
+In this case we are using words as keys instead of strings. The key `+` contains a block. When executed using "`.`" it gets the object reference from the stack, obtains the values of `val_a` and `val_b`, and add them.
 
 ## 8. Advanced Topics
 
