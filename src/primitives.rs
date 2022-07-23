@@ -5,7 +5,7 @@ use hashbrown::HashMap;
 use alloc::{string::String, format};
 
 enum PrimitiveErr {
-    StackUnderflow = 1000,
+    StackUnderflow = 100,
     NoClosingBlock,
     NoArgsStack,
     NoArgsConcat,
