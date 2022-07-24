@@ -110,12 +110,12 @@ fn def(pack: &mut Pack) -> Result<bool, Error> {
 }
 
 fn at(pack: &mut Pack) -> Result<bool, Error> {
-    if let Some(Cell::Word(w)) = pack.concat.next() {
-        pack.stack.push(Cell::Word(w.clone()));
+    if let Some(cell) = pack.concat.next() {
+        pack.stack.push(cell.clone());
         Ok(true)
     }
     else {
-        return Err(Error::new("at: Expecting a word in the Concat".into(), PrimitiveErr::NoArgsConcat.into()));
+        return Err(Error::new("at: Expecting a cell in the Concat".into(), PrimitiveErr::NoArgsConcat.into()));
     }
 }
 
@@ -452,20 +452,14 @@ fn period(pack: &mut Pack) -> Result<bool, Error> {
     }
 }
 
-/*
-PROPOSAL: Create a word (&) to exec a key from an object in the stack, popping it before exec, and then pushing it again after exec:
-    (
-        @ + { & val_a, & val_b, drop + }
-        @ val_a 10
-        @ val_b 20
-        new
-    ) def my_obj
+//TODO: traverse object:
+//  @ my_obj { print print '------' print } for
+//  Execute the block for each key-val of my_obj, passing the key and val in the stack.
 
-    @ my_obj . + print
-Will this really simplify things?
- */
-
-//TODO: map: traverse object key by key
+//TODO: get cell from concat and put into stack, but not from immediate concat, from defined word concat:
+//  { @@ ++ } inc_post
+//  inc_post 100 print
+//The word @@ doesn't get the next cell in the concat, that is "++", it uses concat position of word caller.
 
 fn exe(pack: &mut Pack) -> Result<bool, Error> {
     match pack.stack.pop() {

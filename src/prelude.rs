@@ -32,14 +32,12 @@ pub const PRELUDE: &str = r#"
     { is_int? { 1 } { 1.0 } ifelse - } def --
     "fract a_f -> b_f"
     { dup int float - } def fract
-    "sum a_i,b_i,c_i,..,N -> z_i"
+    "sum a,b,c,..,N -> z"
     { { size 1 > } { + } while } def sum
-    "sub a_i,b_i,c_i,..,N -> z_i"
+    "sub a,b,c,..,N -> z"
     { { size 1 > } { - } while } def sub
-    "prod a,b,c,..,N -> z_i"
+    "prod a,b,c,..,N -> z"
     { { size 1 > } { * } while } def prod
-    "div a,b,c,..,N -> z_i"
+    "div a,b,c,..,N -> z"
     { { size 1 > } { / } while } def div
-
-    "TODO: Vectors"
 "#;
