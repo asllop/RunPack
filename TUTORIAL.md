@@ -542,10 +542,11 @@ Note that we didn't change the word `count.down` at all. We only adapted the def
 
 ## 6. Word References
 
-RunPack doesn't have a garbage collector, nor automatic reference counting, or any other built-in memory manager. It uses the Rust memory handling mechanisms. The reason why it's possible is simple: every time you send something from one place to another, you are cloning it. There are no pointers, memory references or shared buffers. You duplicate a string in the stack, RunPack clones the string. You drop it from the stack, RunPack deallocates it. So simple. Everything is passed by value in RunPack. But that doesn't sound too performant, right? What if I have a large string stored in a variable, and I want to pass it to a word to operate? For these kind of cases we have word references. You can create a word reference using the `@` word:
+RunPack doesn't have a garbage collector, nor automatic reference counting, or any other built-in memory manager. It uses the Rust memory handling mechanisms. The reason why it's possible is simple: every time you send something from one place to another, you are cloning it. There are no pointers, memory references or shared buffers. You duplicate a string in the stack, RunPack clones the string. You drop it from the stack, RunPack deallocates it. So simple. Everything is passed by value in RunPack. But that doesn't sound too performant, right? What if I have a large piece of data stored in a variable, and I want to pass it to a word to operate? For these kind of cases we have word references. You can create a word reference using the `@` word:
 
 ```
-@ print
+'This is a string' def my_str
+@ my_str
 print_stack
 ```
 
@@ -553,19 +554,54 @@ Output:
 
 ```
 Stack:
-	0 : Word("print")
+	0 : Word("my_str")
 ```
 
-This code puts into the stack a reference to the `print` word. We could execute this reference with the `exe` word:
+This code defines a variable with a string, and puts into the stack a reference to this variable.
+
+We can even store the reference into another word:
 
 ```
-'Hello' @ print exe
+'This is a string' def my_str
+@ my_str def str_ref
+str_ref
+print_stack
 ```
 
 Output:
 
 ```
-Hello
+Stack:
+	0 : Word("my_str")
+```
+
+And execute this reference with the `exe` word:
+
+```
+'This is a string' def my_str
+@ my_str def str_ref
+str_ref exe
+print_stack
+```
+
+Output:
+
+```
+Stack:
+	0 : String("This is a string")
+```
+
+Word references work with any word, not only variables:
+
+```
+@ print def print_ref
+'Hello from ref' print_ref exe
+```
+
+Output:
+
+```
+Hello from ref
 ```
 
 Some words accept word references instead of values. We will see some examples in the following chapter.
@@ -631,6 +667,21 @@ Output:
 ```
 true
 false
+```
+
+Vectors are just normal objects, with the particularity of having integer keys:
+
+```
+( 12.34, 'A string', 1000, true vec ) def my_vec
+1 @ my_vec get print
+@ my_vec len print
+```
+
+Output:
+
+```
+A string
+4
 ```
 
 There is also an operator to "run" keys, the `:` word:
