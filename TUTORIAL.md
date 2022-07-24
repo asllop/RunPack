@@ -656,12 +656,15 @@ Andreu
 And an operator to run keys is if they were methods, passing a reference to the object in the stack:
 
 ```
+{ dup : val_a } def get_a
+{ swap : val_b } def get_b
 (
-    @ + { dup : val_a, swap : val_b, + }
-    @ val_a 10
-    @ val_b 20
+    @ +         { get_a get_b + }
+    @ val_a     10
+    @ val_b     20
     new
-) def my_obj
+)
+def my_obj
 
 @ my_obj . + print
 ```
@@ -675,6 +678,8 @@ Output:
 In this case we are using words as keys instead of strings. The key `+` contains a block. When executed using "`.`" it gets the object reference from the stack, obtains the values of `val_a` and `val_b`, and add them.
 
 ## 8. Advanced Topics
+
+If you are reading this (and didn't cheat skipping chapters), it means you already know all the aspects of RunPack programming. Now it's time to understand the internals of the interpreter and how to interact with Rust to extend the language.
 
 ### The Cell
 
