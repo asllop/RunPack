@@ -19,6 +19,23 @@ impl Error {
     }
 }
 
+/// Common error codes.
+pub enum ErrCode {
+    StackUnderflow = 100,
+    NoClosingBlock,
+    NoArgsStack,
+    NoArgsConcat,
+    NoArgsStackConcat,
+    WrongType,
+    NotFound,
+}
+
+impl Into<u16> for ErrCode {
+    fn into(self) -> u16 {
+        self as u16
+    }
+}
+
 #[derive(PartialEq, PartialOrd, Eq, Hash, Clone, Copy, Debug)]
 /// Block reference type
 pub struct BlockRef {

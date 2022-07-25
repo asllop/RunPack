@@ -10,6 +10,7 @@ All RunPack scripts in this tutorial have been executed in the following program
 
 ```rust
 use runpack::{Pack, Cell, self};
+use runpack_obj;
 
 fn main() {
     println!("RunPack Tutorial\n");
@@ -20,6 +21,7 @@ fn main() {
     "#;
 
     let mut pack = Pack::new_with_prelude(script);
+    runpack_obj::register(&mut pack);
     pack.dictionary.native("print", print);
     pack.dictionary.native("print_stack", print_stack);
     pack.run().expect("Failed running the script");
