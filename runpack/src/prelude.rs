@@ -7,7 +7,7 @@ pub const PRELUDE: &str = r#"
     "swap a,b -> b,a"
     { [ a b | a b ] } def swap
     "flush a,b,c,..,N -> "
-    { { size 0 > } { drop } while } def flush
+    { { size 0 > } { drop } loop } def flush
 
     "--- Types ---"
     "is_int? a -> bool"
@@ -27,17 +27,17 @@ pub const PRELUDE: &str = r#"
     
     "--- Math ---"
     "++ a_i_f -> b_i_f"
-    { is_int? { 1 } { 1.0 } ifelse + } def ++
+    { is_int? { 1 } { 1.0 } either + } def ++
     "-- a_i_f -> b_i_f"
-    { is_int? { 1 } { 1.0 } ifelse - } def --
+    { is_int? { 1 } { 1.0 } either - } def --
     "fract a_f -> b_f"
     { dup int float - } def fract
     "sum a,b,c,..,N -> z"
-    { { size 1 > } { + } while } def sum
+    { { size 1 > } { + } loop } def sum
     "sub a,b,c,..,N -> z"
-    { { size 1 > } { - } while } def sub
+    { { size 1 > } { - } loop } def sub
     "prod a,b,c,..,N -> z"
-    { { size 1 > } { * } while } def prod
+    { { size 1 > } { * } loop } def prod
     "div a,b,c,..,N -> z"
-    { { size 1 > } { / } while } def div
+    { { size 1 > } { / } loop } def div
 "#;

@@ -9,7 +9,7 @@ pub fn register_primitives(pack: &mut Pack) {
         ("(", open_parenth), (")", close_parenth), ("size", size), ("{", open_curly), ("}", close_curly), ("lex", lex), ("def", def),
         ("@", at), ("+", plus), ("-", minus), ("*", star), ("/", slash), ("%", percent), (">", bigger), ("<", smaller), ("=", equal),
         ("!=", not_equal), (">=", big_equal), ("<=", small_equal), ("and", and), ("or", or), ("not", not), ("if", if_word),
-        ("ifelse", ifelse_word), ("while", while_word), ("[", open_bracket), ("exe", exe), ("int", int), ("float", float),
+        ("either", either_word), ("loop", loop_word), ("[", open_bracket), ("exe", exe), ("int", int), ("float", float),
         ("type", type_word),
     ]);
 }
@@ -243,12 +243,12 @@ fn if_word(pack: &mut Pack) -> Result<bool, Error> {
         }
     }
     else {
-        return Err(Error::new("ifelse: couldn't find condition and 1 block".into(), ErrCode::NoArgsStack.into()));
+        return Err(Error::new("if: couldn't find condition and 1 block".into(), ErrCode::NoArgsStack.into()));
     }
     Ok(true)
 }
 
-fn ifelse_word(pack: &mut Pack) -> Result<bool, Error> {
+fn either_word(pack: &mut Pack) -> Result<bool, Error> {
     if let (Some(Cell::Block(false_blk)), Some(Cell::Block(true_blk)), Some(Cell::Boolean(cond))) = (pack.stack.pop(), pack.stack.pop(), pack.stack.pop()) {
         if cond {
             pack.run_block(&true_blk)
@@ -258,11 +258,11 @@ fn ifelse_word(pack: &mut Pack) -> Result<bool, Error> {
         }
     }
     else {
-        Err(Error::new("ifelse: couldn't find condition and 2 blocks".into(), ErrCode::NoArgsStack.into()))
+        Err(Error::new("either: couldn't find condition and 2 blocks".into(), ErrCode::NoArgsStack.into()))
     }
 }
 
-fn while_word(pack: &mut Pack) -> Result<bool, Error> {
+fn loop_word(pack: &mut Pack) -> Result<bool, Error> {
     if let (Some(Cell::Block(loop_blk)), Some(Cell::Block(cond_blk))) = (pack.stack.pop(), pack.stack.pop()) {
         loop {
             pack.run_block(&cond_blk)?;
@@ -275,12 +275,12 @@ fn while_word(pack: &mut Pack) -> Result<bool, Error> {
                 }
             }
             else {
-                return Err(Error::new("while: condition didn't produce a bool".into(), ErrCode::WrongType.into()));
+                return Err(Error::new("loop: condition didn't produce a bool".into(), ErrCode::WrongType.into()));
             }
         }
     }
     else {
-        return Err(Error::new("while: couldn't find 2 blocks".into(), ErrCode::NoArgsStack.into()));
+        return Err(Error::new("loop: couldn't find 2 blocks".into(), ErrCode::NoArgsStack.into()));
     }
     Ok(true)
 }

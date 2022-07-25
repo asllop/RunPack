@@ -438,7 +438,7 @@ The abreviations for the types are: i (integer), f (float), s (string), b (boole
 The `x2` word we implemented in the previous chapter will only work with integers, and that's a problem, because arithmetic operators should accept integers and floats. How could we create a version of it that works with both types?
 
 ```
-{ is_int? { 2 } { 2.0 } ifelse * } def x2
+{ is_int? { 2 } { 2.0 } either * } def x2
 5 x2 print
 5.2 x2 print
 ```
@@ -450,7 +450,7 @@ Output:
 10.4
 ```
 
-We introduced multiple new things here. First, the `is_int?` word, checks if the type of the next cell in the stack is an integer, and puts a boolean with the result. Then we have the `ifelse`. This words gets from the stack a boolean, and two blocks, the first block will be executed if the boolean is `true`, and the second if it's `false`.
+We introduced multiple new things here. First, the `is_int?` word, checks if the type of the next cell in the stack is an integer, and puts a boolean with the result. Then we have the `either`. This words gets from the stack a boolean, and two blocks, the first block will be executed if the boolean is `true`, and the second if it's `false`.
 
 There is a simplified version that only has the true block:
 
@@ -467,24 +467,34 @@ It's bigger than ten
 
 Here we introduced one more word, the `>`. This word is a comparator, it gets two cells, compares if the first is bigger thant the second, and returns a boolean. There are 6 comparators: `=`, `!=`, `>`, `<`, `>=`, and `<=`.
 
-And the last control flow word is `while`. It works pretty much like `if`, but the condition, instead of being a simple boolean, is a block that must return a boolean:
+And the last control flow word is `loop`. It works pretty much like `if`, but the condition, instead of being a simple boolean, is a block that must return a boolean:
 
 ```
-{ { dup 0 > } { dup print, -- } while drop } def countdown
-5 countdown
+{ { size 0 > } { 2 * print } loop } def dobl
+( 1 2 3 4 dobl )
 ```
 
 Output:
 
 ```
-5
+8
+6
 4
-3
 2
-1
 ```
 
-This `countdown` word we just defined operates over an integer in the stack. That's why we use `dup` before comparing and printing, to avoid consuming the data, that must be used in the next loop iteration. And the final `drop` is to remove the 0 left there after finishing. If you find this code messy or hard to understand, don't worry, it is. In the next section we are going to talk more in depth about it.
+This word we just defined, `dobl`, gets every integer in the stack, doubles it, and prints. We do this with the `size` word, that returns the size of the current stack. Every time we calculate a multiplication, the stack decreases, until it's 0 and the loop stops.
+
+Now let's try to write a word to count down. We will pass an integer to it and will print the countdown until it reaches zero. An **unexperienced** RunPack programmer could do something like:
+
+```
+{ { dup 0 > } { dup print, -- } loop drop } def countdown
+5 countdown
+```
+
+Explaination: This `countdown` word we just defined operates over an integer in the stack. That's why we use `dup` before comparing and printing, to avoid consuming the data, that must be used in the next loop iteration. And the final `drop` is to remove the 0 left there after finishing.
+
+If you find this code messy or hard to understand, don't worry, **it is**. In the next section we are going to talk more in depth about it.
 
 ## 5. Lexicons
 
@@ -495,7 +505,7 @@ This section is more about how to structure applications written un RunPack. We 
 { dup print } def print_count
 { 1 - } def dec_count
 { drop } def clean_count
-{ { continue_count? } { print_count dec_count } while clean_count } def countdown
+{ { continue_count? } { print_count dec_count } loop clean_count } def countdown
 
 5 countdown
 ```
@@ -514,7 +524,7 @@ lex 'count.'
     { dup print } def print
     { 1 - } def dec
     { drop } def clean
-    { { count.continue? } { count.print count.dec } while count.clean } def down
+    { { count.continue? } { count.print count.dec } loop count.clean } def down
 lex ''
 
 5 count.down
@@ -533,7 +543,7 @@ lex 'count.'
     { count.var print } def print
     { count.var 1 - def count.var } def dec
     { 0 def count.var } def clean
-    { { count.continue? } { count.print count.dec } while count.clean } def down
+    { { count.continue? } { count.print count.dec } loop count.clean } def down
 lex ''
 
 5 def count.var
