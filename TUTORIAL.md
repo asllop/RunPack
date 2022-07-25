@@ -539,14 +539,15 @@ This approach is also very flexible. Imagine that, after we finished the program
 ```
 lex 'count.'
     0 def var
+    { def count.var } def set
     { count.var 0 > } def continue?
     { count.var print } def print
-    { count.var 1 - def count.var } def dec
-    { 0 def count.var } def clean
+    { count.var -- count.set } def dec
+    { 0 count.set } def clean
     { { count.continue? } { count.print count.dec } loop count.clean } def down
 lex ''
 
-5 def count.var
+5 count.set
 count.down
 ```
 
