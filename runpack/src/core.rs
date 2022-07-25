@@ -269,12 +269,7 @@ impl Pack {
     pub fn new(reader: &str) -> Self {
         let mut pack = Pack::default();
         register_primitives(&mut pack);
-        pack.append(reader);
-        pack
-    }
-
-    pub fn new_with_prelude(reader: &str) -> Self {
-        let mut pack = Pack::new(PRELUDE);
+        pack.append(PRELUDE);
         pack.append(reader);
         pack
     }

@@ -20,7 +20,7 @@ fn main() {
         'Hello, World!' print
     "#;
 
-    let mut pack = Pack::new_with_prelude(script);
+    let mut pack = Pack::new(script);
     runpack_obj::register(&mut pack);
     pack.dictionary.native("print", print);
     pack.dictionary.native("print_stack", print_stack);
@@ -671,7 +671,7 @@ true
 false
 ```
 
-Vectors are just normal objects, with the particularity of having integer keys:
+Vectors are just normal objects, with the particularity of having integer keys. They are defined with the `vec` word, but operated with the same words we use for any object:
 
 ```
 ( 12.34, 'A string', 1000, true vec ) def my_vec
@@ -732,7 +732,7 @@ In this case we are using words as keys instead of strings. The key `+` contains
 
 ## 8. Advanced Topics
 
-If you are reading this (and didn't cheat skipping chapters), it means you already know all the aspects of RunPack programming. Now it's time to understand the internals of the interpreter and how to interact with Rust to extend the language.
+If you are reading this (and didn't cheat skipping chapters), it means you already know the basics of RunPack programming. Now it's time to understand the internals of the interpreter and how to interact with Rust to extend the language.
 
 ### The Cell
 
