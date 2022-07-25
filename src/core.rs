@@ -252,10 +252,7 @@ impl Pack {
     pub fn new(reader: &str) -> Self {
         let mut pack = Pack::default();
         register_primitives(&mut pack);
-        pack.reader = reader.into();
-        pack.tokenize();
-        pack.reader = String::new();
-        pack.pos = 0;
+        pack.append(reader);
         pack
     }
 
