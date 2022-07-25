@@ -704,7 +704,7 @@ Hello, World!
 Andreu
 ```
 
-And an operator to run keys is if they were methods, passing a reference to the object in the stack:
+And an operator to run keys as if they were methods, passing a reference to the object in the stack:
 
 ```
 { dup : val_a } def get_a

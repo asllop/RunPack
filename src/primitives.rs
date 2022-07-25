@@ -334,6 +334,9 @@ fn new_word(pack: &mut Pack) -> Result<bool, Error> {
     Ok(true)
 }
 
+//TODO: maybe create a new cell type for vectors?
+//TODO: move vectors into plugin
+//TODO: vector push and pop words
 fn vec_word(pack: &mut Pack) -> Result<bool, Error> {
     let mut obj = Object::default();
     let mut size = pack.stack.size();
@@ -460,6 +463,10 @@ fn period(pack: &mut Pack) -> Result<bool, Error> {
 //  { @@ ++ } inc_post
 //  inc_post 100 print
 //The word @@ doesn't get the next cell in the concat, that is "++", it uses concat position of word caller.
+
+//TODO: remove key from object
+
+//TODO: remove word from dictionary
 
 fn exe(pack: &mut Pack) -> Result<bool, Error> {
     match pack.stack.pop() {
