@@ -1,6 +1,7 @@
 extern crate alloc;
 
 use runpack::{Pack, Cell, Object, DictEntry, IntegerType, Error, ErrCode};
+use crate::prelude::PRELUDE;
 use alloc::format;
 
 //TODO: traverse object:
@@ -11,8 +12,9 @@ use alloc::format;
 
 //TODO: push and pop cells into a vector
 
-/// Register words.
+/// Register words and prelude.
 pub fn register(pack: &mut Pack) {
+    pack.code(PRELUDE);
     pack.def_natives(&[
         ("new", new_word), ("vec", vec_word), ("set", set_word), ("get", get_word), ("key?", key_word), ("len", len_word), (":", colon),
         (".", period),

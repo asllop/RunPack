@@ -266,11 +266,11 @@ pub struct Pack {
 }
 
 impl Pack {
-    pub fn new(reader: &str) -> Self {
+    /// Create a new Pack with registered primitives and prelude.
+    pub fn new() -> Self {
         let mut pack = Pack::default();
         register_primitives(&mut pack);
-        pack.append(PRELUDE);
-        pack.append(reader);
+        pack.code(PRELUDE);
         pack
     }
 
@@ -412,7 +412,7 @@ impl Pack {
     }
 
     /// Append literal code to the end of the Concat.
-    pub fn append(&mut self, code: &str) {
+    pub fn code(&mut self, code: &str) {
         self.reader = code.into();
         self.tokenize();
         self.reader = String::new();

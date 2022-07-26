@@ -35,7 +35,8 @@ let script = r#"
     10 20 +
 "#;
 
-let mut pack = Pack::new(script);
+let mut pack = Pack::new();
+pack.code(script);
 pack.run().expect("Error running the script");
 
 if let Some(Cell::Integer(i)) = pack.stack.pop() {
@@ -53,8 +54,9 @@ let script = r#"
     'Andreu' hi
 "#;
 
-let mut pack = Pack::new(script);
+let mut pack = Pack::new();
 pack.dictionary.native("hi", hi_word);
+pack.code(script);
 pack.run().expect("Error running the script");
 
 fn hi_word(pack: &mut Pack) -> Result<bool, runpack::Error> {
@@ -78,7 +80,8 @@ let script = r#"
     3.14159 def pi
 "#;
 
-let mut pack = Pack::new(script);
+let mut pack = Pack::new();
+pack.code(script);
 pack.run().expect("Error running the script");
 pack.exec("pi").expect("Failed executing 'pi'");
 

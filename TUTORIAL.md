@@ -20,10 +20,14 @@ fn main() {
         'Hello, World!' print
     "#;
 
-    let mut pack = Pack::new(script);
+    // Create pack and register plugins
+    let mut pack = Pack::new();
     runpack_obj::register(&mut pack);
     pack.dictionary.native("print", print);
     pack.dictionary.native("print_stack", print_stack);
+
+    // Add script code and run
+    pack.code(script);
     pack.run().expect("Failed running the script");
 }
 
