@@ -502,13 +502,18 @@ If you find this code messy or hard to understand, don't worry, **it is**. In th
 
 ## 5. Lexicons
 
-This section is more about how to structure applications written un RunPack. We will start from the `countdown` example used in the previous chapter, and will create an alternative version of it:
+This section is more about how to structure applications written un RunPack.
+
+In the previous chapter we crated a `countdown` word, but we are not very happy with the results. The resulting code is actually pretty uggly, and that's because we are using an abstraction level that is not adequate to the job. To understand the code, we have to read each word, mentally calculate the stack effects it will produce, and move to the next word to do the same again. It's easy to miss something, and it's just a very straightforward definition, imagine a complex one! When we see the `dup 0 >`, we know we are comparing somthing with 0, but what? `dup` doesn't tell us much about it. Same for `dup print, --`, and the final `drop`. These words are too low level. We need new words, with a higher abstraction level, that are specifically desgined to fit in our problem domain.
+
+Knowing all this, let's try to create an alternative version of the countdown:
 
 ```
 { dup 0 > } def continue_count?
 { dup print } def print_count
 { 1 - } def dec_count
 { drop } def clean_count
+
 { { continue_count? } { print_count dec_count } loop clean_count } def countdown
 
 5 countdown
@@ -516,11 +521,11 @@ This section is more about how to structure applications written un RunPack. We 
 
 Wow, that was pretty verbose, wasn't it?
 
-Yes, but look at the `countdown` definition. Isn't it much more readable now? It's almost plain english. We defined four support words before `countdown`. Many, or maybe all, of these words doesn't make sense outside the context of the countdown. They are closely related, all together form what Leo Brodie called a *lexicon*, in his indispensable book *"Thinking Forth"*. 
+Yes, but look at the `countdown` definition. Isn't it much more readable now? It's almost plain english. We defined four support words before `countdown`. Many, or maybe all of these words doesn't make sense outside the context of the countdown. They are closely related, all together form what Leo Brodie called a **lexicon**, in his indispensable book *"Thinking Forth"*. One could argue that we just took the parts of the old `countdown` definition and moved them to a different place. And that's true, but that makes the difference. First, we gave them meaningful names, so we can know what they do. Second, by splitting them apart, we can test them separately. And third, we can modify them without touching the main word.
 
-That's the programming style we should use in RunPack. Is the way to create easy to write, read and maintain applications. We atomize the program into small and simple words, then use these words to create other words with a higher abstraction level, and finally group them into lexicons.
+That's the programming style we should use in RunPack. Is the way to create easy to write, read and maintain applications. We follow an iterative methodology where we atomize the program into small and simple words, we use these words to create other words with a higher abstraction level, and we group these words into lexicons.
 
-RunPack offers a really straightforward but effective way to define lexicons, the word `lex`. We can rewrite the countdown program to use it:
+RunPack offers a really basic but effective way to define lexicons, the word `lex`. We can rewrite the countdown program to use it:
 
 ```
 lex 'count.'
@@ -528,6 +533,7 @@ lex 'count.'
     { dup print } def print
     { 1 - } def dec
     { drop } def clean
+
     { { count.continue? } { count.print count.dec } loop count.clean } def down
 lex ''
 
@@ -548,6 +554,7 @@ lex 'count.'
     { count.var print } def print
     { count.var -- count.set } def dec
     { 0 count.set } def clean
+
     { { count.continue? } { count.print count.dec } loop count.clean } def down
 lex ''
 
