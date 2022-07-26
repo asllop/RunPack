@@ -179,7 +179,7 @@ impl RetStack {
 #[derive(Default, Debug)]
 /// Concatenation, the array of words that conforms the program.
 pub struct Concat {
-    array: Vec<Cell>,
+    pub array: Vec<Cell>,
     pub pointer: usize,
 }
 
