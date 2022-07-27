@@ -124,6 +124,7 @@ impl Hash for Cell {
 
 impl Eq for Cell {}
 
+#[derive(Clone)]
 /// Dictionary entry
 pub enum DictEntry {
     Native(fn(&mut Pack) -> Result<bool, Error>),
@@ -131,7 +132,7 @@ pub enum DictEntry {
     Data(Cell),
 }
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 /// Dictionary of words
 pub struct Dictionary {
     pub dict: HashMap<String, DictEntry>,
@@ -158,7 +159,7 @@ impl Dictionary {
     }
 }
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone)]
 /// Return stack
 pub struct RetStack {
     stack: Vec<usize>,
@@ -176,7 +177,7 @@ impl RetStack {
     }
 }
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone)]
 /// Concatenation, the array of words that conforms the program.
 pub struct Concat {
     pub array: Vec<Cell>,
@@ -197,7 +198,7 @@ impl Concat {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 /// Stack structure
 pub struct Stack {
     stack: Vec<Cell>,
@@ -254,7 +255,7 @@ impl Stack {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 /// RunPack interpreter
 pub struct Pack {
     pub stack: Stack,

@@ -750,7 +750,7 @@ Output:
 30
 ```
 
-In this case we are using words as keys instead of strings. The key `+` contains a block. When executed using "`.`" it gets the object reference from the stack, obtains the values of `val_a` and `val_b`, and add them.
+In this case we are using words as keys instead of strings. The key `+` contains a block. When executed using "`.`" it uses the object reference in the stack to obtains the values of `val_a` and `val_b`, and add them.
 
 ## 8. Advanced Topics
 
