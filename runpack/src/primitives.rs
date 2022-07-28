@@ -7,8 +7,8 @@ pub fn register_primitives(pack: &mut Pack) {
         ("(", open_parenth), (")", close_parenth), ("size", size), ("{", open_curly), ("}", close_curly), ("lex", lex), ("def", def),
         ("@", at), ("+", plus), ("-", minus), ("*", star), ("/", slash), ("%", percent), (">", bigger), ("<", smaller), ("=", equal),
         ("!=", not_equal), (">=", big_equal), ("<=", small_equal), ("and", and), ("or", or), ("not", not), ("if", if_word),
-        ("either", either_word), ("loop", loop_word), ("[", open_bracket), ("exe", exe), ("int", int), ("float", float),
-        ("type", type_word), ("?", question),
+        ("either", either_word), ("loop", loop_word), ("[", open_bracket), ("exe", exe), ("int", int), ("float", float), ("string", string_word),
+        ("word", word_word), ("type", type_word), ("?", question),
     ]);
 }
 
@@ -139,7 +139,7 @@ fn two_num_or_str_op(stack: &mut Stack, int_op: fn(IntegerType, IntegerType) -> 
         stack.push(Cell::String(str_op(str_a, str_b)));
     }
     else {
-        return Err(Error::new("two_num_op: Expecting two numbers of the same type".into(), ErrCode::NoArgsStack.into()));
+        return Err(Error::new("two_num_or_str_op: Expecting two cells of the same type".into(), ErrCode::NoArgsStack.into()));
     }
     Ok(true)
 }
@@ -339,6 +339,26 @@ fn float(pack: &mut Pack) -> Result<bool, Error> {
     }
     else {
         Err(Error::new("int: Coulnd't get an int".into(), ErrCode::NoArgsStack.into()))
+    }
+}
+
+fn string_word(pack: &mut Pack) -> Result<bool, Error> {
+    if let Some(Cell::Word(w)) = pack.stack.pop() {
+        pack.stack.push(Cell::String(w));
+        Ok(true)
+    }
+    else {
+        Err(Error::new("string: Coulnd't get a word".into(), ErrCode::NoArgsStack.into()))
+    }
+}
+
+fn word_word(pack: &mut Pack) -> Result<bool, Error> {
+    if let Some(Cell::String(s)) = pack.stack.pop() {
+        pack.stack.push(Cell::Word(s));
+        Ok(true)
+    }
+    else {
+        Err(Error::new("word: Coulnd't get a string".into(), ErrCode::NoArgsStack.into()))
     }
 }
 
