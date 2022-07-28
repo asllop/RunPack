@@ -1,11 +1,17 @@
 pub const PRELUDE: &str = r#"
-    "--- Concat ---"
+    "--- Word Definition ---"
 
     ? def 'a -> ' 'Define a word taken from the concat with the value taken from the stack.'
     { @@ @def } { @@ } exe def @def
 
     ? @ ' -> a' 'Get a cell from the concat and put it in the stack.'
     { @@ } def @
+
+    ? setter 'a -> ' 'Create a setter for the word reference in the stack. The setter is named \'word!\''
+    { dup string '!' + word, swap { def $ } block swap @def } def setter
+
+    ? var 'a -> ' 'Define a variable and a setter with intial value taken from the stack and name taken from the concat.'
+    { @@ [ word val | word val word ] @def setter } def var
 
     "--- Stack ---"
 
