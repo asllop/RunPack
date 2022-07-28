@@ -4,20 +4,13 @@ use alloc::string::String;
 
 pub fn register_primitives(pack: &mut Pack) {
     pack.def_natives(&[
-        ("(", open_parenth), (")", close_parenth), ("size", size), ("{", open_curly), ("}", close_curly), ("lex", lex), ("def", def),
-        ("@", at), ("+", plus), ("-", minus), ("*", star), ("/", slash), ("%", percent), (">", bigger), ("<", smaller), ("=", equal),
+        ("(", open_parenth), (")", close_parenth), ("size", size), ("{", open_curly), ("}", close_curly), ("lex", lex),
+        ("+", plus), ("-", minus), ("*", star), ("/", slash), ("%", percent), (">", bigger), ("<", smaller), ("=", equal),
         ("!=", not_equal), (">=", big_equal), ("<=", small_equal), ("and", and), ("or", or), ("not", not), ("if", if_word),
-        ("either", either_word), ("loop", loop_word), ("[", open_bracket), ("exe", exe), ("int", int), ("float", float), ("string", string_word),
-        ("word", word_word), ("type", type_word), ("?", question),
+        ("either", either_word), ("loop", loop_word), ("[", open_bracket), ("exe", exe), ("int", int), ("float", float),
+        ("string", string_word), ("word", word_word), ("type", type_word), ("?", question), ("@@", atat), ("@def", atdef),
     ]);
 }
-
-//TODO: get cell from concat and put into stack, but not from immediate concat, from defined word concat:
-//  { @@ ++ } inc_post
-//  inc_post 100 print
-//The word @@ doesn't get the next cell in the concat, that is "++", it uses concat position of word caller.
-
-//TODO: remove word from dictionary (is it really useful?)
 
 fn open_parenth(pack: &mut Pack) -> Result<bool, Error> {
     pack.stack.start_stack();
@@ -81,35 +74,6 @@ fn lex(pack: &mut Pack) -> Result<bool, Error> {
     }
     else {
         return Err(Error::new("lex: couldn't find string".into(), ErrCode::NoArgsConcat.into()));
-    }
-}
-
-fn def(pack: &mut Pack) -> Result<bool, Error> {
-    let (data, word) = (pack.stack.pop(), pack.concat.next());
-    if let Some(Cell::Word(word)) = word {
-        if let Some(Cell::Block(block)) = data {
-            pack.dictionary.block(word, block);
-        }
-        else if let Some(cell) = data {
-            pack.dictionary.data(word, cell);
-        }
-        else {
-            return Err(Error::new("def: Expecting a block or a cell".into(), ErrCode::WrongType.into()));
-        }
-    }
-    else {
-        return Err(Error::new("def: Expecting a word in the Concat".into(), ErrCode::NoArgsStackConcat.into()));
-    }
-    Ok(true)
-}
-
-fn at(pack: &mut Pack) -> Result<bool, Error> {
-    if let Some(cell) = pack.concat.next() {
-        pack.stack.push(cell.clone());
-        Ok(true)
-    }
-    else {
-        return Err(Error::new("at: Expecting a cell in the Concat".into(), ErrCode::NoArgsConcat.into()));
     }
 }
 
@@ -395,4 +359,40 @@ fn question(pack: &mut Pack) -> Result<bool, Error> {
     else {
         Err(Error::new("question: No correct arguments in the concat".into(), ErrCode::NoArgsConcat.into()))
     }
+}
+
+fn atat(pack: &mut Pack) -> Result<bool, Error>  {
+    if let Some(parent_concat_pos) = pack.ret.pop() {
+        if let Some(cell) = pack.concat.array.get(parent_concat_pos) {
+            pack.ret.push(parent_concat_pos + 1);
+            pack.stack.push(cell.clone());
+            Ok(true)
+        }
+        else {
+            Err(Error::new("atat: couldn't get a cell from the concat".into(), ErrCode::NoArgsConcat.into()))
+        }
+    }
+    else {
+        Err(Error::new("atat: couldn't get ret pos".into(), ErrCode::NoArgsStack.into()))
+    }
+}
+
+// Usage: 10 @ num @def
+fn atdef(pack: &mut Pack) -> Result<bool, Error> {
+    let (word, data) = (pack.stack.pop(), pack.stack.pop());
+    if let Some(Cell::Word(word)) = word {
+        if let Some(Cell::Block(block)) = data {
+            pack.dictionary.block(&word, block);
+        }
+        else if let Some(cell) = data {
+            pack.dictionary.data(&word, cell);
+        }
+        else {
+            return Err(Error::new("atdef: Expecting a block or a cell".into(), ErrCode::NoArgsStack.into()));
+        }
+    }
+    else {
+        return Err(Error::new("atdef: Expecting a word in the stack".into(), ErrCode::NoArgsStack.into()));
+    }
+    Ok(true)
 }

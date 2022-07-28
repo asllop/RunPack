@@ -1,4 +1,12 @@
 pub const PRELUDE: &str = r#"
+    "--- Concat ---"
+
+    ? def 'a -> ' 'Define a word taken from the concat with the value taken from the stack.'
+    { @@ @def } { @@ } exe def @def
+
+    ? @ ' -> a' 'Get a cell from the concat and put it in the stack.'
+    { @@ } def @
+
     "--- Stack ---"
 
     ? drop 'a -> ' 'Extract one cell from the stack.'
