@@ -4,6 +4,8 @@ This tutorial should be read sequentially. Some programming skills are assumed, 
 
 If you are not used to [reverse polish notation](https://en.wikipedia.org/wiki/Reverse_Polish_notation) it can be shocking at first. Take your time to understand and test the examples.
 
+**TODO: rebuild using the REPL tool.**
+
 ## 0. Setup
 
 All RunPack scripts in this tutorial have been executed in the following program:

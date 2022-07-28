@@ -7,10 +7,59 @@ pub fn register_primitives(pack: &mut Pack) {
         ("(", open_parenth), (")", close_parenth), ("size", size), ("{", open_curly), ("}", close_curly), ("lex", lex),
         ("+", plus), ("-", minus), ("*", star), ("/", slash), ("%", percent), (">", bigger), ("<", smaller), ("=", equal),
         ("!=", not_equal), (">=", big_equal), ("<=", small_equal), ("and", and), ("or", or), ("not", not), ("if", if_word),
-        ("either", either_word), ("loop", loop_word), ("[", open_bracket), ("exe", exe), ("int", int), ("float", float),
-        ("string", string_word), ("word", word_word), ("type", type_word), ("?", question), ("@@", atat), ("@def", atdef),
+        ("either", either), ("loop", loop_word), ("[", open_bracket), ("exe", exe), ("int", int), ("float", float),
+        ("string", string), ("word", word), ("type", type_word), ("?", question), ("@@", atat), ("@def", atdef),
+        ("skip", skip), ("block", block),
     ]);
 }
+
+/*
+TODO
+
+Ens cal poder crear blocs al concat fora de la zona d'execució per a poder modifcar-los.
+Ens agradaria poder definir paraules que defineixin altres paraules. Com para un setter que genera setters de variables:
+
+0 def num
+setter num      "Això crea la praula num! que fica un valor a num"
+10 num!         "Ara num val 10"
+num print
+
+Podríem crear una paraula "var" que fa igual que un def + setter:
+10 var num
+num print   "10"
+5 num!
+num print   "5"
+
+14> "{ @@ string '!' + word, dup { @ $ @def } swap @def } def setter"
+15> { @@ string '!' + word, 0 swap @def } def setter
+16> setter num
+17> num!        "hem creat una variable num! que conté un 0"
+18> print_stack
+
+En comptes d'un 0, voldríem que num! tingués un bloc amb la definició: { def num }
+
+Com modificar blocks:
+
+@ num { def $ } block
+
+La paraula "block" pren de la pila una referència de block, la repassa de forma seqüencial i per cada "$" obté una cell de la pila
+i la hi fica al seu lloc a la definició. En aquest cas, la paraula num. Aleshores crea un nou bloc modificat a un altre lloc del
+concat i fica a la pila la ref del nou bloc.
+
+Problema, si fiquem la nova paraula al final del concat, tard o d'hora serà executat. Podem crear una paraula SKIP que se salta
+N paraula del concat. Així al final del concat hi ficarem:
+
+4 SKIP { def num } ...
+
+Com faríem setter?
+
+0 def num
+{ @@ dup string '!' + word, swap { def $ } block swap @def } def setter
+setter num
+
+5 num!
+num print   "5"
+*/
 
 fn open_parenth(pack: &mut Pack) -> Result<bool, Error> {
     pack.stack.start_stack();
@@ -210,7 +259,7 @@ fn if_word(pack: &mut Pack) -> Result<bool, Error> {
     Ok(true)
 }
 
-fn either_word(pack: &mut Pack) -> Result<bool, Error> {
+fn either(pack: &mut Pack) -> Result<bool, Error> {
     if let (Some(Cell::Block(false_blk)), Some(Cell::Block(true_blk)), Some(Cell::Boolean(cond))) = (pack.stack.pop(), pack.stack.pop(), pack.stack.pop()) {
         if cond {
             pack.run_block(&true_blk)
@@ -306,7 +355,7 @@ fn float(pack: &mut Pack) -> Result<bool, Error> {
     }
 }
 
-fn string_word(pack: &mut Pack) -> Result<bool, Error> {
+fn string(pack: &mut Pack) -> Result<bool, Error> {
     if let Some(Cell::Word(w)) = pack.stack.pop() {
         pack.stack.push(Cell::String(w));
         Ok(true)
@@ -316,7 +365,7 @@ fn string_word(pack: &mut Pack) -> Result<bool, Error> {
     }
 }
 
-fn word_word(pack: &mut Pack) -> Result<bool, Error> {
+fn word(pack: &mut Pack) -> Result<bool, Error> {
     if let Some(Cell::String(s)) = pack.stack.pop() {
         pack.stack.push(Cell::Word(s));
         Ok(true)
@@ -377,7 +426,6 @@ fn atat(pack: &mut Pack) -> Result<bool, Error>  {
     }
 }
 
-// Usage: 10 @ num @def
 fn atdef(pack: &mut Pack) -> Result<bool, Error> {
     let (word, data) = (pack.stack.pop(), pack.stack.pop());
     if let Some(Cell::Word(word)) = word {
@@ -395,4 +443,48 @@ fn atdef(pack: &mut Pack) -> Result<bool, Error> {
         return Err(Error::new("atdef: Expecting a word in the stack".into(), ErrCode::NoArgsStack.into()));
     }
     Ok(true)
+}
+
+fn skip(pack: &mut Pack) -> Result<bool, Error> {
+    if let Some(Cell::Integer(offset)) = pack.stack.pop() {
+        pack.concat.pointer = pack.concat.pointer.wrapping_add(offset as usize);
+        Ok(true)
+    }
+    else {
+        Err(Error::new("skip: Expecting a integer in the stack".into(), ErrCode::NoArgsStack.into()))
+    }
+}
+
+fn block(pack: &mut Pack) -> Result<bool, Error> {
+    if let Some(Cell::Block(block)) = pack.stack.pop() {
+        // New block will start at the end of current concat + 3 ("N skip {").
+        let new_block_pos = pack.concat.array.len() + 3;
+        let new_block_len = block.len;
+        // Add skip and {
+        pack.concat.array.push(Cell::Integer(new_block_len as IntegerType + 1));
+        pack.concat.array.push(Cell::Word("skip".into()));
+        pack.concat.array.push(Cell::Word("{".into()));
+        // Copy the block to the end of the concat
+        for n in block.pos..(block.pos + block.len) {
+            // Substitute any $ word with the cell in the stack
+            if let Cell::Word(w) = &pack.concat.array[n] {
+                if w == "$" {
+                    if let Some(cell) = pack.stack.pop() {
+                        pack.concat.array.push(cell);
+                        continue;
+                    }
+                    else {
+                        return Err(Error::new("block: Couldn't get cell from stack".into(), ErrCode::NoArgsStack.into()))
+                    }
+                }
+            }
+            pack.concat.array.push(pack.concat.array[n].clone());
+        }
+        // Return the new block in the stack
+        pack.stack.push(Cell::Block(BlockRef { pos: new_block_pos, len: new_block_len }));
+        Ok(true)
+    }
+    else {
+        Err(Error::new("block: Couldn't get block from stack".into(), ErrCode::NoArgsStack.into()))
+    }
 }

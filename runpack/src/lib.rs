@@ -15,4 +15,4 @@ pub use self::primitives::register_primitives;
 
 //TODO: plugins: crates that append lexicons to the core: string, stdio, fs, math, etc
 //TODO: async words
-//YODO: tests
+//TODO: tests
