@@ -1,5 +1,3 @@
-extern crate alloc;
-
 use hashbrown::HashMap;
 use alloc::{vec::Vec, string::String, format, str};
 use core::hash::Hash;
@@ -196,6 +194,18 @@ impl Concat {
             None
         }
     }
+
+    /// Get next cell from the Concat, cloning it
+    pub fn next_clone(&mut self) -> Option<Cell> {
+        if self.pointer < self.array.len() {
+            let cell = &self.array[self.pointer];
+            self.pointer += 1;
+            Some(cell.clone())
+        }
+        else {
+            None
+        }
+    }
 }
 
 #[derive(Debug, Default, Clone)]
@@ -262,6 +272,7 @@ pub struct Pack {
     pub dictionary: Dictionary,
     pub ret: RetStack,
     pub concat: Concat,
+    pub is_dev: bool,
     reader: String,
     pos: usize,
 }
@@ -269,7 +280,13 @@ pub struct Pack {
 impl Pack {
     /// Create a new Pack with registered primitives and prelude.
     pub fn new() -> Self {
+        Self::new_dev_mode(false)
+    }
+
+    /// Create a new Pack specifying developer mode. Intended for REPL console.
+    pub fn new_dev_mode(dev_mode: bool) -> Self {
         let mut pack = Pack::default();
+        pack.is_dev = dev_mode;
         register_primitives(&mut pack);
         pack.code(PRELUDE);
         pack

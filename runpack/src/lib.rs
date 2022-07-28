@@ -3,6 +3,9 @@
 
 #![no_std]
 
+#[macro_use]
+extern crate alloc;
+
 mod core;
 mod primitives;
 mod prelude;

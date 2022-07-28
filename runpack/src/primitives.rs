@@ -1,5 +1,3 @@
-extern crate alloc;
-
 use super::core::{Pack, Cell, BlockRef, Stack, IntegerType, FloatType, Error, ErrCode};
 use hashbrown::HashMap;
 use alloc::string::String;
@@ -10,7 +8,7 @@ pub fn register_primitives(pack: &mut Pack) {
         ("@", at), ("+", plus), ("-", minus), ("*", star), ("/", slash), ("%", percent), (">", bigger), ("<", smaller), ("=", equal),
         ("!=", not_equal), (">=", big_equal), ("<=", small_equal), ("and", and), ("or", or), ("not", not), ("if", if_word),
         ("either", either_word), ("loop", loop_word), ("[", open_bracket), ("exe", exe), ("int", int), ("float", float),
-        ("type", type_word),
+        ("type", type_word), ("?", question),
     ]);
 }
 
@@ -19,7 +17,7 @@ pub fn register_primitives(pack: &mut Pack) {
 //  inc_post 100 print
 //The word @@ doesn't get the next cell in the concat, that is "++", it uses concat position of word caller.
 
-//TODO: remove word from dictionary
+//TODO: remove word from dictionary (is it really useful?)
 
 fn open_parenth(pack: &mut Pack) -> Result<bool, Error> {
     pack.stack.start_stack();
@@ -361,5 +359,20 @@ fn type_word(pack: &mut Pack) -> Result<bool, Error> {
     }
     else {
         Err(Error::new("type: Stack is empty".into(), ErrCode::NoArgsStack.into()))
+    }
+}
+
+fn question(pack: &mut Pack) -> Result<bool, Error> {
+    if let (Some(Cell::Word(word)), Some(Cell::String(stack_effect)), Some(Cell::String(description))) = (pack.concat.next_clone(), pack.concat.next_clone(), pack.concat.next_clone()) {
+        if pack.is_dev {
+            let stack_help_word = format!("?_{word}_stack_");
+            let desc_help_word = format!("?_{word}_desc_");
+            pack.dictionary.data(&stack_help_word, Cell::String(stack_effect));
+            pack.dictionary.data(&desc_help_word, Cell::String(description));
+        }
+        Ok(true)
+    }
+    else {
+        Err(Error::new("question: No correct arguments in the concat".into(), ErrCode::NoArgsConcat.into()))
     }
 }
