@@ -1,6 +1,6 @@
 # RunPack
 
-_Extremely simple, yet practical, scripting language_
+_Minimalistic, yet practical, scripting language_
 
 ## Introduction
 
