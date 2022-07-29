@@ -250,7 +250,7 @@ Stack:
 
 Explanation: The word `(` opens a new stack nested inside the current one. From now on, this new stack will be our current. When we push `20` we are pushing into the nested stack, and thus, this cell doesn't live in the same stack as the `10` we pushed before, because it's located in the previous stack. That's why in the first `print_stack` we only see the `20`. Then we run the word `)`, that closes a nested stack. When this happens, all data in the current stack goes to the parent stack, in our case, the `20`. that's why the second `print_stack` shows both, the `10` and the `20`.
 
-Nested stacks are useful for operations that use all the data from the stack, because it allows us to demarcate the limits of these operations. For example, the word `flush`, that removes all cells from the stack. We will see more usage examples in the following chapters.
+Nested stacks are useful for operations that use all the data from the stack, because it allows us to demarcate the limits of these operations. For example, the word `wipe`, that removes all cells from the stack. We will see more usage examples in the following chapters.
 
 ## 2. Arithmetic & Logic operations
 

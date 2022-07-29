@@ -24,8 +24,8 @@ pub const PRELUDE: &str = r#"
     ? swap 'a b -> b a' 'Swap positions of 2 cells in the stack.'
     { [ a b | a b ] } def swap
 
-    ? flush 'a b c ... N -> ' 'Remove all cells in the stack: ( 1 2 3 flush )'
-    { { size 0 > } { drop } loop } def flush
+    ? wipe 'a b c ... N -> ' 'Remove all cells in the stack: ( 1 2 3 wipe )'
+    { { size 0 > } { drop } loop } def wipe
 
     "--- Types ---"
 
