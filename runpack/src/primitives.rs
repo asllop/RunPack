@@ -13,54 +13,6 @@ pub fn register_primitives(pack: &mut Pack) {
     ]);
 }
 
-/*
-TODO
-
-Ens cal poder crear blocs al concat fora de la zona d'execució per a poder modifcar-los.
-Ens agradaria poder definir paraules que defineixin altres paraules. Com para un setter que genera setters de variables:
-
-0 def num
-setter num      "Això crea la praula num! que fica un valor a num"
-10 num!         "Ara num val 10"
-num print
-
-Podríem crear una paraula "var" que fa igual que un def + setter:
-10 var num
-num print   "10"
-5 num!
-num print   "5"
-
-14> "{ @@ string '!' + word, dup { @ $ @def } swap @def } def setter"
-15> { @@ string '!' + word, 0 swap @def } def setter
-16> setter num
-17> num!        "hem creat una variable num! que conté un 0"
-18> print_stack
-
-En comptes d'un 0, voldríem que num! tingués un bloc amb la definició: { def num }
-
-Com modificar blocks:
-
-@ num { def $ } block
-
-La paraula "block" pren de la pila una referència de block, la repassa de forma seqüencial i per cada "$" obté una cell de la pila
-i la hi fica al seu lloc a la definició. En aquest cas, la paraula num. Aleshores crea un nou bloc modificat a un altre lloc del
-concat i fica a la pila la ref del nou bloc.
-
-Problema, si fiquem la nova paraula al final del concat, tard o d'hora serà executat. Podem crear una paraula SKIP que se salta
-N paraula del concat. Així al final del concat hi ficarem:
-
-4 SKIP { def num } ...
-
-Com faríem setter?
-
-0 def num
-{ @@ dup string '!' + word, swap { def $ } block swap @def } def setter
-setter num
-
-5 num!
-num print   "5"
-*/
-
 fn open_parenth(pack: &mut Pack) -> Result<bool, Error> {
     pack.stack.start_stack();
     Ok(true)
@@ -170,10 +122,12 @@ fn star(pack: &mut Pack) -> Result<bool, Error> {
 }
 
 fn slash(pack: &mut Pack) -> Result<bool, Error> {
+    //TODO: check division by zero
     two_num_op(&mut pack.stack, |a, b| a / b, |a, b| a / b)
 }
 
 fn percent(pack: &mut Pack) -> Result<bool, Error> {
+    //TODO: check division by zero
     two_num_op(&mut pack.stack, |a, b| a % b, |a, b| a % b)
 }
 
