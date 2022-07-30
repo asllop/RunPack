@@ -4,6 +4,9 @@ use core::hash::Hash;
 use super::primitives::register_primitives;
 use super::prelude::PRELUDE;
 
+// TODO: - remove error code.
+//       - add error location info: concat pos, ret stack (backtrace), and word that caused the crash.
+
 #[derive(Debug)]
 /// Error type
 pub struct Error {
@@ -429,7 +432,7 @@ impl Pack {
         }
     }
 
-    /// Append literal code to the end of the Concat.
+    /// Append code to the end of the Concat.
     pub fn code(&mut self, code: &str) {
         self.reader = code.into();
         self.tokenize();
@@ -450,13 +453,12 @@ impl Pack {
     
     /// Run a block
     pub fn run_block(&mut self, block: &BlockRef) -> Result<bool, Error> {
-        let init_pointer = self.concat.pointer;
         self.ret.push(self.concat.pointer);
         self.concat.pointer = block.pos;
         loop {
             match self.one_step() {
                 Ok(true) => {
-                    if self.concat.pointer == init_pointer {
+                    if self.concat.pointer == block.pos + block.len - 1 {
                         return Ok(true);
                     }
                 },

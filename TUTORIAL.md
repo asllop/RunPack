@@ -4,11 +4,22 @@ This tutorial should be read sequentially. Some programming skills are assumed, 
 
 If you are not used to [reverse polish notation](https://en.wikipedia.org/wiki/Reverse_Polish_notation) it can be shocking at first. Take your time to understand and test the examples.
 
-**TODO: rebuild using the REPL tool.**
-
 ## 0. Setup
 
-All RunPack scripts in this tutorial have been executed in the following program:
+All RunPack scripts in this tutorial have been executed using the REPL tool. To install it, do the following:
+
+```
+$ cargo install --git https://github.com/asllop/RunPack-REPL
+$ runpack-cli
+```
+
+If your cargo bin folder is not in the path, put it or run:
+
+```
+$ ~/.cargo/bin/runpack-cli
+```
+
+Alternatively, you can create a Rust program and embed the scripts in there. Something like the following should work:
 
 ```rust
 use runpack::{Pack, Cell, self};
@@ -54,12 +65,14 @@ fn print(pack: &mut Pack) -> Result<bool, runpack::Error> {
 
 fn print_stack(pack: &mut Pack) -> Result<bool, runpack::Error>  {
     println!("Stack:");
-    for n in (0..pack.stack.size()).rev() {
+    for n in 0..pack.stack.size() {
         println!("\t{} : {:?}", n, pack.stack.get(n).unwrap());
     }
     Ok(true)
 }
 ```
+
+**TODO: rewrite tutorial using the REPL tool**
 
 ## 1. Ye Olde Stack
 

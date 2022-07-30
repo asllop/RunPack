@@ -229,13 +229,17 @@ fn either(pack: &mut Pack) -> Result<bool, Error> {
 
 fn loop_word(pack: &mut Pack) -> Result<bool, Error> {
     if let (Some(Cell::Block(loop_blk)), Some(Cell::Block(cond_blk))) = (pack.stack.pop(), pack.stack.pop()) {
+        let concat_pointer = pack.concat.pointer;
         loop {
             pack.run_block(&cond_blk)?;
+            pack.ret.pop();
             if let Some(Cell::Boolean(cond)) = pack.stack.pop() {
                 if cond {
                     pack.run_block(&loop_blk)?;
+                    pack.ret.pop();
                 }
                 else {
+                    pack.concat.pointer = concat_pointer;
                     break;
                 }
             }
