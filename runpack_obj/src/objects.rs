@@ -1,5 +1,3 @@
-extern crate alloc;
-
 use runpack::{Pack, Cell, Object, DictEntry, IntegerType, Error, ErrCode};
 use crate::prelude::PRELUDE;
 use alloc::format;

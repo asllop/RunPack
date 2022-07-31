@@ -1,0 +1,33 @@
+use runpack::{Pack, Cell, ErrCode, Error};
+
+/// Register words and prelude.
+pub fn register(pack: &mut Pack) {
+    //pack.code(PRELUDE);
+    pack.def_natives(&[
+        ("end", end), ("reenter", reenter),
+    ]);
+}
+
+fn reenter(pack: &mut Pack) -> Result<bool, runpack::Error> {
+    pack.ret.push(pack.concat.pointer - 1);
+    Ok(true)
+}
+
+fn end(pack: &mut Pack) -> Result<bool, runpack::Error> {
+    if let Some(Cell::Integer(level)) = pack.stack.pop() {
+        // Discard n positions of the return stack + reent return stack
+        for _ in 0..level + 1 {
+            pack.ret.pop();
+        }
+        if let Some(pos) = pack.ret.pop() {
+            pack.concat.pointer = pos;
+            Ok(true)
+        }
+        else {
+            Err(Error::new("end: Return stack underflow".into(), ErrCode::StackUnderflow.into()))
+        }
+    }
+    else {
+        Err(Error::new("end: Couln't find integer in stack".into(), ErrCode::NoArgsStack.into()))
+    }
+}

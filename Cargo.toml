@@ -3,4 +3,5 @@
 members = [
     "runpack",
     "runpack_obj",
+    "runpack_async",
 ]
