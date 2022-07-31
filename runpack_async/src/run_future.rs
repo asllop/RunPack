@@ -21,7 +21,6 @@ impl<'a> Future for RunFuture<'a> {
         let mut shared_state = self.shared_state.lock().unwrap();
         match shared_state.pack.one_step() {
             Ok(true) => {
-                println!("Run one_step");
                 shared_state.waker = Some(cx.waker().clone());
                 if let Some(waker) = shared_state.waker.take() {
                     waker.wake()

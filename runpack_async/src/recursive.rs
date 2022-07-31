@@ -4,7 +4,7 @@ use runpack::{Pack, Cell, ErrCode, Error};
 pub fn register(pack: &mut Pack) {
     //pack.code(PRELUDE);
     pack.def_natives(&[
-        ("end", end), ("reenter", reenter),
+        ("break", break_word), ("reenter", reenter),
     ]);
 }
 
@@ -13,9 +13,9 @@ fn reenter(pack: &mut Pack) -> Result<bool, runpack::Error> {
     Ok(true)
 }
 
-fn end(pack: &mut Pack) -> Result<bool, runpack::Error> {
+fn break_word(pack: &mut Pack) -> Result<bool, runpack::Error> {
     if let Some(Cell::Integer(level)) = pack.stack.pop() {
-        // Discard n positions of the return stack + reent return stack
+        // Discard n positions of the return stack + reenter return stack
         for _ in 0..level + 1 {
             pack.ret.pop();
         }
@@ -24,10 +24,10 @@ fn end(pack: &mut Pack) -> Result<bool, runpack::Error> {
             Ok(true)
         }
         else {
-            Err(Error::new("end: Return stack underflow".into(), ErrCode::StackUnderflow.into()))
+            Err(Error::new("break_word: Return stack underflow".into(), ErrCode::StackUnderflow.into()))
         }
     }
     else {
-        Err(Error::new("end: Couln't find integer in stack".into(), ErrCode::NoArgsStack.into()))
+        Err(Error::new("break_word: Couln't find integer in stack".into(), ErrCode::NoArgsStack.into()))
     }
 }
