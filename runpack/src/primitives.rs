@@ -287,7 +287,11 @@ fn open_bracket(pack: &mut Pack) -> Result<bool, Error> {
 
 fn exe(pack: &mut Pack) -> Result<bool, Error> {
     match pack.stack.pop() {
-        Some(Cell::Block(blk)) => pack.run_block(&blk),
+        Some(Cell::Block(blk)) => {
+            pack.ret.push(pack.concat.pointer);
+            pack.concat.pointer = blk.pos;
+            Ok(true)
+        },
         Some(Cell::Word(w)) => pack.exec(&w),
         _ => Err(Error::new("exe: Couldn't get a word".into(), ErrCode::NoArgsStack.into())),
     }

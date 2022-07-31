@@ -418,8 +418,8 @@ impl Pack {
                     return func(self);
                 },
                 DictEntry::Defined(block_ref) => {
-                    let block = *block_ref;
-                    return self.run_block(&block);
+                    self.ret.push(self.concat.pointer);
+                    self.concat.pointer = block_ref.pos;
                 },
                 DictEntry::Data(data_cell) => {
                     self.stack.push(data_cell.clone());
