@@ -121,6 +121,7 @@ fn colon(pack: &mut Pack) -> Result<bool, Error> {
                     },
                     Cell::Block(blk) => {
                         let blk = blk.clone();
+                        //TODO: don't use run_block, is the evil
                         return pack.run_block(&blk);
                     },
                     Cell::Empty => return Err(Error::new("period: cell is empty".into(), ErrCode::WrongType.into())),

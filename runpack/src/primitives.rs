@@ -204,7 +204,8 @@ fn not(pack: &mut Pack) -> Result<bool, Error> {
 fn if_word(pack: &mut Pack) -> Result<bool, Error> {
     if let (Some(Cell::Block(blk)), Some(Cell::Boolean(cond))) = (pack.stack.pop(), pack.stack.pop()) {
         if cond {
-            pack.run_block(&blk)?;
+            pack.ret.push(pack.concat.pointer);
+            pack.concat.pointer = blk.pos;
         }
     }
     else {
@@ -216,11 +217,14 @@ fn if_word(pack: &mut Pack) -> Result<bool, Error> {
 fn either(pack: &mut Pack) -> Result<bool, Error> {
     if let (Some(Cell::Block(false_blk)), Some(Cell::Block(true_blk)), Some(Cell::Boolean(cond))) = (pack.stack.pop(), pack.stack.pop(), pack.stack.pop()) {
         if cond {
-            pack.run_block(&true_blk)
+            pack.ret.push(pack.concat.pointer);
+            pack.concat.pointer = true_blk.pos;
         }
         else {
-            pack.run_block(&false_blk)
+            pack.ret.push(pack.concat.pointer);
+            pack.concat.pointer = false_blk.pos;
         }
+        Ok(true)
     }
     else {
         Err(Error::new("either: couldn't find condition and 2 blocks".into(), ErrCode::NoArgsStack.into()))

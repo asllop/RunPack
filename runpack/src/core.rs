@@ -451,7 +451,7 @@ impl Pack {
         }
     }
     
-    /// Run a block
+    /// Run a block and return when finished.
     pub fn run_block(&mut self, block: &BlockRef) -> Result<bool, Error> {
         self.ret.push(self.concat.pointer);
         self.concat.pointer = block.pos;
