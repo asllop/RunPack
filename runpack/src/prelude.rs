@@ -8,7 +8,7 @@ pub const PRELUDE: &str = r#"
     { @@ } def @
 
     ? setter 'a -> ' 'Create a setter for the word reference in the stack. The setter is named \'word!\': 10 def num , @ num setter , 0 num!'
-    { dup string '!' + word, swap { def $ } block swap @def } def setter
+    { dup string '!' + word, swap string lex# swap + word { def $ } block swap @def } def setter
 
     ? var 'a -> ' 'Define a variable and a setter with intial value taken from the stack and name taken from the concat: 10 var num'
     { @@ [ word val | word val word ] @def setter } def var

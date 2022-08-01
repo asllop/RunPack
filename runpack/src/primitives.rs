@@ -8,7 +8,7 @@ pub fn register_primitives(pack: &mut Pack) {
         ("+", plus), ("-", minus), ("*", star), ("/", slash), ("%", percent), (">", bigger), ("<", smaller), ("=", equal),
         ("!=", not_equal), (">=", big_equal), ("<=", small_equal), ("and", and), ("or", or), ("not", not), ("if", if_word),
         ("either", either), ("loop", loop_word), ("[", open_bracket), ("exe", exe), ("int", int), ("float", float),
-        ("string", string), ("word", word), ("type", type_word), ("?", question), ("@@", atat), ("@def", atdef),
+        ("string", string), ("word", word), ("type", type_word), ("?", question), ("@@", atat), ("@def", atdef), ("lex#", lex_val),
         ("skip", skip), ("block", block),
     ]);
 }
@@ -453,4 +453,9 @@ fn block(pack: &mut Pack) -> Result<bool, Error> {
     else {
         Err(Error::new("block: Couldn't get block from stack".into(), ErrCode::NoArgsStack.into()))
     }
+}
+
+fn lex_val(pack: &mut Pack) -> Result<bool, Error> {
+    pack.stack.push(Cell::String(pack.dictionary.lex.clone()));
+    Ok(true)
 }
