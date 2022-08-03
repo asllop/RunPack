@@ -1,4 +1,36 @@
 pub const PRELUDE: &str = r#"
+    "--- Primitives doc ---"
+
+    ? size ' -> a' 'Get size of current stack: size'
+    ? lex ' -> ' 'Set prefix for word definition: lex \'mylex.\' 10 def num lex \'\''
+    ? + 'a b -> c' 'Add two numbers: 1 2 +'
+    ? - 'a b -> c' 'Subtract two numbers: 1 2 -'
+    ? * 'a b -> c' 'Muliply two numbers: 1 2 *'
+    ? / 'a b -> c' 'Divide two numbers: 1 2 /'
+    ? % 'a b -> c' 'Remainder of an integer division: 3 2 %'
+    ? > 'a b -> c' 'Compare two numbers, true if a is bigger than b: 2 1 >'
+    ? < 'a b -> c' 'Compare two numbers, true if a is smaller than b: 1 2 <'
+    ? >= 'a b -> c' 'Compare two numbers, true if a is bigger or equal than b: 2 1 >='
+    ? <= 'a b -> c' 'Compare two numbers, true if a is smaller or equal than b: 1 2 <='
+    ? = 'a b -> c' 'Compare two numbers, true if a is equal to b: 2 2 ='
+    ? != 'a b -> c' 'Compare two numbers, true if a is different from b: 2 1 !='
+    ? and 'a b -> c' 'Calculate logic and of two operands'
+    ? or 'a b -> c' 'Calculate logic or of two operands'
+    ? not 'a -> b' 'Calculate logic inversion of an operand'
+    ? if 'a b -> ' 'Execute block b if a is true: 2 2 = { "do something" } if'
+    ? either 'a b c -> ' 'Execute block b if a is true, or block c if a is false: 2 2 = { "true block" } { "false block" } either'
+    ? loop 'a b -> ' 'Execute block b while result of block a is true: 10 var num { num 0 > } { num -- num! } loop'
+    ? exe 'a -> ' 'Execute a word referenced in the stack: @ a_word exe'
+    ? int 'a -> b' 'Convert a float into an integer: 10.9 int'
+    ? float 'a -> b' 'Convert an integer into a float: 10 float'
+    ? string 'a -> b' 'Convert a word into a string: @ my_word string'
+    ? word 'a -> b' 'Convert a string into a word: \'my_word\' word'
+    ? type 'a -> a b' 'Get type of data in the stack without consuming it: 20 type'
+    ? @@ ' -> a' 'Get a cell from the concat of current block caller, and put it in the stack: { @@ } exe my_word'
+    ? @def 'a b -> ' 'Define word b with value a: 10 @ my_num @def'
+    ? lex# ' -> a' 'Put value of current lex prefix in the stack: lex#'
+    ? block '... a -> b' 'Get a block from the stack and create a new one. For each $ word in the block, it will get a cell from the stack and put in its place: 10 { 1 $ + } block exe'
+
     "--- Word Definition ---"
 
     ? def 'a -> ' 'Define a word taken from the concat with the value taken from the stack: 10 def num'
