@@ -14,9 +14,9 @@ pub const PRELUDE: &str = r#"
     ? <= 'a b -> c' 'Compare two numbers, true if a is smaller or equal than b: 1 2 <='
     ? = 'a b -> c' 'Compare two numbers, true if a is equal to b: 2 2 ='
     ? != 'a b -> c' 'Compare two numbers, true if a is different from b: 2 1 !='
-    ? and 'a b -> c' 'Calculate logic and of two operands'
-    ? or 'a b -> c' 'Calculate logic or of two operands'
-    ? not 'a -> b' 'Calculate logic inversion of an operand'
+    ? and 'a b -> c' 'Calculate logic "and" of two operands: -1 -1 and'
+    ? or 'a b -> c' 'Calculate logic "or" of two operands: -1 0 or'
+    ? not 'a -> b' 'Calculate logic inversion of an operand: 0 not'
     ? if 'a b -> ' 'Execute block b if a is true: 2 2 = { "do something" } if'
     ? either 'a b c -> ' 'Execute block b if a is true, or block c if a is false: 2 2 = { "true block" } { "false block" } either'
     ? loop 'a b -> ' 'Execute block b while result of block a is true: 10 var num { num 0 > } { num -- num! } loop'
@@ -30,6 +30,7 @@ pub const PRELUDE: &str = r#"
     ? @def 'a b -> ' 'Define word b with value a: 10 @ my_num @def'
     ? lex# ' -> a' 'Put value of current lex prefix in the stack: lex#'
     ? block '... a -> b' 'Get a block from the stack and create a new one. For each $ word in the block, it will get a cell from the stack and put in its place: 10 { 1 $ + } block exe'
+    ? ? ' -> ' 'Get a word and two strings from the concat and generate help words: ? add \'a b -> c\' \'Calculate addition of two operands and put results in stack.\''
 
     "--- Word Definition ---"
 
