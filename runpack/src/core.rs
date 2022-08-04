@@ -275,7 +275,6 @@ pub struct Pack {
     pub dictionary: Dictionary,
     pub ret: RetStack,
     pub concat: Concat,
-    pub is_dev: bool,
     reader: String,
     pos: usize,
 }
@@ -283,13 +282,7 @@ pub struct Pack {
 impl Pack {
     /// Create a new Pack with registered primitives and prelude.
     pub fn new() -> Self {
-        Self::new_dev_mode(false)
-    }
-
-    /// Create a new Pack specifying developer mode. Intended for REPL console.
-    pub fn new_dev_mode(dev_mode: bool) -> Self {
         let mut pack = Pack::default();
-        pack.is_dev = dev_mode;
         register_primitives(&mut pack);
         pack.code(PRELUDE);
         pack

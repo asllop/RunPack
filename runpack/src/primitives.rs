@@ -363,7 +363,7 @@ fn type_word(pack: &mut Pack) -> Result<bool, Error> {
 
 fn question(pack: &mut Pack) -> Result<bool, Error> {
     if let (Some(Cell::Word(word)), Some(Cell::String(stack_effect)), Some(Cell::String(description))) = (pack.concat.next_clone(), pack.concat.next_clone(), pack.concat.next_clone()) {
-        if pack.is_dev {
+        if pack.dictionary.dict.contains_key("?__") {
             let stack_help_word = format!("?_{word}_stack_");
             let desc_help_word = format!("?_{word}_desc_");
             pack.dictionary.data(&stack_help_word, Cell::String(stack_effect));
