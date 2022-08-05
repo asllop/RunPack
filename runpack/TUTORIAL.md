@@ -74,8 +74,6 @@ fn show_stack(pack: &mut Pack) -> Result<bool, runpack::Error>  {
 }
 ```
 
-**TODO: rewrite tutorial using the REPL tool**
-
 ## 1. Ye Olde Stack
 
 The stack is the most important data structure in RunPack. It's used as an intermediate store to pass data from one word to another. In other language's terminology, we would say that it's used to pass arguments to functions, and to get returned values from them.
