@@ -19,11 +19,13 @@ RunPack is what you are looking for, if you...
 
 ## Embedding
 
-To embed RunPack start by including the dependencies in your cargo file:
+To start using RunPack, first include it in your cargo file:
 
 ```toml
 runpack = "0.1.0"
 ```
+
+Also include as a dependency any other [RunPack module](#modules) you will need.
 
 Then use it:
 
@@ -90,6 +92,20 @@ if let Some(Cell::Float(f)) = pack.stack.pop() {
 }
 ```
 
+## Modules
+
+The [RunPack core](runpack/) contains only the most common functionality, due to its modular nature, all domain-specific features are spread across different crates.
+
+As of now, the available modules are:
+
+- [runpack](runpack/): Contains the interpreter and the core words, the minimum necessary to make the language work.
+- [runpack_obj](runpack_obj/): Vocabulary to operate with objects.
+- [runpack_async](runpack_async/): Asyncronous infrastructure.
+
+Additionally, we have the [RunPack REPL](https://github.com/asllop/RunPack-REPL), a cli tool to facilitate the development of RunPack programs.
+
 ## Learn RunPack
 
-Learning is easy, you only need 1 hour of your time and this [tutorial](TUTORIAL.md). Enjoy the trip!
+Learning is easy, you only need 1 hour of your time and this introductory [tutorial](runpack/TUTORIAL.md). Each module comes with its own documentation and tutorial, check-out the different crate folders in the present repository.
+
+Enjoy the trip!

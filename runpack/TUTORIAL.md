@@ -1,8 +1,10 @@
 # RunPack Tutorial
 
-This tutorial should be read sequentially. Some programming skills are assumed, at least a basic level of Rust, and understanding of the essential data structures like stacks, and hash maps.
+In this tutorial we are going to learn the basics of RunPack, how the interpreter works and the core functionalities.
 
-If you are not used to [reverse polish notation](https://en.wikipedia.org/wiki/Reverse_Polish_notation) it can be shocking at first. Take your time to understand and test the examples.
+If you are not used to [reverse polish notation](https://en.wikipedia.org/wiki/Reverse_Polish_notation) it can be shocking at first, take your time to understand and test the examples.
+
+Some programming skills are assumed, at least a basic level of Rust, and understanding of the essential data structures like stacks, and hash maps.
 
 ## 0. Setup
 
@@ -37,7 +39,7 @@ fn main() {
     let mut pack = Pack::new();
     runpack_obj::register(&mut pack);
     pack.dictionary.native("print", print);
-    pack.dictionary.native("print_stack", print_stack);
+    pack.dictionary.native("show_stack", show_stack);
 
     // Add script code and run
     pack.code(script);
@@ -63,7 +65,7 @@ fn print(pack: &mut Pack) -> Result<bool, runpack::Error> {
     }
 }
 
-fn print_stack(pack: &mut Pack) -> Result<bool, runpack::Error>  {
+fn show_stack(pack: &mut Pack) -> Result<bool, runpack::Error>  {
     println!("Stack:");
     for n in 0..pack.stack.size() {
         println!("\t{} : {:?}", n, pack.stack.get(n).unwrap());
@@ -84,10 +86,10 @@ To push something into the stack we simply do:
 10
 ```
 
-Now the stack contains one element, an integer with value 10. We can check that running the word `print_stack`, that will show the contents of the stack:
+Now the stack contains one element, an integer with value 10. We can check that running the word `show_stack`, that will show the contents of the stack:
 
 ```
-10 print_stack
+show_stack
 ```
 
 The output will be:
@@ -102,23 +104,33 @@ We learned a new thing, to execute a word (the equivalent of a function in other
 Let's try to push more data of different types:
 
 ```
-10 -5.5 true 'Hello' print_stack
+-5.5 true 'Hello'
+show_stack
 ```
 
 Output:
 
 ```
 Stack:
-	3 : Integer(10)
-	2 : Float(-5.5)
-	1 : Boolean(true)
 	0 : String("Hello")
+	1 : Boolean(true)
+	2 : Float(-5.5)
+	3 : Integer(10)
 ```
 
 All good. Now we want to pop data out from the stack. How can we do that?
 
+First we are going to clean-up the stack:
+
 ```
-10 20 + print_stack
+wipe
+```
+
+And then:
+
+```
+10 20 +
+show_stack
 ```
 
 Output:
@@ -133,7 +145,8 @@ Interesting. We put two integers in the stack, then we called the word `+` and n
 There are other basic operations we can perform on the stack. We can remove one data cell calling `drop`:
 
 ```
-'hello' drop print_stack
+drop
+show_stack
 ```
 
 Output:
@@ -145,7 +158,8 @@ Stack:
 Duplicate it with `dup`:
 
 ```
-123 dup print_stack
+123 dup
+show_stack
 ```
 
 Output:
@@ -159,18 +173,20 @@ Stack:
 Or `swap` positions:
 
 ```
-'A' 'B' print_stack swap print_stack
+wipe
+'A' 'B' show_stack
+swap show_stack
 ```
 
 Output:
 
 ```
 Stack:
-	1 : String("A")
 	0 : String("B")
+	1 : String("A")
 Stack:
-	1 : String("B")
 	0 : String("A")
+	1 : String("B")
 ```
 
 ### Stack Transfers
@@ -180,15 +196,16 @@ Sometimes it can be hard to work with the stack. Our word needs the arguments in
 Let's imagine our current stack state is as follows:
 
 ```
+wipe
+
 0.5 'A string' 100.0 false
 ```
 
 And we have to multiply the two floats, so we need them to be consecutive in the stack, right at the top of it. That's the perfect fit for the stack transfer operator:
 
 ```
-0.5 'A string' 100.0 false
 [ a, flt_a, b, flt_b | b, a, flt_b, flt_a ] * print
-print_stack
+show_stack
 ```
 
 Output:
@@ -196,9 +213,11 @@ Output:
 ```
 50
 Stack:
-	1 : String("A string")
 	0 : Boolean(false)
+	1 : String("A string")
 ```
+
+Look how we printed the multipliation of 0.5 and 100.0, and the rest of the srack remained the same.
 
 **Beware of the spaces!** In RunPack, the space is the word delimiter. Writing "`[ a`" is a totally different thing than writing "`[a`". In the former case we have 2 words, `[` and `a`. In the latter, we have only one word, identified as `[a`.
 
@@ -215,30 +234,33 @@ The variables at the left of `|` are popped from the stack in the order they app
 The variable in the left side can't be repeaded, but they can appear multiple times in the right side, or don't appear at all. For example, if we have 3 cells and want to remove the one in the middle, we could do:
 
 ```
-1 2 3 [ a b c | c a ] print_stack
+wipe
+
+1 2 3 [ a b c | c a ] show_stack
 ```
 
 Output:
 
 ```
 Stack:
-	1 : Integer(1)
 	0 : Integer(3)
+	1 : Integer(1)
 ```
 
 Or maybe we want to triple a cell:
 
 ```
-100 [ a | a a a ] print_stack
+[ a | a a a ] show_stack
 ```
 
 Output:
 
 ```
 Stack:
-	2 : Integer(100)
-	1 : Integer(100)
-	0 : Integer(100)
+	0 : Integer(3)
+	1 : Integer(3)
+	2 : Integer(3)
+	3 : Integer(1)
 ```
 
 ### Nested Stacks
@@ -248,7 +270,9 @@ The way we have used the stack until now is linear, we push and pop data into th
 We can create a new stack, nested into the current stack, and this one will become our new current stack. We do that with the words `(` and `)`:
 
 ```
-10 ( 20 print_stack ) print_stack
+wipe
+
+10 ( 20 show_stack ) show_stack
 ```
 
 Output:
@@ -257,11 +281,11 @@ Output:
 Stack:
 	0 : Integer(20)
 Stack:
-	1 : Integer(10)
 	0 : Integer(20)
+	1 : Integer(10)
 ```
 
-Explanation: The word `(` opens a new stack nested inside the current one. From now on, this new stack will be our current. When we push `20` we are pushing into the nested stack, and thus, this cell doesn't live in the same stack as the `10` we pushed before, because it's located in the previous stack. That's why in the first `print_stack` we only see the `20`. Then we run the word `)`, that closes a nested stack. When this happens, all data in the current stack goes to the parent stack, in our case, the `20`. that's why the second `print_stack` shows both, the `10` and the `20`.
+Explanation: The word `(` opens a new stack nested inside the current one. From now on, this new stack will be our current. When we push `20` we are pushing into the nested stack, and thus, this cell doesn't live in the same stack as the `10` we pushed before, because it's located in the previous stack. That's why in the first `show_stack` we only see the `20`. Then we run the word `)`, that closes a nested stack. When this happens, all data in the current stack goes to the parent stack, in our case, the `20`. that's why the second `show_stack` shows both, the `10` and the `20`.
 
 Nested stacks are useful for operations that use all the data from the stack, because it allows us to demarcate the limits of these operations. For example, the word `wipe`, that removes all cells from the stack. We will see more usage examples in the following chapters.
 
@@ -270,6 +294,8 @@ Nested stacks are useful for operations that use all the data from the stack, be
 We have already seen some of them. Arithmetic operations can work either with integers or floats, but can't mix them. There are five: addition, subtraction, multiplication, division, and remainder of a division.
 
 ```
+wipe
+
 5 2 + print
 5 2 - print
 5 2 * print
@@ -304,7 +330,7 @@ Output:
 Sometimes an arithmetic operation that is big and complicated can look messy when implemented using these operators. Just look how we would implement `(1+2+3)*(4+5+6)*(7+8+9)`:
 
 ```
-1 2 + 3 + 4 5 + 6 + 7 8 + 9 + * *
+1 2 + 3 + 4 5 + 6 + 7 8 + 9 + * * print
 ```
 
 Pretty ugly, uh?
@@ -312,7 +338,7 @@ Pretty ugly, uh?
 For this kind of cases we have the sequence operations: `sum` and `prod`:
 
 ```
-( ( 1 2 3 sum ) ( 4 5 6 sum ) ( 7 8 9 sum ) prod )
+( ( 1 2 3 sum ) ( 4 5 6 sum ) ( 7 8 9 sum ) prod ) print
 ```
 
 Pretty neat, uh?
@@ -354,7 +380,7 @@ To define a word we use the word `def` followed by a name:
 555555 def phone
 ```
 
-This syntax may look contradictory for a language that uses Reverse Polish Notation, it seems to violate the rules. The word `def` uses an argument that is in the stack, that's good, but then it uses another argument, the word name, that is not in the stack. For now let's leave it, we will understand what's going on once we get into the [Concat](#the-concat).
+This syntax may look contradictory for a language that uses Reverse Polish Notation, it seems to violate the rules. The word `def` uses an argument that is in the stack, that's good, but then it uses another argument, the word name, that is not in the stack. For now let's leave it, we will understand what's going on once we get into the [Concat](#73-the-concat).
 
 Now, what happens when we execute these words?
 
@@ -364,15 +390,15 @@ Now, what happens when we execute these words?
 
 name
 phone
-print_stack
+show_stack
 ```
 
 Output:
 
 ```
 Stack:
-	1 : String("Andreu")
 	0 : Integer(555555)
+	1 : String("Andreu")
 ```
 
 The values we assigned to these words are now in the stack. These words act as a constant or a variable, executing `name` is equivalent to execute `'Andreu'`.
@@ -380,21 +406,26 @@ The values we assigned to these words are now in the stack. These words act as a
 Before proceeding to the next step, we will talk about a new data type: the Block. To define a block we use the words `{` and `}` (I know I'm being a bit of a nagger, but please, beware of the spaces):
 
 ```
+wipe
+
 { 'We are in a block' print }
-print_stack
+show_stack
 ```
 
 Output:
 
 ```
 Stack:
-	0 : Block(BlockRef { pos: 115, len: 3 })
+	0 : Block(BlockRef { pos: 477, len: 3 })
 ```
+
+_Note_: the exact pos value  may vary.
 
 A block is a piece of code, but is also a data type and can be treated as data. It can be pushed into the stack, sent to other words, and returned by them. And of course, stored in a word definition:
 
 ```
-{ 'We are in a block' print } def we_are
+def we_are
+
 we_are
 ```
 
@@ -419,38 +450,67 @@ Output:
 240
 ```
 
-### Stack Effect Comments
-
-Because of the dynamic nature of RunPack and the use of the stack, there is no way to know the arguments a word takes and the results it produces without inspecting and understending the code. For this reason we have the stack effect comments, to describe in a fast and readable way how a word affects the stack. The format for this comments is:
+There are other words used to define words, a very useful one is `var` used to define variables:
 
 ```
-"word_name a,b,c -> x,y,z"
-{ . . . } def word_name
+101 var my_num
 ```
 
-Where a, b, and c, are the contents of the stack before executing the word, and that are used by it, and x, y, and z, are the contents of the stack after executing the word, and that are produced by it. Optionally we can also include, underneath, a description of what the word does.
-
-Let's take the `x2` word we previously defined:
+Now we can just invoce `my_num` to get the value in the stack:
 
 ```
-"x2 a -> b"
-" Description: Takes an integer and doubles it."
-{ 2 * } def x2
+my_num print
 ```
 
-This comment is telling us that this word takes an argument, called `a`, and consumes it. And as a results it pushes another element, `b`. We could also specify the data types:
+Output:
 
 ```
-"x2 a_i -> b_i"
-" Description: Takes an integer and doubles it."
-{ 2 * } def x2
+101
 ```
 
-The abreviations for the types are: i (integer), f (float), s (string), b (boolean), o (object), w (word), and k (block). If the word accepts multiple data types we can concatenate multiple type abreviations:
+But what makes it different from using `def`? The cool part of `var` is that it actually defines two words, a getter and a setter. We already saw the getter, is just `my_num`. The setter is used to change the value:
 
 ```
-"my_word a_i_f -> b_i_f"
+202 my_num!
 ```
+
+Now we can print `my_num` again and see how the value changed:
+
+```
+my_num print
+```
+
+Output:
+
+```
+202
+```
+
+### Word Documentation
+
+Because of the dynamic nature of RunPack and the use of the stack, there is no way to know the arguments a word takes and the results it produces without inspecting and understending the code. For this reason we have the stack effect comments, to describe in a fast and readable way how a word affects the stack. The format for this comments is: `a b -> x y`, where `a` and `b`, are the contents of the stack before executing the word, and that are used by it, and `x` and `y`, are the contents of the stack after executing the word.
+
+```
+? double2x 'a b -> x y' 'Double two numbers.'
+{ x2 swap x2 swap } def double2x
+```
+
+_Note_: this word makes use of the `x2` we previously defined.
+
+We used the word `?` to document how `double2x` works. It takes 3 arguments, the word name, the stack effects (a string) and the description (another string). Now we can use the word `help` to consult the documentation:
+
+```
+help double2x
+```
+
+Output:
+
+```
+Stack effect:	a b -> x y
+Description:	Double two numbers.
+```
+
+The word `?` only does somthing in development mode (while in the REPL tool), when running a script in production mode, it will just be ignored.
 
 ## 4. Control Flow
 
@@ -471,7 +531,7 @@ Output:
 
 We introduced multiple new things here. First, the `is_int?` word, checks if the type of the next cell in the stack is an integer, and puts a boolean with the result. Then we have the `either`. This words gets from the stack a boolean, and two blocks, the first block will be executed if the boolean is `true`, and the second if it's `false`.
 
-There is a simplified version that only has the true block:
+If we only need a true block, we can use the `if` word:
 
 ```
 { 10 > { 'It\'s bigger than ten' print } if } def >10
@@ -486,7 +546,7 @@ It's bigger than ten
 
 Here we introduced one more word, the `>`. This word is a comparator, it gets two cells, compares if the first is bigger thant the second, and returns a boolean. There are 6 comparators: `=`, `!=`, `>`, `<`, `>=`, and `<=`.
 
-And the last control flow word is `loop`. It works pretty much like `if`, but the condition, instead of being a simple boolean, is a block that must return a boolean:
+And finally, the last control flow word is `loop`. It gets two blocks, executes the first and it the resutl is a `true` in the stack, executes the second block, and loops again until the condition block returns a `false`.
 
 ```
 { { size 0 > } { 2 * print } loop } def dobl
@@ -504,7 +564,9 @@ Output:
 
 This word we just defined, `dobl`, gets every integer in the stack, doubles it, and prints. We do this with the `size` word, that returns the size of the current stack. Every time we calculate a multiplication, the stack decreases, until it's 0 and the loop stops.
 
-Now let's try to write a word to count down. We will pass an integer to it and will print the countdown until it reaches zero. An **unexperienced** RunPack programmer could do something like:
+Now let's try to write a word to count down. We will pass an integer to it and will print the countdown until it reaches zero. 
+
+An **unexperienced** RunPack programmer could do something like:
 
 ```
 { { dup 0 > } { dup print, -- } loop drop } def countdown
@@ -563,11 +625,11 @@ This approach is also very flexible. Imagine that, after we finished the program
 
 ```
 lex 'count.'
-    0 def var
-    { def count.var } def set
-    { count.var 0 > } def continue?
-    { count.var print } def print
-    { count.var -- count.set } def dec
+    0 var cnt
+    { count.cnt! } def set
+    { count.cnt 0 > } def continue?
+    { count.cnt print } def print
+    { count.cnt -- count.set } def dec
     { 0 count.set } def clean
 
     { { count.continue? } { count.print count.dec } loop count.clean } def down
@@ -584,9 +646,9 @@ Note that we didn't change the word `count.down` at all. We only adapted the def
 RunPack doesn't have a garbage collector, nor automatic reference counting, or any other built-in memory manager. It uses the Rust memory handling mechanisms. The reason why it's possible is simple: every time you send something from one place to another, you are cloning it. There are no pointers, memory references or shared buffers. You duplicate a string in the stack, RunPack clones the string. You drop it from the stack, RunPack deallocates it. So simple. Everything is passed by value in RunPack. But that doesn't sound too performant, right? What if I have a large piece of data stored in a variable, and I want to pass it to a word to operate? For these kind of cases we have word references. You can create a word reference using the `@` word:
 
 ```
-'This is a string' def my_str
+'This is a long string' def my_str
 @ my_str
-print_stack
+show_stack
 ```
 
 Output:
@@ -601,10 +663,9 @@ This code defines a variable with a string, and puts into the stack a reference 
 We can even store the reference into another word:
 
 ```
-'This is a string' def my_str
-@ my_str def str_ref
+def str_ref
 str_ref
-print_stack
+show_stack
 ```
 
 Output:
@@ -617,172 +678,61 @@ Stack:
 And execute this reference with the `exe` word:
 
 ```
-'This is a string' def my_str
-@ my_str def str_ref
-str_ref exe
-print_stack
+exe
+show_stack
 ```
 
 Output:
 
 ```
 Stack:
-	0 : String("This is a string")
+	0 : String("This is a long string")
 ```
 
 Word references work with any word, not only variables:
 
 ```
 @ print def print_ref
-'Hello from ref' print_ref exe
+print_ref exe
 ```
 
 Output:
 
 ```
-Hello from ref
+This is a long string
 ```
 
-Some words accept word references instead of values. We will see some examples in the following chapter.
-
-## 7. Objects
-
-There is still one data type we haven't covered yet: the object. In RunPack an object is a set of key-value pairs, internally implemented with a hash map. Key and value can be of any type, integer, float, string, boolean, word, block, even another object.
-
-To define an object, we use the `new` word:
+Some words accept word references instead of values. For example, we know how to define a word using `def`, that takes the value from the stack and the word name from the concat. But this is just a convenient definition to make things easier, the actual primitive used to define words is `@def`, that takes both, word name and value, from the stack:
 
 ```
-( 'name' 'Joe'
-  'phone' 5555555 new )
-print_stack
+10 @ ten @def
+ten print
 ```
 
-Output:
+Output: 
 
 ```
-Stack:
-	0 : Object(Object { map: {String("phone"): Integer(5555555), String("name"): String("Joe")} })
+10
 ```
 
-As always, we can store it in a word using `def`:
+The word `def` internally uses `@def` to define words.
 
-```
-( 'name' 'Andreu'
-  'phone' 5555555 new ) def my_obj
-```
-
-We use a pair of words to `set` and `get` values from an object:
-
-```
-( 'name' 'Andreu'
-  'phone' 5555555 new ) def my_obj
-
-'name' @ my_obj get print
-'name' 'Joe' @ my_obj set
-'name' @ my_obj get print
-```
-
-Output:
-
-```
-Andreu
-Joe
-```
-
-These operators use a [word reference](#6-word-references) to acces the object, to avoid cloning it in the stack over and over again.
-
-We can check if a key exists in an object with the `key?` word:
-
-```
-( 'name' 'Andreu'
-  'phone' 5555555 new ) def my_obj
-
-'name' @ my_obj key? print
-'xxxx' @ my_obj key? print
-```
-
-Output:
-
-```
-true
-false
-```
-
-Vectors are just normal objects, with the particularity of having integer keys. They are defined with the `vec` word, but operated with the same words we use for any object:
-
-```
-( 12.34, 'A string', 1000, true vec ) def my_vec
-1 @ my_vec get print
-@ my_vec len print
-```
-
-Output:
-
-```
-A string
-4
-```
-
-There is also an operator to "run" keys, the `:` word:
-
-```
-(
-    'name' 'Andreu'
-    'hi' { 'Hello, World!' print }
-    new
-) def my_obj
-
-@ my_obj : 'hi'
-@ my_obj : 'name' print
-```
-
-Output:
-
-```
-Hello, World!
-Andreu
-```
-
-And an operator to run keys as if they were methods, passing a reference to the object in the stack:
-
-```
-{ dup : val_a } def get_a
-{ swap : val_b } def get_b
-(
-    @ +         { get_a get_b + }
-    @ val_a     10
-    @ val_b     20
-    new
-)
-def my_obj
-
-@ my_obj . + print
-```
-
-Output:
-
-```
-30
-```
-
-In this case we are using words as keys instead of strings. The key `+` contains a block. When executed using "`.`" it uses the object reference in the stack to obtains the values of `val_a` and `val_b`, and add them.
-
-## 8. Advanced Topics
+## 7. Advanced Topics
 
 If you are reading this (and didn't cheat skipping chapters), it means you already know the basics of RunPack programming. Now it's time to understand the internals of the interpreter and how to interact with Rust to extend the language.
 
-### The Cell
+### 7.1 The Cell
 
 TODO
 
-### The Dictionary
+### 7.2 The Concat
 
 TODO
 
-### The Concat
+### 7.3 The Dictionary
 
 TODO
 
-### The Return Stack
+### 7.4 The Return Stack
 
 TODO
