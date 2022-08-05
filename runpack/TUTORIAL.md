@@ -378,7 +378,7 @@ To define a word we use the word `def` followed by a name:
 555555 def phone
 ```
 
-This syntax may look contradictory for a language that uses Reverse Polish Notation, it seems to violate the rules. The word `def` uses an argument that is in the stack, that's good, but then it uses another argument, the word name, that is not in the stack. For now let's leave it, we will understand what's going on once we get into the [Concat](#73-the-concat).
+This syntax may look contradictory for a language that uses Reverse Polish Notation, it seems to violate the rules. The word `def` uses an argument that is in the stack, that's good, but then it uses another argument, the word name, that is not in the stack. For now let's leave it, we will understand what's going on once we get into the [Concat](#72-the-concat).
 
 Now, what happens when we execute these words?
 
@@ -719,9 +719,44 @@ The word `def` internally uses `@def` to define words.
 
 If you are reading this (and didn't cheat skipping chapters), it means you already know the basics of RunPack programming. Now it's time to understand the internals of the interpreter and how to interact with Rust to extend the language.
 
-### 7.1 The Cell
+### 7.1 Cells
 
-TODO
+During this tutorial we have been reding the word "cell" here and there as a synonym of datum. Anything in the stack, an integer, float, string, whatever, is a cell. But cells are not only found in the stack, anything we execute is also a cell. Both, data and code, are composed of cells.
+
+But what is it? Internally, a cell is a Rust enum that looks like:
+
+```rust
+pub enum Cell {
+    Empty,
+    Integer(IntegerType),
+    Float(FloatType),
+    Boolean(bool),
+    String(String),
+    Word(String),
+    Block(BlockRef),
+    Object(Object),
+}
+```
+
+The stack is a vector of `Cell`s where we can push and pop elements. In Rust we can define a Cell and push it into the stack by doing:
+
+```rust
+let mut pack = Pack::new();
+
+// Put an integer into the stack
+pack.stack.push(Cell::Integer(100));
+
+// Put a string into the stack
+pack.stack.push(Cell::String("This is a string".into()));
+```
+
+We can also pop a Cell from the stack:
+
+```rust
+if let Some(cell) = pack.stack.pop() {
+    // do something with the cell
+}
+```
 
 ### 7.2 The Concat
 
