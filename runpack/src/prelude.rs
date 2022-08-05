@@ -30,6 +30,7 @@ pub const PRELUDE: &str = r#"
     ? @def 'a b -> ' 'Define word b with value a: 10 @ my_num @def'
     ? lex# ' -> a' 'Put value of current lex prefix in the stack: lex#'
     ? block '... a -> b' 'Get a block from the stack and create a new one. For each $ word in the block, it will get a cell from the stack and put in its place: 10 { 1 $ + } block exe'
+    ? exist? 'a -> a b' 'Check if word "a" exists and puts a boolean "b" in the stack: @ my_word exist?'
     ? ? ' -> ' 'Get a word and two strings from the concat and generate help words: ? add \'a b -> c\' \'Calculate addition of two operands and put results in stack.\''
 
     "--- Word Definition ---"

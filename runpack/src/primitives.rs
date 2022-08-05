@@ -9,7 +9,7 @@ pub fn register_primitives(pack: &mut Pack) {
         ("!=", not_equal), (">=", big_equal), ("<=", small_equal), ("and", and), ("or", or), ("not", not), ("if", if_word),
         ("either", either), ("loop", loop_word), ("[", open_bracket), ("exe", exe), ("int", int), ("float", float),
         ("string", string), ("word", word), ("type", type_word), ("?", question), ("@@", atat), ("@def", atdef), ("lex#", lex_val),
-        ("skip", skip), ("block", block),
+        ("skip", skip), ("block", block), ("exist?", exist_question),
     ]);
 }
 
@@ -458,4 +458,16 @@ fn block(pack: &mut Pack) -> Result<bool, Error> {
 fn lex_val(pack: &mut Pack) -> Result<bool, Error> {
     pack.stack.push(Cell::String(pack.dictionary.lex.clone()));
     Ok(true)
+}
+
+fn exist_question(pack: &mut Pack) -> Result<bool, Error> {
+    if let Some(Cell::Word(w)) = pack.stack.pop() {
+        let b = pack.dictionary.dict.contains_key(&w);
+        pack.stack.push(Cell::Word(w));
+        pack.stack.push(Cell::Boolean(b));
+        Ok(true)
+    }
+    else {
+        Err(Error::new("exist_question: Couldn't get word ref from stack".into(), ErrCode::NoArgsStack.into()))
+    }
 }
