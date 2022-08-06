@@ -772,7 +772,7 @@ After the stack, the Concat is the most important data structure in RunPack. The
 
 But how does it work?
 
-When we add code to the `Pack`, it is tokezined and converted into cells. These cells are appened to the Concat. The Concat also contains a pointer to the current cell that is being executed. When the program starts this pointer is 0, then it runs a cell taken from the Concat at this position, increments the pointer, and starts the loop again. But a word can also get a cell from the Concat. When this happens, the pointer is incremented as if the cell was executed, and the execution will continue after it. Let's create a simple word that just gets a word from the concat and prints it:
+When we add code to the `Pack`, using `pack.code(...)`, it is tokezined and converted into cells. These cells are appened to the Concat. The Concat contains a pointer to the current cell that is being executed. When the program starts, this pointer is 0. Then it runs a cell taken from the Concat at pointer position, increments the pointer, and starts the loop again. But a word can also get a cell from the Concat. When this happens, the pointer is incremented as if the cell was executed, and the execution will continue after it. Let's create a simple word that just gets a word from the concat and prints it:
 
 ```rust
 use runpack::{self, Pack, Cell};
@@ -798,6 +798,22 @@ fn hello_word(pack: &mut Pack) -> Result<bool, runpack::Error> {
 ```
 
 We used the method `next()` to get the next cell from the concat. This will return a reference to the cell and increment the pointer. We also have the method `next_clone()` that returns a cloned cell instead of a reference.
+
+We used Rust for this example, but we can also play with the Concat using RunPack code. We already know how to get a cell from the Concat:
+
+```
+@ my_word
+```
+
+The word `@` gets a cell from the Concat and pushes it into the stack. But what if we want to define a word that gets a cell from the concat? In this case we use the word `@@`. Let's try to recreate the `hello` word using RunPack:
+
+```
+{ 'Hello ' @@ string + '!' + print } def hello
+
+hello Andreu
+```
+
+The word `@@` instead of getting the next cell in the concat, as `@` does, it gets the next cell in the concat of the word caller, that is `Andreu`.
 
 ### 7.3 The Dictionary
 
