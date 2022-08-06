@@ -378,7 +378,7 @@ To define a word we use the word `def` followed by a name:
 555555 def phone
 ```
 
-This syntax may look contradictory for a language that uses Reverse Polish Notation, it seems to violate the rules. The word `def` uses an argument that is in the stack, that's good, but then it uses another argument, the word name, that is not in the stack. For now let's leave it, we will understand what's going on once we get into the [Concat](#72-the-concat).
+This syntax may look contradictory for a language that uses Reverse Polish Notation, it seems to violate the rules. The word `def` uses an argument that is in the stack, that's good, but then it uses another argument, the word name, that is not in the stack. For now let's leave it, we will understand what's going on once we get into the [Concat](#72-the-concatenation).
 
 Now, what happens when we execute these words?
 
@@ -738,9 +738,13 @@ pub enum Cell {
 }
 ```
 
+Every data type supported by RunPack has its representation in this enum.
+
 The stack is a vector of `Cell`s where we can push and pop elements. In Rust we can define a Cell and push it into the stack by doing:
 
 ```rust
+use runpack::{Pack, Cell};
+
 let mut pack = Pack::new();
 
 // Put an integer into the stack
@@ -758,9 +762,42 @@ if let Some(cell) = pack.stack.pop() {
 }
 ```
 
-### 7.2 The Concat
+### 7.2 The Concat(enation)
 
-TODO
+After the stack, the Concat is the most important data structure in RunPack. The actual code that is executed must be stored somewhere, and this place is the Concat. Just like the stack, it is a vector of `Cell`s, but the way we use it is different. We have seen in the past that some words get arguments from the Concat, for example the word `def` here takes the word name `num` from the Concat:
+
+```
+10 def num
+```
+
+But how does it work?
+
+When we add code to the `Pack`, it is tokezined and converted into cells. These cells are appened to the Concat. The Concat also contains a pointer to the current cell that is being executed. When the program starts this pointer is 0, then it runs a cell taken from the Concat at this position, increments the pointer, and starts the loop again. But a word can also get a cell from the Concat. When this happens, the pointer is incremented as if the cell was executed, and the execution will continue after it. Let's create a simple word that just gets a word from the concat and prints it:
+
+```rust
+use runpack::{self, Pack, Cell};
+
+let script = r#"
+    hello Andreu
+"#;
+
+let mut pack = Pack::new();
+pack.dictionary.native("hello", hello_word);
+pack.code(script);
+pack.run().expect("Error running the script");
+
+fn hello_word(pack: &mut Pack) -> Result<bool, runpack::Error> {
+    if let Some(Cell::Word(w)) = pack.concat.next() {
+        println!("Hello {}!", w);
+        Ok(true)
+    }
+    else {
+        Err(runpack::Error::new("Couldn't get a word from the concat".into(), 1000))
+    }
+}
+```
+
+We used the method `next()` to get the next cell from the concat. This will return a reference to the cell and increment the pointer. We also have the method `next_clone()` that returns a cloned cell instead of a reference.
 
 ### 7.3 The Dictionary
 

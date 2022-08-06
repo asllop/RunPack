@@ -269,7 +269,7 @@ impl Stack {
 }
 
 #[derive(Default, Clone)]
-/// RunPack interpreter
+/// Pack of structures that form the RunPack interpreter
 pub struct Pack {
     pub stack: Stack,
     pub dictionary: Dictionary,

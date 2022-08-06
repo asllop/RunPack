@@ -33,7 +33,7 @@ Then use it:
 use runpack::{Pack, Cell};
 
 let script = r#"
-    "Sum two integers, leaving the result in the stack"
+    "Add two integers, leaving the result in the stack"
     10 20 +
 "#;
 
