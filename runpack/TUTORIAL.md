@@ -815,6 +815,18 @@ hello Andreu
 
 The word `@@` instead of getting the next cell in the concat, as `@` does, it gets the next cell in the concat of the word caller, that is `Andreu`.
 
+With all we know now, we could even create our version of `def`:
+
+```
+{ @@ @def } def my_def
+
+10 my_def num
+```
+
+And now comes the question, if we have two ways to pass arguments to a word (stack and concat), which one should we use?
+
+In general, if the data needs to be dynamic, we should use the stack. And if it won't change and is defined in the moment we write the code, we can use the concat. For example, the `+` word uses two arguments in the stack, because we want to be able to add any number comming from any source. But `def` gets the word name from the concat, because it is something we want to set at the moment we write the program and it won't depend on execution results. This is a general rule, but how we use the stack and the concat must be driven by usuability and code readability criteria.
+
 ### 7.3 The Dictionary
 
 TODO
