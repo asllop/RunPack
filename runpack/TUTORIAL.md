@@ -544,7 +544,7 @@ It's bigger than ten
 
 Here we introduced one more word, the `>`. This word is a comparator, it gets two cells, compares if the first is bigger thant the second, and returns a boolean. There are 6 comparators: `=`, `!=`, `>`, `<`, `>=`, and `<=`.
 
-And finally, the last control flow word is `loop`. It gets two blocks, executes the first and it the resutl is a `true` in the stack, executes the second block, and loops again until the condition block returns a `false`.
+And finally, the last control flow word is `loop`. It gets two blocks, executes the first and if the result is a `true` in the stack, executes the second block, and loops again until the condition block returns a `false`.
 
 ```
 { { size 0 > } { 2 * print } loop } def dobl
@@ -829,7 +829,89 @@ In general, if the data needs to be dynamic, we should use the stack. And if it 
 
 ### 7.3 The Dictionary
 
-TODO
+Every time a word is found in the concat, the interpreter looks for it in the dictionary in order to execute it. Every time we define a word, a new entry in the dictionary is created.
+
+Internally, the dictionary is a hash map where each key is a `String`, and each value is a `DictEntry` enum:
+
+```rust
+pub enum DictEntry {
+    Native(fn(&mut Pack) -> Result<bool, Error>),
+    Defined(BlockRef),
+    Data(Cell),
+}
+```
+
+From this enum we can infer the three kinds of words RunPack supports: native words (a Rust function), defined words (blocks of code) and data words (a Cell). Using RunPack we can only create two of them, defined and data words:
+
+```
+"This is a defined word"
+{ 1 + } def plus_one
+
+"These are data words"
+10 def ten
+'Andreu' def name
+```
+
+Native words are defined in Rust. We have already seen how to do it, in the previous chapter, when we created the word `hello`, we wrote:
+
+```rust
+pack.dictionary.native("hello", hello_word);
+```
+
+But we can also define data and defined words using Rust. Data words are easy:
+
+```rust
+pack.dictionary.data("my_num", Cell::Integer(101));
+```
+
+Defined words require a little bit more explanation, first we need to understand the `BlockRef` struct.
+
+When we write a block in RunPack, like this
+
+```
+{ 'Hello, World!' print }
+
+show_stack
+```
+
+What we see in the stack is something like:
+
+```
+Stack:
+	0 : Block(BlockRef { pos: 474, len: 3 })
+```
+
+What this is telling us is where the code block is located in the concat. The `pos` field contains the index of the first cell, in this case the string `'Hello, World!'`, and `len` is the size of the code block. It is 3 because `}` also counts, this word is like a "return" in other languages.
+
+To create a defined word we need a `BlockRef`. To see a simple example, let's create a partial clone of `def` in Rust:
+
+```rust
+use runpack::{Pack, Cell, BlockRef, self};
+
+let mut pack = Pack::new();
+pack.dictionary.native("my_def", my_def);
+pack.code(r#"
+    { 1 + } my_def one_plus
+    10 one_plus
+"#);
+pack.run().expect("Failed running the script");
+
+if let Some(Cell::Integer(i)) = pack.stack.pop() {
+    println!("Result = {}", i);
+}
+
+fn my_def(pack: &mut Pack) -> Result<bool, runpack::Error> {
+    if let (Some(Cell::Block(blk)), Some(Cell::Word(w))) = (pack.stack.pop(), pack.concat.next()) {
+        pack.dictionary.block(w, blk);
+        Ok(true)
+    }
+    else {
+        Err(runpack::Error::new("couldn't get arguments".into(), 1000))
+    }
+}
+```
+
+Our custom word `my_def` got two arguments, a block from the stack and a word from the concat. And it used these arguments to create a new word.
 
 ### 7.4 The Return Stack
 
