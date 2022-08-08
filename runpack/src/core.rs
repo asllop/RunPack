@@ -466,9 +466,9 @@ impl Pack {
         if let Some(cell) = self.concat.next() {
             let cell = cell.clone();
             match cell {
-                Cell::Integer(_) | Cell::Float(_) | Cell::Boolean(_) | Cell::String(_) => self.stack.push(cell),
                 Cell::Word(w) => return self.exec(&w),
-                _ => return Err(Error::new(format!("Found an invalid cell value in the Concat: {:?}", cell), 1))
+                Cell::Empty => return Err(Error::new(format!("Found an invalid cell value in the Concat: {:?}", cell), 1)),
+                _ => self.stack.push(cell),
             }
             Ok(true)
         }
