@@ -25,7 +25,6 @@ Alternatively, you can create a Rust program and embed the scripts in there. Som
 
 ```rust
 use runpack::{Pack, Cell, self};
-use runpack_obj;
 
 fn main() {
     println!("RunPack Tutorial\n");
@@ -37,7 +36,6 @@ fn main() {
 
     // Create pack and register plugins
     let mut pack = Pack::new();
-    runpack_obj::register(&mut pack);
     pack.dictionary.native("print", print);
     pack.dictionary.native("show_stack", show_stack);
 
@@ -858,7 +856,7 @@ Native words are defined in Rust. We have already seen how to do it, in the prev
 pack.dictionary.native("hello", hello_word);
 ```
 
-But we can also define data and defined words using Rust. Data words are easy:
+But we can also create data and defined words using Rust. Data words are easy:
 
 ```rust
 pack.dictionary.data("my_num", Cell::Integer(101));
@@ -866,7 +864,7 @@ pack.dictionary.data("my_num", Cell::Integer(101));
 
 Defined words require a little bit more explanation, first we need to understand the `BlockRef` struct.
 
-When we write a block in RunPack, like this
+When we write a block in RunPack, like this:
 
 ```
 { 'Hello, World!' print }
@@ -881,7 +879,7 @@ Stack:
 	0 : Block(BlockRef { pos: 474, len: 3 })
 ```
 
-What this is telling us is where the code block is located in the concat. The `pos` field contains the index of the first cell, in this case the string `'Hello, World!'`, and `len` is the size of the code block. It is 3 because `}` also counts, this word is like a "return" in other languages.
+What this is telling us is where the code block is located within the concat. The `pos` field contains the index of the first cell, in this case the string `'Hello, World!'`, and `len` is the size of the code block. It is 3 because `}` also counts, this word is like a "return" in other languages.
 
 To create a defined word we need a `BlockRef`. To see a simple example, let's create a partial clone of `def` in Rust:
 
@@ -891,8 +889,8 @@ use runpack::{Pack, Cell, BlockRef, self};
 let mut pack = Pack::new();
 pack.dictionary.native("my_def", my_def);
 pack.code(r#"
-    { 1 + } my_def one_plus
-    10 one_plus
+    { 1 + } my_def plus_one
+    10 plus_one
 "#);
 pack.run().expect("Failed running the script");
 
@@ -915,4 +913,25 @@ Our custom word `my_def` got two arguments, a block from the stack and a word fr
 
 ### 7.4 The Return Stack
 
-TODO
+When a defined word is called, RunPack needs to know where to contnue the execution after it, and this is achieved using the return stack. For example:
+
+```
+{ 1 + } def plus_one
+10 plus_one print
+```
+
+At the moment `plus_one` is called, RunPack puts in the return stack the concat pointer of the next word, that is `print`. Then it gets the block ref of `plus_one`, and put in the concat pointer the value of the `pos` field. Then the block is executed until it reaches the `}` word. This word just gets a value from the return stack, and puts it in the concat pointer, and the execution returns to the `print`.
+
+The `RetStack` is a simple struct that only accepts two operations, pushing an address and popping an address:
+
+```rust
+pack.ret.push(address);
+```
+
+```rust
+if let Some(address) = pack.ret.pop() {
+    // ...
+}
+```
+
+Manipulating the return stack is delicate, and must be done with care. In general, you shouldn't touch it, unless you have a very specific need that can't be achieved in any other way.
