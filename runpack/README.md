@@ -1,6 +1,6 @@
 # RunPack core
 
-This crates contains the RunPack interpreter along with the *primitives*, the most essential words that make the language work.
+This crate contains the RunPack interpreter along with the *primitives*, the most essential words that make the language work.
 
 ## Installation
 
@@ -79,7 +79,7 @@ if let Some(Cell::Float(f)) = pack.stack.pop() {
 
 ## Vocabulary
 
-The list of words defines by this create:
+The list of words defined by this create:
 
 ```
 !=     ?         float        not       }
