@@ -1,6 +1,12 @@
 pub const PRELUDE: &str = r#"
     "--- Primitives doc ---"
 
+    ? ( ' -> ' 'Open new nested stack: 1 2 ( 3 4 )'
+    ? ) ' -> ' 'Close nested stack.'
+    ? { ' -> a' 'Create a block and put block cell in the stack: { 1 + }'
+    ? } ' -> ' 'Return from block, get concat position from the return stack.'
+    ? [ '? -> ?' 'Create stack transfer: [ a b | a a ]'
+    ? skip 'a -> ' 'Skip "a" words from the concat: -2 skip'
     ? size ' -> a' 'Get size of current stack: size'
     ? lex ' -> ' 'Set prefix for word definition: lex \'mylex.\' 10 def num lex \'\''
     ? + 'a b -> c' 'Add two numbers: 1 2 +'
