@@ -82,21 +82,21 @@ if let Some(Cell::Float(f)) = pack.stack.pop() {
 The list of words defined by this create:
 
 ```
-!=     ?         float        not       }
-%      @         fract        or
-(      @@        if           prod
-)      @def      int          setter
-*      [         is_block?    size
-+      and       is_block?    skip
-++     block     is_bool?     string
--      break     is_float?    sub
---     def       is_int?      sum
-/      div       is_obj?      swap
-<      drop      is_str?      type
-<=     dup       is_word?     var
-=      either    lex          wipe
->      exe       lex#         word
->=     exist?    loop         {
+!=     ?         fract         prod
+%      @         if            setter
+(      @@        int           size
+)      @def      is_block?     skip
+*      [         is_bool?      string
++      and       is_float?     sub
+++     block     is_int?       sum
+-      def       is_obj?       swap
+--     div       is_str?       type
+/      drop      is_word?      var
+<      dup       lex           wipe
+<=     either    lex#          word
+=      exe       loop          {
+>      exist?    not           }
+>=     float     or
 ```
 
 Checkout the documentation of each word for usage details.
