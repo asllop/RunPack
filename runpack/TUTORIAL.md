@@ -506,7 +506,7 @@ Stack effect:	a b -> x y
 Description:	Double two numbers.
 ```
 
-The word `?` only does somthing in development mode (while in the REPL tool), when running a script in production mode, it will just be ignored.
+The word `?` only does somthing in development mode (while in the REPL tool), when running a script in production mode, it will be ignored.
 
 ## 4. Control Flow
 
@@ -594,7 +594,7 @@ Knowing all this, let's try to create an alternative version of the countdown:
 
 Wow, that was pretty verbose, wasn't it?
 
-Yes, but look at the `countdown` definition. Isn't it much more readable now? It's almost plain english. We defined four support words before `countdown`. Many, or maybe all of these words doesn't make sense outside the context of the countdown. They are closely related, all together form what Leo Brodie called a **lexicon**, in his indispensable book *"Thinking Forth"*. One could argue that we just took the parts of the old `countdown` definition and moved them to a different place. And that's true, but that makes the difference. First, we gave them meaningful names, so we can know what they do. Second, by splitting them apart, we can test them separately. And third, we can modify them without touching the main word.
+Yes, but look at the `countdown` definition, isn't it much more readable now? It's almost plain english. We defined four support words before `countdown`. Many, or maybe all of these words doesn't make sense outside the context of the countdown. They are closely related, all together form what Leo Brodie called a **lexicon**, in his indispensable book *"Thinking Forth"*. One could argue that we just took the parts of the old `countdown` definition and moved them to a different place. And that's true, but that makes the difference. First, we gave them meaningful names, so we can know what they do. Second, by splitting them apart, we can test them separately. And third, we can modify them without touching the main word.
 
 That's the programming style we should use in RunPack. Is the way to create easy to write, read and maintain applications. We follow an iterative methodology where we atomize the program into small and simple words, we use these words to create other words with a higher abstraction level, and we group these words into lexicons.
 
