@@ -4,36 +4,18 @@ use core::hash::Hash;
 use super::primitives::register_primitives;
 use super::prelude::PRELUDE;
 
-// TODO: - remove error code.
+// TODO:
 //       - add error location info: concat pos, ret stack (backtrace), and word that caused the crash.
 
 #[derive(Debug)]
 /// Error type
 pub struct Error {
     pub msg: String,
-    pub code: u16
 }
 
 impl Error {
-    pub fn new(msg: String, code: u16) -> Self {
-        Self { msg, code }
-    }
-}
-
-/// Common error codes.
-pub enum ErrCode {
-    StackUnderflow = 100,
-    NoClosingBlock,
-    NoArgsStack,
-    NoArgsConcat,
-    NoArgsStackConcat,
-    WrongType,
-    NotFound,
-}
-
-impl Into<u16> for ErrCode {
-    fn into(self) -> u16 {
-        self as u16
+    pub fn new(msg: String) -> Self {
+        Self { msg }
     }
 }
 
@@ -421,7 +403,7 @@ impl Pack {
             Ok(true)
         }
         else {
-            Err(Error::new(format!("Word '{}' doesn't exist in dictionary", word), 0))
+            Err(Error::new(format!("Word '{}' doesn't exist in dictionary", word)))
         }
     }
 
@@ -467,7 +449,7 @@ impl Pack {
             let cell = cell.clone();
             match cell {
                 Cell::Word(w) => return self.exec(&w),
-                Cell::Empty => return Err(Error::new(format!("Found an invalid cell value in the Concat: {:?}", cell), 1)),
+                Cell::Empty => return Err(Error::new(format!("Found an invalid cell value in the Concat: {:?}", cell))),
                 _ => self.stack.push(cell),
             }
             Ok(true)

@@ -1,4 +1,4 @@
-use runpack::{Pack, Cell, ErrCode, Error};
+use runpack::{Pack, Cell, Error};
 
 /// Register words and prelude.
 pub fn register(pack: &mut Pack) {
@@ -24,10 +24,10 @@ fn break_word(pack: &mut Pack) -> Result<bool, runpack::Error> {
             Ok(true)
         }
         else {
-            Err(Error::new("break_word: Return stack underflow".into(), ErrCode::StackUnderflow.into()))
+            Err(Error::new("break_word: Return stack underflow".into()))
         }
     }
     else {
-        Err(Error::new("break_word: Couln't find integer in stack".into(), ErrCode::NoArgsStack.into()))
+        Err(Error::new("break_word: Couln't find integer in stack".into()))
     }
 }

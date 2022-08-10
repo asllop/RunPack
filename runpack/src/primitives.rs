@@ -1,4 +1,4 @@
-use super::core::{Pack, Cell, BlockRef, Stack, IntegerType, FloatType, Error, ErrCode};
+use super::core::{Pack, Cell, BlockRef, Stack, IntegerType, FloatType, Error};
 use hashbrown::HashMap;
 use alloc::string::String;
 
@@ -20,7 +20,7 @@ fn open_parenth(pack: &mut Pack) -> Result<bool, Error> {
 
 fn close_parenth(pack: &mut Pack) -> Result<bool, Error> {
     if let None = pack.stack.end_stack() {
-        Err(Error::new("close_parenth: Stack level undeflow".into(), ErrCode::StackUnderflow.into()))
+        Err(Error::new("close_parenth: Stack level undeflow".into()))
     }
     else {
         Ok(true)
@@ -52,7 +52,7 @@ fn open_curly(pack: &mut Pack) -> Result<bool, Error> {
             }
         }
         else {
-            return Err(Error::new("open_curly: Reached the end and didn't find a closing block".into(), ErrCode::NoClosingBlock.into()));
+            return Err(Error::new("open_curly: Reached the end and didn't find a closing block".into()));
         }
     }
     Ok(true)
@@ -64,7 +64,7 @@ fn close_curly(pack: &mut Pack) -> Result<bool, Error> {
         Ok(true)
     }
     else {
-        Err(Error::new("close_curly: Return stack underflow".into(), ErrCode::StackUnderflow.into()))
+        Err(Error::new("close_curly: Return stack underflow".into()))
     }
 }
 
@@ -74,7 +74,7 @@ fn lex(pack: &mut Pack) -> Result<bool, Error> {
         Ok(true)
     }
     else {
-        return Err(Error::new("lex: couldn't find string".into(), ErrCode::NoArgsConcat.into()));
+        return Err(Error::new("lex: couldn't find string".into()));
     }
 }
 
@@ -87,7 +87,7 @@ fn two_num_op(stack: &mut Stack, int_op: fn(IntegerType, IntegerType) -> Integer
         stack.push(Cell::Float(flt_op(*flt_a, *flt_b)));
     }
     else {
-        return Err(Error::new("two_num_op: Expecting two numbers of the same type".into(), ErrCode::NoArgsStack.into()));
+        return Err(Error::new("two_num_op: Expecting two numbers of the same type".into()));
     }
     Ok(true)
 }
@@ -104,7 +104,7 @@ fn two_num_or_str_op(stack: &mut Stack, int_op: fn(IntegerType, IntegerType) -> 
         stack.push(Cell::String(str_op(str_a, str_b)));
     }
     else {
-        return Err(Error::new("two_num_or_str_op: Expecting two cells of the same type".into(), ErrCode::NoArgsStack.into()));
+        return Err(Error::new("two_num_or_str_op: Expecting two cells of the same type".into()));
     }
     Ok(true)
 }
@@ -137,7 +137,7 @@ fn two_cell_cmp(pack: &mut Pack, op: fn(Cell, Cell) -> bool) -> Result<bool, Err
         Ok(true)
     }
     else {
-        Err(Error::new("two_cell_cmp: Couldn't get two cells".into(), ErrCode::NoArgsStack.into()))
+        Err(Error::new("two_cell_cmp: Couldn't get two cells".into()))
     }
 }
 
@@ -174,7 +174,7 @@ fn two_logic_op(stack: &mut Stack, op_bool: fn(bool, bool) -> bool, op_int: fn(I
         stack.push(Cell::Integer(op_int(*int_a, *int_b)));
     }
     else {
-        return Err(Error::new("two_logic_op: Expecting two booleans or two integers".into(), ErrCode::NoArgsStack.into()));
+        return Err(Error::new("two_logic_op: Expecting two booleans or two integers".into()));
     }
     Ok(true)
 }
@@ -196,7 +196,7 @@ fn not(pack: &mut Pack) -> Result<bool, Error> {
         pack.stack.push(Cell::Integer(!a));
     }
     else {
-        return Err(Error::new("not: Expecting a boolean or an integer".into(), ErrCode::NoArgsStack.into()));
+        return Err(Error::new("not: Expecting a boolean or an integer".into()));
     }
     Ok(true)
 }
@@ -209,7 +209,7 @@ fn if_word(pack: &mut Pack) -> Result<bool, Error> {
         }
     }
     else {
-        return Err(Error::new("if: couldn't find condition and 1 block".into(), ErrCode::NoArgsStack.into()));
+        return Err(Error::new("if: couldn't find condition and 1 block".into()));
     }
     Ok(true)
 }
@@ -227,7 +227,7 @@ fn either(pack: &mut Pack) -> Result<bool, Error> {
         Ok(true)
     }
     else {
-        Err(Error::new("either: couldn't find condition and 2 blocks".into(), ErrCode::NoArgsStack.into()))
+        Err(Error::new("either: couldn't find condition and 2 blocks".into()))
     }
 }
 
@@ -248,12 +248,12 @@ fn loop_word(pack: &mut Pack) -> Result<bool, Error> {
                 }
             }
             else {
-                return Err(Error::new("loop: condition didn't produce a bool".into(), ErrCode::WrongType.into()));
+                return Err(Error::new("loop: condition didn't produce a bool".into()));
             }
         }
     }
     else {
-        return Err(Error::new("loop: couldn't find 2 blocks".into(), ErrCode::NoArgsStack.into()));
+        return Err(Error::new("loop: couldn't find 2 blocks".into()));
     }
     Ok(true)
 }
@@ -269,7 +269,7 @@ fn open_bracket(pack: &mut Pack) -> Result<bool, Error> {
                 vars.insert(w.clone(), cell);
             }
             else {
-                return Err(Error::new("open_bracket: stack is empty".into(), ErrCode::NoArgsStack.into()));
+                return Err(Error::new("open_bracket: stack is empty".into()));
             }
         }
     }
@@ -282,7 +282,7 @@ fn open_bracket(pack: &mut Pack) -> Result<bool, Error> {
                 pack.stack.push(k.clone());
             }
             else {
-                return Err(Error::new("open_bracket: Couldn't find variable name".into(), ErrCode::NoArgsStack.into()));
+                return Err(Error::new("open_bracket: Couldn't find variable name".into()));
             }
         }
     }
@@ -297,7 +297,7 @@ fn exe(pack: &mut Pack) -> Result<bool, Error> {
             Ok(true)
         },
         Some(Cell::Word(w)) => pack.exec(&w),
-        _ => Err(Error::new("exe: Couldn't get a word".into(), ErrCode::NoArgsStack.into())),
+        _ => Err(Error::new("exe: Couldn't get a word".into())),
     }
 }
 
@@ -307,7 +307,7 @@ fn int(pack: &mut Pack) -> Result<bool, Error> {
         Ok(true)
     }
     else {
-        Err(Error::new("int: Coulnd't get a float".into(), ErrCode::NoArgsStack.into()))
+        Err(Error::new("int: Coulnd't get a float".into()))
     }
 }
 
@@ -317,7 +317,7 @@ fn float(pack: &mut Pack) -> Result<bool, Error> {
         Ok(true)
     }
     else {
-        Err(Error::new("int: Coulnd't get an int".into(), ErrCode::NoArgsStack.into()))
+        Err(Error::new("int: Coulnd't get an int".into()))
     }
 }
 
@@ -327,7 +327,7 @@ fn string(pack: &mut Pack) -> Result<bool, Error> {
         Ok(true)
     }
     else {
-        Err(Error::new("string: Coulnd't get a word".into(), ErrCode::NoArgsStack.into()))
+        Err(Error::new("string: Coulnd't get a word".into()))
     }
 }
 
@@ -337,7 +337,7 @@ fn word(pack: &mut Pack) -> Result<bool, Error> {
         Ok(true)
     }
     else {
-        Err(Error::new("word: Coulnd't get a string".into(), ErrCode::NoArgsStack.into()))
+        Err(Error::new("word: Coulnd't get a string".into()))
     }
 }
 
@@ -357,7 +357,7 @@ fn type_word(pack: &mut Pack) -> Result<bool, Error> {
         Ok(true)
     }
     else {
-        Err(Error::new("type: Stack is empty".into(), ErrCode::NoArgsStack.into()))
+        Err(Error::new("type: Stack is empty".into()))
     }
 }
 
@@ -372,7 +372,7 @@ fn question(pack: &mut Pack) -> Result<bool, Error> {
         Ok(true)
     }
     else {
-        Err(Error::new("question: No correct arguments in the concat".into(), ErrCode::NoArgsConcat.into()))
+        Err(Error::new("question: No correct arguments in the concat".into()))
     }
 }
 
@@ -384,11 +384,11 @@ fn atat(pack: &mut Pack) -> Result<bool, Error>  {
             Ok(true)
         }
         else {
-            Err(Error::new("atat: couldn't get a cell from the concat".into(), ErrCode::NoArgsConcat.into()))
+            Err(Error::new("atat: couldn't get a cell from the concat".into()))
         }
     }
     else {
-        Err(Error::new("atat: couldn't get ret pos".into(), ErrCode::NoArgsStack.into()))
+        Err(Error::new("atat: couldn't get ret pos".into()))
     }
 }
 
@@ -402,11 +402,11 @@ fn atdef(pack: &mut Pack) -> Result<bool, Error> {
             pack.dictionary.data(&word, cell);
         }
         else {
-            return Err(Error::new("atdef: Expecting a block or a cell".into(), ErrCode::NoArgsStack.into()));
+            return Err(Error::new("atdef: Expecting a block or a cell".into()));
         }
     }
     else {
-        return Err(Error::new("atdef: Expecting a word in the stack".into(), ErrCode::NoArgsStack.into()));
+        return Err(Error::new("atdef: Expecting a word in the stack".into()));
     }
     Ok(true)
 }
@@ -417,7 +417,7 @@ fn skip(pack: &mut Pack) -> Result<bool, Error> {
         Ok(true)
     }
     else {
-        Err(Error::new("skip: Expecting a integer in the stack".into(), ErrCode::NoArgsStack.into()))
+        Err(Error::new("skip: Expecting a integer in the stack".into()))
     }
 }
 
@@ -440,7 +440,7 @@ fn block(pack: &mut Pack) -> Result<bool, Error> {
                         continue;
                     }
                     else {
-                        return Err(Error::new("block: Couldn't get cell from stack".into(), ErrCode::NoArgsStack.into()))
+                        return Err(Error::new("block: Couldn't get cell from stack".into()))
                     }
                 }
             }
@@ -451,7 +451,7 @@ fn block(pack: &mut Pack) -> Result<bool, Error> {
         Ok(true)
     }
     else {
-        Err(Error::new("block: Couldn't get block from stack".into(), ErrCode::NoArgsStack.into()))
+        Err(Error::new("block: Couldn't get block from stack".into()))
     }
 }
 
@@ -468,6 +468,6 @@ fn exist_question(pack: &mut Pack) -> Result<bool, Error> {
         Ok(true)
     }
     else {
-        Err(Error::new("exist_question: Couldn't get word ref from stack".into(), ErrCode::NoArgsStack.into()))
+        Err(Error::new("exist_question: Couldn't get word ref from stack".into()))
     }
 }

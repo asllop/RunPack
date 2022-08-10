@@ -1,4 +1,4 @@
-use runpack::{Pack, Cell, Object, DictEntry, IntegerType, Error, ErrCode};
+use runpack::{Pack, Cell, Object, DictEntry, IntegerType, Error};
 use crate::prelude::PRELUDE;
 use alloc::format;
 
@@ -28,7 +28,7 @@ fn new_word(pack: &mut Pack) -> Result<bool, Error> {
         pack.stack.push(Cell::Object(obj));
     }
     else {
-        return Err(Error::new("new: Stack must contain key-value pairs".into(), ErrCode::NoArgsStack.into()));
+        return Err(Error::new("new: Stack must contain key-value pairs".into()));
     }
     Ok(true)
 }
@@ -50,11 +50,11 @@ fn set_word(pack: &mut Pack) -> Result<bool, Error> {
             obj.map.insert(key, val);
         }
         else {
-            return Err(Error::new(format!("set: dictionary doesn't contain an Object for word '{}'", w), ErrCode::WrongType.into()));
+            return Err(Error::new(format!("set: dictionary doesn't contain an Object for word '{}'", w)));
         }
     }
     else {
-        return Err(Error::new("set: Couldn't get a key-value pair and a word".into(), ErrCode::NoArgsStack.into()));
+        return Err(Error::new("set: Couldn't get a key-value pair and a word".into()));
     }
     Ok(true)
 }
@@ -66,15 +66,15 @@ fn get_word(pack: &mut Pack) -> Result<bool, Error> {
                 pack.stack.push(val.clone());
             }
             else {
-                return Err(Error::new("get: key doesn't exist in object".into(), ErrCode::NotFound.into()));
+                return Err(Error::new("get: key doesn't exist in object".into()));
             }
         }
         else {
-            return Err(Error::new(format!("get: dictionary doesn't contain an Object for word '{}'", w), ErrCode::WrongType.into()));
+            return Err(Error::new(format!("get: dictionary doesn't contain an Object for word '{}'", w)));
         }
     }
     else {
-        return Err(Error::new("get: Couldn't get a value and a word".into(), ErrCode::NoArgsStack.into()));
+        return Err(Error::new("get: Couldn't get a value and a word".into()));
     }
     Ok(true)
 }
@@ -85,11 +85,11 @@ fn key_word(pack: &mut Pack) -> Result<bool, Error> {
             pack.stack.push(Cell::Boolean(obj.map.contains_key(&key)));
         }
         else {
-            return Err(Error::new(format!("key: dictionary doesn't contain an Object for word '{}'", w), ErrCode::WrongType.into()));
+            return Err(Error::new(format!("key: dictionary doesn't contain an Object for word '{}'", w)));
         }
     }
     else {
-        return Err(Error::new("key: Couldn't get a value and a word".into(), ErrCode::NoArgsStack.into()));
+        return Err(Error::new("key: Couldn't get a value and a word".into()));
     }
     Ok(true)
 }
@@ -100,11 +100,11 @@ fn len_word(pack: &mut Pack) -> Result<bool, Error> {
             pack.stack.push(Cell::Integer(obj.map.len() as IntegerType));
         }
         else {
-            return Err(Error::new(format!("key: dictionary doesn't contain an Object for word '{}'", w), ErrCode::WrongType.into()));
+            return Err(Error::new(format!("key: dictionary doesn't contain an Object for word '{}'", w)));
         }
     }
     else {
-        return Err(Error::new("key: Couldn't get a value and a word".into(), ErrCode::NoArgsStack.into()));
+        return Err(Error::new("key: Couldn't get a value and a word".into()));
     }
     Ok(true)
 }
@@ -124,19 +124,19 @@ fn colon(pack: &mut Pack) -> Result<bool, Error> {
                         //TODO: don't use run_block, is the evil
                         return pack.run_block(&blk);
                     },
-                    Cell::Empty => return Err(Error::new("period: cell is empty".into(), ErrCode::WrongType.into())),
+                    Cell::Empty => return Err(Error::new("period: cell is empty".into())),
                 }
             }
             else {
-                return Err(Error::new("period: key doesn't exist in object".into(), ErrCode::NotFound.into()));
+                return Err(Error::new("period: key doesn't exist in object".into()));
             }
         }
         else {
-            return Err(Error::new(format!("period: dictionary doesn't contain an Object for word '{}'", w), ErrCode::WrongType.into()));
+            return Err(Error::new(format!("period: dictionary doesn't contain an Object for word '{}'", w)));
         }
     }
     else {
-        return Err(Error::new("period: Couldn't get an object and a key".into(), ErrCode::NoArgsStackConcat.into()));
+        return Err(Error::new("period: Couldn't get an object and a key".into()));
     }
     Ok(true)
 }
@@ -148,6 +148,6 @@ fn period(pack: &mut Pack) -> Result<bool, Error> {
         colon(pack)
     }
     else {
-        return Err(Error::new("period: Couldn't get a cell".into(), ErrCode::NoArgsStack.into()));
+        return Err(Error::new("period: Couldn't get a cell".into()));
     }
 }
