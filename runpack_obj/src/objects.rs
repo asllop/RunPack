@@ -14,8 +14,7 @@ use alloc::format;
 pub fn register(pack: &mut Pack) {
     pack.code(PRELUDE);
     pack.def_natives(&[
-        ("new", new_word), ("vec", vec_word), ("set", set_word), ("get", get_word), ("key?", key_word), ("len", len_word), (":", colon),
-        (".", period),
+        ("new", new_word), ("vec", vec_word), ("set", set_word), ("get", get_word), ("key?", key_word), ("len", len_word),
     ]);
 }
 
@@ -107,47 +106,4 @@ fn len_word(pack: &mut Pack) -> Result<bool, Error> {
         return Err(Error::new("key: Couldn't get a value and a word".into()));
     }
     Ok(true)
-}
-
-fn colon(pack: &mut Pack) -> Result<bool, Error> {
-    if let (Some(Cell::Word(w)), Some(key)) = (pack.stack.pop(), pack.concat.next()) {
-        if let Some(DictEntry::Data(Cell::Object(obj))) = pack.dictionary.dict.get(&w) {
-            if let Some(val) = obj.map.get(&key) {
-                match val {
-                    Cell::Integer(_) | Cell::Float(_) | Cell::Boolean(_) | Cell::String(_) | Cell::Object(_) => pack.stack.push(val.clone()),
-                    Cell::Word(word) => {
-                        let word = word.clone();
-                        return pack.exec(&word)
-                    },
-                    Cell::Block(blk) => {
-                        let blk = blk.clone();
-                        //TODO: don't use run_block, is the evil
-                        return pack.run_block(&blk);
-                    },
-                    Cell::Empty => return Err(Error::new("period: cell is empty".into())),
-                }
-            }
-            else {
-                return Err(Error::new("period: key doesn't exist in object".into()));
-            }
-        }
-        else {
-            return Err(Error::new(format!("period: dictionary doesn't contain an Object for word '{}'", w)));
-        }
-    }
-    else {
-        return Err(Error::new("period: Couldn't get an object and a key".into()));
-    }
-    Ok(true)
-}
-
-fn period(pack: &mut Pack) -> Result<bool, Error> {
-    if let Some(cell) = pack.stack.pop() {
-        pack.stack.push(cell.clone());
-        pack.stack.push(cell);
-        colon(pack)
-    }
-    else {
-        return Err(Error::new("period: Couldn't get a cell".into()));
-    }
 }

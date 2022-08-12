@@ -297,7 +297,11 @@ fn exe(pack: &mut Pack) -> Result<bool, Error> {
             Ok(true)
         },
         Some(Cell::Word(w)) => pack.exec(&w),
-        _ => Err(Error::new("exe: Couldn't get a word".into())),
+        Some(cell) => {
+            pack.stack.push(cell);
+            Ok(true)
+        },
+        _ => Err(Error::new("exe: Couldn't get a valid cell from the stack".into()))
     }
 }
 
