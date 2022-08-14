@@ -2,10 +2,6 @@ use runpack::{Pack, Cell, Object, DictEntry, IntegerType, Error};
 use crate::prelude::PRELUDE;
 use alloc::format;
 
-//TODO: traverse object:
-//  @ my_obj { print print '------' print } for
-//  Execute the block for each key-val of my_obj, passing the key and val in the stack.
-
 //TODO: remove key from object
 
 //TODO: push and pop cells into a vector
@@ -15,6 +11,7 @@ pub fn register(pack: &mut Pack) {
     pack.code(PRELUDE);
     pack.def_natives(&[
         ("new", new_word), ("vec", vec_word), ("set", set_word), ("get", get_word), ("key?", key_word), ("len", len_word),
+        ("foreach", foreach),
     ]);
 }
 
@@ -106,4 +103,24 @@ fn len_word(pack: &mut Pack) -> Result<bool, Error> {
         return Err(Error::new("key: Couldn't get a value and a word".into()));
     }
     Ok(true)
+}
+
+fn foreach(pack: &mut Pack) -> Result<bool, Error> {
+    if let (Some(Cell::Block(blk)), Some(Cell::Word(w))) = (pack.stack.pop(), pack.stack.pop()) {
+        if let Some(DictEntry::Data(Cell::Object(obj))) = pack.dictionary.dict.get(&w) {
+            let obj = obj.clone();
+            for (key, val) in obj.map.into_iter() {
+                pack.stack.push(key);
+                pack.stack.push(val);
+                pack.run_block(&blk)?;
+            }
+            Ok(true)
+        }
+        else {
+            Err(Error::new(format!("foreach: dictionary doesn't contain an Object for word '{}'", w)))
+        }
+    }
+    else {
+        Err(Error::new("foreach: Couldn't get a block and a word".into()))
+    }
 }

@@ -5,6 +5,7 @@ pub const PRELUDE: &str = r#"
     ? vec 'v0 v1 v2 ... N -> obj' 'Create vector with values taken from the stack: ( 10 20 30 vec ) def nums , 0 @ nums get print'
     ? key? 'key word -> bool' 'Check if key exist in object: \'age\' @ my_obj key?'
     ? len 'word -> n' 'Get size of an object: @ my_obj len'
+    ? foreach 'word block -> ?' 'Traverse object at "word" and execute "block" passing each key and value in the stack: @ my_obj { print print } foreach'
 
     ? : 'a -> ' 'Get word "a" from the stack and a word "w" from the concat and run "w" from "a": @ my_obj : my_word'
     { @@ swap get exe } def :
