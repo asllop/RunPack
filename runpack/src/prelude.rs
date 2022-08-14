@@ -89,6 +89,9 @@ pub const PRELUDE: &str = r#"
 
     ? is_obj? 'a -> a bool' 'Check if cell in the stack is an object: ( new ) is_obj?'
     { type 'object' = } def is_obj?
+
+    ? is_vec? 'a -> a bool' 'Check if cell in the stack is a vector: ( vec ) is_vec?'
+    { type 'vector' = } def is_vec?
     
     "--- Math ---"
 

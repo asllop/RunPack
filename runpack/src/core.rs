@@ -53,6 +53,12 @@ impl PartialOrd for Object {
     }
 }
 
+#[derive(Default, Eq, PartialEq, PartialOrd, Clone, Debug)]
+/// Custom vector type
+pub struct Vector {
+    pub vector: Vec<Cell>,
+}
+
 /// Integer type alias
 pub type IntegerType = i64;
 
@@ -70,6 +76,7 @@ pub enum Cell {
     Word(String),
     Block(BlockRef),
     Object(Object),
+    Vector(Vector),
 }
 
 impl Cell {

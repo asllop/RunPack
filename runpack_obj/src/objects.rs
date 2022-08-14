@@ -1,13 +1,13 @@
-use runpack::{Pack, Cell, Object, DictEntry, IntegerType, Error};
+use runpack::{Pack, Cell, Object, DictEntry, IntegerType, Error, Vector};
 use crate::prelude::PRELUDE;
-use alloc::format;
+use alloc::{format, vec::Vec};
 
 /// Register words and prelude.
 pub fn register(pack: &mut Pack) {
     pack.code(PRELUDE);
     pack.def_natives(&[
-        ("new", new_word), ("vec", vec_word), ("set", set_word), ("get", get_word), ("key?", key_word), ("len", len_word),
-        ("foreach", foreach), ("rem", rem),
+        ("new", new_word), ("set", set_word), ("get", get_word), ("key?", key_word), ("len", len_word),
+        ("foreach", foreach), ("rem", rem), ("vec", vec_word), 
     ]);
 }
 
@@ -22,17 +22,6 @@ fn new_word(pack: &mut Pack) -> Result<bool, Error> {
     else {
         return Err(Error::new("new: Stack must contain key-value pairs".into()));
     }
-    Ok(true)
-}
-
-fn vec_word(pack: &mut Pack) -> Result<bool, Error> {
-    let mut obj = Object::default();
-    let mut size = pack.stack.size();
-    while let Some(val) = pack.stack.pop() {
-        obj.map.insert(Cell::Integer((size - 1) as IntegerType), val);
-        size -= 1;
-    }
-    pack.stack.push(Cell::Object(obj));
     Ok(true)
 }
 
@@ -92,11 +81,11 @@ fn len_word(pack: &mut Pack) -> Result<bool, Error> {
             pack.stack.push(Cell::Integer(obj.map.len() as IntegerType));
         }
         else {
-            return Err(Error::new(format!("key: dictionary doesn't contain an Object for word '{}'", w)));
+            return Err(Error::new(format!("len: dictionary doesn't contain an Object for word '{}'", w)));
         }
     }
     else {
-        return Err(Error::new("key: Couldn't get a value and a word".into()));
+        return Err(Error::new("len: Couldn't get a value and a word".into()));
     }
     Ok(true)
 }
@@ -121,6 +110,7 @@ fn foreach(pack: &mut Pack) -> Result<bool, Error> {
     }
 }
 
+//TODO: put removed key and value into the stack
 fn rem(pack: &mut Pack) -> Result<bool, Error> {
     if let (Some(Cell::Word(w)), Some(cell)) = (pack.stack.pop(), pack.stack.pop()) {
         if let Some(DictEntry::Data(Cell::Object(obj))) = pack.dictionary.dict.get_mut(&w) {
@@ -136,4 +126,17 @@ fn rem(pack: &mut Pack) -> Result<bool, Error> {
     }
 }
 
-//TODO: push and pop cells into a vector
+fn vec_word(pack: &mut Pack) -> Result<bool, Error> {
+    let mut vector = Vec::with_capacity(pack.stack.size());
+    unsafe { vector.set_len(pack.stack.size()); }
+    let mut v = Vector { vector };
+    while let Some(val) = pack.stack.pop() {
+        v.vector[pack.stack.size()] = val;
+    }
+    pack.stack.push(Cell::Vector(v));
+    Ok(true)
+}
+
+//TODO: push, pop, and insert cells on a vector
+
+//TODO: overload get, set, rem, foreach and len to support vectors
