@@ -2,16 +2,12 @@ use runpack::{Pack, Cell, Object, DictEntry, IntegerType, Error};
 use crate::prelude::PRELUDE;
 use alloc::format;
 
-//TODO: remove key from object
-
-//TODO: push and pop cells into a vector
-
 /// Register words and prelude.
 pub fn register(pack: &mut Pack) {
     pack.code(PRELUDE);
     pack.def_natives(&[
         ("new", new_word), ("vec", vec_word), ("set", set_word), ("get", get_word), ("key?", key_word), ("len", len_word),
-        ("foreach", foreach),
+        ("foreach", foreach), ("rem", rem),
     ]);
 }
 
@@ -124,3 +120,20 @@ fn foreach(pack: &mut Pack) -> Result<bool, Error> {
         Err(Error::new("foreach: Couldn't get a block and a word".into()))
     }
 }
+
+fn rem(pack: &mut Pack) -> Result<bool, Error> {
+    if let (Some(Cell::Word(w)), Some(cell)) = (pack.stack.pop(), pack.stack.pop()) {
+        if let Some(DictEntry::Data(Cell::Object(obj))) = pack.dictionary.dict.get_mut(&w) {
+            obj.map.remove(&cell);
+            Ok(true)
+        }
+        else {
+            Err(Error::new(format!("rem: dictionary doesn't contain an Object for word '{}'", w)))
+        }
+    }
+    else {
+        Err(Error::new("rem: Couldn't get a key and a word".into()))
+    }
+}
+
+//TODO: push and pop cells into a vector

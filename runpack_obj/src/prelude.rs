@@ -6,6 +6,7 @@ pub const PRELUDE: &str = r#"
     ? key? 'key word -> bool' 'Check if key exist in object: \'age\' @ my_obj key?'
     ? len 'word -> n' 'Get size of an object: @ my_obj len'
     ? foreach 'word block -> ?' 'Traverse object at "word" and execute "block" passing each key and value in the stack: @ my_obj { print print } foreach'
+    ? rem 'key word -> ' 'Remove key from object: \'my_key\' @ my_obj rem'
 
     ? : 'a -> ' 'Get word "a" from the stack and a word "w" from the concat and run "w" from "a": @ my_obj : my_word'
     { @@ swap get exe } def :
