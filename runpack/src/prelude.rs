@@ -87,8 +87,8 @@ pub const PRELUDE: &str = r#"
     ? is_block? 'a -> a bool' 'Check if cell in the stack is a block: { } is_block?'
     { type 'block' = } def is_block?
 
-    ? is_obj? 'a -> a bool' 'Check if cell in the stack is an object: ( new ) is_obj?'
-    { type 'object' = } def is_obj?
+    ? is_map? 'a -> a bool' 'Check if cell in the stack is an map: ( new ) is_map?'
+    { type 'map' = } def is_map?
 
     ? is_vec? 'a -> a bool' 'Check if cell in the stack is a vector: ( vec ) is_vec?'
     { type 'vector' = } def is_vec?

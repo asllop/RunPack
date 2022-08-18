@@ -481,7 +481,7 @@ Description:
 Check if cell in the stack is an integer: 10 is_int?
 ```
 
-## is_obj?
+## is_map?
 
 Stack Effects:
 
@@ -491,7 +491,7 @@ a -> a bool
 Description:
 
 ```
-Check if cell in the stack is an object: ( new ) is_obj?
+Check if cell in the stack is a map: ( new ) is_map?
 ```
 
 ## is_str?

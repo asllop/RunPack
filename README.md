@@ -99,7 +99,7 @@ The [RunPack core](runpack/) contains only the most common functionality, due to
 As of now, the available modules are:
 
 - [runpack](runpack/): Contains the interpreter and the core words, the minimum necessary to make the language work.
-- [runpack_obj](runpack_obj/): Vocabulary to operate with objects.
+- [runpack_obj](runpack_obj/): Vocabulary to operate with maps and vectors.
 - [runpack_async](runpack_async/): Asyncronous infrastructure.
 
 Additionally, we have the [RunPack REPL](https://github.com/asllop/RunPack-REPL), a cli tool to facilitate the development of RunPack programs.

@@ -27,12 +27,12 @@ pub struct BlockRef {
 }
 
 #[derive(Default, Eq, Clone, Debug)]
-/// Custom object type
-pub struct Object {
+/// Map type
+pub struct Map {
     pub map: HashMap<Cell, Cell>,
 }
 
-impl Hash for Object {
+impl Hash for Map {
     fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
         self.map.iter().for_each(|(k, v)| {
             k.hash(state);
@@ -41,13 +41,13 @@ impl Hash for Object {
     }
 }
 
-impl PartialEq for Object {
+impl PartialEq for Map {
     fn eq(&self, other: &Self) -> bool {
         self.map.len() == other.map.len()
     }
 }
 
-impl PartialOrd for Object {
+impl PartialOrd for Map {
     fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
         self.map.len().partial_cmp(&other.map.len())
     }
@@ -75,7 +75,7 @@ pub enum Cell {
     String(String),
     Word(String),
     Block(BlockRef),
-    Object(Object),
+    Map(Map),
     Vector(Vector),
 }
 

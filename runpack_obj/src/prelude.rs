@@ -1,5 +1,5 @@
 pub const PRELUDE: &str = r#"
-    ? new 'k0 v0 k1 v1 ... N -> obj' 'Create object with all pairs of key-value taken from the stack: ( \'name\' \'Andreu\' \'age\' 38 new ) def my_obj'
+    ? map 'k0 v0 k1 v1 ... N -> obj' 'Create a map with all pairs of key-value taken from the stack: ( \'name\' \'Andreu\' \'age\' 38 map ) def my_obj'
     ? get 'key word -> val' 'Get value from "key" in the object stored at "word": \'name\' @ my_obj get'
     ? set 'key value word -> ' 'Set value for key in the object stored at "word": \'age\' 39 @ my_obj set'
     ? vec 'v0 v1 v2 ... N -> obj' 'Create vector with values taken from the stack: ( 10 20 30 vec ) def nums , 0 @ nums get print'

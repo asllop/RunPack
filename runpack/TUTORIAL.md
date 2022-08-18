@@ -54,7 +54,7 @@ fn print(pack: &mut Pack) -> Result<bool, runpack::Error> {
             Cell::String(s) => println!("{}", s),
             Cell::Word(w) => println!("{}", w),
             Cell::Block(b) => println!("{:?}", b),
-            Cell::Object(o) => println!("{:?}", o),
+            Cell::Map(m) => println!("{:?}", m),
             Cell::Vector(v) => println!("{:?}", v),
         }
         Ok(true)
@@ -733,7 +733,7 @@ pub enum Cell {
     String(String),
     Word(String),
     Block(BlockRef),
-    Object(Object),
+    Map(Map),
     Vector(Vector),
 }
 ```
