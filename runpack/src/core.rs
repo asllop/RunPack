@@ -397,17 +397,17 @@ impl Pack {
         if let Some(dict_entry) = self.dictionary.dict.get(word) {
             match dict_entry {
                 DictEntry::Native(func) => {
-                    return func(self);
+                    func(self)
                 },
                 DictEntry::Defined(block_ref) => {
                     let block = block_ref.clone();
-                    self.run_block(&block)?;
+                    self.run_block(&block)
                 },
                 DictEntry::Data(data_cell) => {
                     self.stack.push(data_cell.clone());
+                    Ok(true)
                 },
             }
-            Ok(true)
         }
         else {
             Err(Error::new(format!("Word '{}' doesn't exist in dictionary", word)))
