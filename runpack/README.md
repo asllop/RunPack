@@ -12,7 +12,7 @@ runpack = { git = "https://github.com/asllop/RunPack" }
 
 ## Usage
 
-The most basic usage:
+To run a simple script that adds two numbers:
 
 ```rust
 use runpack::{Pack, Cell};
@@ -22,10 +22,13 @@ let script = r#"
     10 20 +
 "#;
 
+// Create the pack
 let mut pack = Pack::new();
+// Append code
 pack.code(script);
+// Run
 pack.run().expect("Error running the script");
-
+// Check results in the stack
 if let Some(Cell::Integer(i)) = pack.stack.pop() {
     println!("Result = {}", i);
 }
@@ -42,17 +45,19 @@ let script = r#"
 "#;
 
 let mut pack = Pack::new();
+// Define a word "hi" in Rust
 pack.dictionary.native("hi", hi_word);
 pack.code(script);
 pack.run().expect("Error running the script");
 
 fn hi_word(pack: &mut Pack) -> Result<bool, runpack::Error> {
+    // Get a string from the stack and print it
     if let Some(Cell::String(name)) = pack.stack.pop() {
         println!("Hi {}!", name);
         Ok(true)
     }
     else {
-        Err(runpack::Error::new("Couldn't get a string".into(), 1000))
+        Err(runpack::Error::new("Couldn't get a string".into()))
     }
 }
 ```
@@ -70,17 +75,20 @@ let script = r#"
 let mut pack = Pack::new();
 pack.code(script);
 pack.run().expect("Error running the script");
+// Execute word "pi"
 pack.exec("pi").expect("Failed executing 'pi'");
-
+// Check the stack for results
 if let Some(Cell::Float(f)) = pack.stack.pop() {
     println!("The number π is {}", f);
 }
 ```
 
-## Vocabulary
+## Learn RunPack
 
-Checkout the vocabulary [documentation](./DOC.md).
+Learning is easy, you only need 1 hour of your time and this introductory [tutorial](TUTORIAL.md). Each module comes with its own documentation and tutorial. Check-out the different crate folders.
 
-## Learn
+Enjoy the trip!
 
-Read the [tutorial](./TUTORIAL.md).
+## Documentation
+
+Each module defines a vocabulary of words, that is the API of that module. Checkout the documentation of this module [here](./DOC.md).

@@ -60,7 +60,7 @@ fn print(pack: &mut Pack) -> Result<bool, runpack::Error> {
         Ok(true)
     }
     else {
-        Err(runpack::Error::new("print: couldn't get a cell from the stack".into(), 1000))
+        Err(runpack::Error::new("print: couldn't get a cell from the stack".into()))
     }
 }
 
@@ -792,7 +792,7 @@ fn hello_word(pack: &mut Pack) -> Result<bool, runpack::Error> {
         Ok(true)
     }
     else {
-        Err(runpack::Error::new("Couldn't get a word from the concat".into(), 1000))
+        Err(runpack::Error::new("Couldn't get a word from the concat".into()))
     }
 }
 ```
@@ -906,7 +906,7 @@ fn my_def(pack: &mut Pack) -> Result<bool, runpack::Error> {
         Ok(true)
     }
     else {
-        Err(runpack::Error::new("couldn't get arguments".into(), 1000))
+        Err(runpack::Error::new("couldn't get arguments".into()))
     }
 }
 ```
