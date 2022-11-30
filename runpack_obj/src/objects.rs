@@ -30,6 +30,24 @@ fn set_word(pack: &mut Pack) -> Result<bool, Error> {
         if let Some(DictEntry::Data(Cell::Map(obj))) = pack.dictionary.dict.get_mut(&w) {
             obj.map.insert(key, val);
         }
+        else if let Some(DictEntry::Data(Cell::Vector(vec))) = pack.dictionary.dict.get_mut(&w) {
+            if let Cell::Integer(pos) = key {
+                if pos >= 0 {
+                    if pos < vec.vector.len() as i64 {
+                        vec.vector[pos as usize] = val;
+                    }
+                    else {
+                        return Err(Error::new("set: Vector index is out of range".into()));
+                    }
+                }
+                else {
+                    return Err(Error::new("set: Vector index is negative".into()));
+                }
+            }
+            else {
+                return Err(Error::new("set: Vector index is not an integer".into()));
+            }
+        }
         else {
             return Err(Error::new(format!("set: dictionary doesn't contain an Object for word '{}'", w)));
         }
@@ -64,6 +82,24 @@ fn key_word(pack: &mut Pack) -> Result<bool, Error> {
     if let (Some(Cell::Word(w)), Some(key)) = (pack.stack.pop(), pack.stack.pop()) {
         if let Some(DictEntry::Data(Cell::Map(obj))) = pack.dictionary.dict.get(&w) {
             pack.stack.push(Cell::Boolean(obj.map.contains_key(&key)));
+        }
+        else if let Some(DictEntry::Data(Cell::Vector(vec))) = pack.dictionary.dict.get_mut(&w) {
+            if let Cell::Integer(pos) = key {
+                if pos >= 0 {
+                    if pos < vec.vector.len() as i64 {
+                        pack.stack.push(vec.vector[pos as usize].clone());
+                    }
+                    else {
+                        return Err(Error::new("get: Vector index is out of range".into()));
+                    }
+                }
+                else {
+                    return Err(Error::new("get: Vector index is negative".into()));
+                }
+            }
+            else {
+                return Err(Error::new("get: Vector index is not an integer".into()));
+            }
         }
         else {
             return Err(Error::new(format!("key: dictionary doesn't contain an Object for word '{}'", w)));

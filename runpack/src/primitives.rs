@@ -357,6 +357,7 @@ fn type_word(pack: &mut Pack) -> Result<bool, Error> {
             Cell::Block(_) => "block",
             Cell::Map(_) => "map",
             Cell::Vector(_) => "vector",
+            Cell::Struct(_) => "struct",
         };
         pack.stack.push(Cell::String(type_str.into()));
         Ok(true)

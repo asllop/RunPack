@@ -1,5 +1,17 @@
+/*
+TODO:
+
+Modifications to make it fully async
+    - Integrate the runpack_async into the core.
+    - Remove the loop word, all loops must be done using recursion.
+    - Rework "reenter", and convert it into "loop{", that works like "{" + "reenter".
+
+Modifications to support any struct in the stack/concat:
+    - Remove Map and Vector, and use the generic Struct instead.
+ */
+
 use hashbrown::HashMap;
-use alloc::{vec::Vec, string::String, format, str};
+use alloc::{boxed::Box, vec::Vec, string::String, format, str};
 use core::hash::Hash;
 use super::primitives::register_primitives;
 use super::prelude::PRELUDE;
@@ -59,6 +71,49 @@ pub struct Vector {
     pub vector: Vec<Cell>,
 }
 
+/// Trait for generic structs in a Cell.
+pub trait StructCell: core::fmt::Debug {
+    /// Clone wrapper.
+    fn custom_clone(&self) -> Box<dyn StructCell>;
+    /// Set value.
+    fn set(&mut self, key: Cell, value: Cell);
+    /// Remove value.
+    fn rem(&mut self, key: Cell) -> Option<Cell>;
+    /// Get value.
+    fn get(&self, key: Cell) -> Option<&Cell>;
+    /// Execute a command.
+    fn doit(&self, cmd: String, arg: Option<Cell>) -> Option<Cell>;
+    /// Execute a command in a mutable instance.
+    fn doit_mut(&mut self, cmd: String, arg: Option<Cell>) -> Option<Cell>;
+}
+
+#[derive(Debug)]
+/// Struct Cell.
+pub struct Struct {
+    /// Struct name.
+    pub name: String,
+    /// Struct data.
+    pub object: Box<dyn StructCell>,
+}
+
+impl PartialEq for Struct {
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name
+    }
+}
+
+impl PartialOrd for Struct {
+    fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
+        self.name.partial_cmp(&other.name)
+    }
+}
+
+impl Clone for Struct {
+    fn clone(&self) -> Self {
+        Self { name: self.name.clone(), object: self.object.custom_clone() }
+    }
+}
+
 /// Integer type alias
 pub type IntegerType = i64;
 
@@ -77,6 +132,7 @@ pub enum Cell {
     Block(BlockRef),
     Map(Map),
     Vector(Vector),
+    Struct(Struct),
 }
 
 impl Cell {

@@ -33,6 +33,8 @@ impl<'a> Future for RunFuture<'a> {
     }
 }
 
+//TODO: run a word, an async version of "exec"
+
 impl<'a> RunFuture<'a> {
     pub fn new(pack: &'a mut Pack) -> Self {
         let shared_state = Arc::new(Mutex::new(SharedState {

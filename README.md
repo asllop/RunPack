@@ -27,6 +27,6 @@ RunPack is a modular language, what makes it easy to fit in your project needs. 
 
 Additionally, we offer the [RunPack REPL](https://github.com/asllop/RunPack-REPL), a cli tool to facilitate the development of RunPack programs.
 
-## Where to start
+## Where to start?
 
 Start by opening the RunPack [core module](runpack/README.md). From there you will be directed to usage examples, tutorials, and API documentation.
