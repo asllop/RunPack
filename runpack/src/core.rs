@@ -82,9 +82,9 @@ pub trait StructCell: core::fmt::Debug {
     /// Get value.
     fn get(&self, key: Cell) -> Option<&Cell>;
     /// Execute a command.
-    fn doit(&self, cmd: String, arg: Option<Cell>) -> Option<Cell>;
+    fn doit(&self, cmd: String, args: Option<Vec<Cell>>) -> Option<Cell>;
     /// Execute a command in a mutable instance.
-    fn doit_mut(&mut self, cmd: String, arg: Option<Cell>) -> Option<Cell>;
+    fn doit_mut(&mut self, cmd: String, args: Option<Vec<Cell>>) -> Option<Cell>;
 }
 
 #[derive(Debug)]
