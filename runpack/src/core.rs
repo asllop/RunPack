@@ -139,10 +139,10 @@ impl Cell {
     fn number(token: &str) -> Option<Self> {
         //TODO: support hex and binary integers (https://doc.rust-lang.org/std/primitive.i64.html#method.from_str_radix)
         if let Ok(int) = token.parse::<IntegerType>() {
-            Some(Cell::Integer(int))
+            Some(int.into())
         }
         else if let Ok(flt) = token.parse::<FloatType>() {
-            Some(Cell::Float(flt))
+            Some(flt.into())
         }
         else {
             None
@@ -151,10 +151,10 @@ impl Cell {
 
     fn boolean(token: &str) -> Option<Self> {
         if token == "true" {
-            Some(Cell::Boolean(true))
+            Some(true.into())
         }
         else if token == "false" {
-            Some(Cell::Boolean(false))
+            Some(false.into())
         }
         else {
             None
@@ -434,7 +434,7 @@ impl Pack {
 
         if in_string {
             if let Ok(token) = String::from_utf8(buff) {
-                Cell::String(token)
+                token.into()
             }
             else {
                 //TODO: string parse error

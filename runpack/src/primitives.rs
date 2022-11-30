@@ -28,7 +28,7 @@ fn close_parenth(pack: &mut Pack) -> Result<bool, Error> {
 }
 
 fn size(pack: &mut Pack) -> Result<bool, Error> {
-    pack.stack.push(Cell::Integer(pack.stack.size() as IntegerType));
+    pack.stack.push((pack.stack.size() as IntegerType).into());
     Ok(true)
 }
 
@@ -84,7 +84,7 @@ fn two_num_op(stack: &mut Stack, int_op: fn(IntegerType, IntegerType) -> Integer
         stack.push(Cell::Integer(int_op(*int_a, *int_b)));
     }
     else if let (Some(Cell::Float(flt_a)), Some(Cell::Float(flt_b))) = (&cell_a, &cell_b) {
-        stack.push(Cell::Float(flt_op(*flt_a, *flt_b)));
+        stack.push(flt_op(*flt_a, *flt_b).into());
     }
     else {
         return Err(Error::new("two_num_op: Expecting two numbers of the same type".into()));
@@ -95,13 +95,13 @@ fn two_num_op(stack: &mut Stack, int_op: fn(IntegerType, IntegerType) -> Integer
 fn two_num_or_str_op(stack: &mut Stack, int_op: fn(IntegerType, IntegerType) -> IntegerType, flt_op: fn(FloatType, FloatType) -> FloatType, str_op: fn(&String, &String) -> String) -> Result<bool, Error> {
     let (cell_b, cell_a) = (stack.pop(), stack.pop());
     if let (Some(Cell::Integer(int_a)), Some(Cell::Integer(int_b))) = (&cell_a, &cell_b) {
-        stack.push(Cell::Integer(int_op(*int_a, *int_b)));
+        stack.push(int_op(*int_a, *int_b).into());
     }
     else if let (Some(Cell::Float(flt_a)), Some(Cell::Float(flt_b))) = (&cell_a, &cell_b) {
-        stack.push(Cell::Float(flt_op(*flt_a, *flt_b)));
+        stack.push(flt_op(*flt_a, *flt_b).into());
     }
     else if let (Some(Cell::String(str_a)), Some(Cell::String(str_b))) = (&cell_a, &cell_b) {
-        stack.push(Cell::String(str_op(str_a, str_b)));
+        stack.push(str_op(str_a, str_b).into());
     }
     else {
         return Err(Error::new("two_num_or_str_op: Expecting two cells of the same type".into()));
@@ -133,7 +133,7 @@ fn percent(pack: &mut Pack) -> Result<bool, Error> {
 
 fn two_cell_cmp(pack: &mut Pack, op: fn(Cell, Cell) -> bool) -> Result<bool, Error> {
     if let (Some(cell_b), Some(cell_a)) = (pack.stack.pop(), pack.stack.pop()) {
-        pack.stack.push(Cell::Boolean(op(cell_a, cell_b)));
+        pack.stack.push(op(cell_a, cell_b).into());
         Ok(true)
     }
     else {
@@ -168,10 +168,10 @@ fn small_equal(pack: &mut Pack) -> Result<bool, Error> {
 fn two_logic_op(stack: &mut Stack, op_bool: fn(bool, bool) -> bool, op_int: fn(IntegerType, IntegerType) -> IntegerType) -> Result<bool, Error> {
     let (cell_b, cell_a) = (stack.pop(), stack.pop());
     if let (Some(Cell::Boolean(bool_a)), Some(Cell::Boolean(bool_b))) = (&cell_a, &cell_b) {
-        stack.push(Cell::Boolean(op_bool(*bool_a, *bool_b)));
+        stack.push(op_bool(*bool_a, *bool_b).into());
     }
     else if let (Some(Cell::Integer(int_a)), Some(Cell::Integer(int_b))) = (&cell_a, &cell_b) {
-        stack.push(Cell::Integer(op_int(*int_a, *int_b)));
+        stack.push(op_int(*int_a, *int_b).into());
     }
     else {
         return Err(Error::new("two_logic_op: Expecting two booleans or two integers".into()));
@@ -190,10 +190,10 @@ fn or(pack: &mut Pack) -> Result<bool, Error> {
 fn not(pack: &mut Pack) -> Result<bool, Error> {
     let cell = pack.stack.pop();
     if let Some(Cell::Boolean(a)) = cell {
-        pack.stack.push(Cell::Boolean(!a));
+        pack.stack.push((!a).into());
     }
     else if let Some(Cell::Integer(a)) = cell {
-        pack.stack.push(Cell::Integer(!a));
+        pack.stack.push((!a).into());
     }
     else {
         return Err(Error::new("not: Expecting a boolean or an integer".into()));
@@ -307,7 +307,7 @@ fn exe(pack: &mut Pack) -> Result<bool, Error> {
 
 fn int(pack: &mut Pack) -> Result<bool, Error> {
     if let Some(Cell::Float(f)) = pack.stack.pop() {
-        pack.stack.push(Cell::Integer(f as IntegerType));
+        pack.stack.push((f as IntegerType).into());
         Ok(true)
     }
     else {
@@ -317,7 +317,7 @@ fn int(pack: &mut Pack) -> Result<bool, Error> {
 
 fn float(pack: &mut Pack) -> Result<bool, Error> {
     if let Some(Cell::Integer(i)) = pack.stack.pop() {
-        pack.stack.push(Cell::Float(i as FloatType));
+        pack.stack.push((i as FloatType).into());
         Ok(true)
     }
     else {
@@ -327,7 +327,7 @@ fn float(pack: &mut Pack) -> Result<bool, Error> {
 
 fn string(pack: &mut Pack) -> Result<bool, Error> {
     if let Some(Cell::Word(w)) = pack.stack.pop() {
-        pack.stack.push(Cell::String(w));
+        pack.stack.push(w.into());
         Ok(true)
     }
     else {
@@ -359,7 +359,7 @@ fn type_word(pack: &mut Pack) -> Result<bool, Error> {
             Cell::Vector(_) => "vector",
             Cell::Struct(_) => "struct",
         };
-        pack.stack.push(Cell::String(type_str.into()));
+        pack.stack.push(type_str.into());
         Ok(true)
     }
     else {
@@ -372,8 +372,8 @@ fn question(pack: &mut Pack) -> Result<bool, Error> {
         if pack.dictionary.dict.contains_key("?__") {
             let stack_help_word = format!("?_{word}_stack_");
             let desc_help_word = format!("?_{word}_desc_");
-            pack.dictionary.data(&stack_help_word, Cell::String(stack_effect));
-            pack.dictionary.data(&desc_help_word, Cell::String(description));
+            pack.dictionary.data(&stack_help_word, stack_effect.into());
+            pack.dictionary.data(&desc_help_word, description.into());
         }
         Ok(true)
     }
@@ -433,7 +433,7 @@ fn block(pack: &mut Pack) -> Result<bool, Error> {
         let new_block_pos = pack.concat.array.len() + 3;
         let new_block_len = block.len;
         // Add skip and {
-        pack.concat.array.push(Cell::Integer(new_block_len as IntegerType + 1));
+        pack.concat.array.push((new_block_len as IntegerType + 1).into());
         pack.concat.array.push(Cell::Word("skip".into()));
         pack.concat.array.push(Cell::Word("{".into()));
         // Copy the block to the end of the concat
@@ -462,7 +462,7 @@ fn block(pack: &mut Pack) -> Result<bool, Error> {
 }
 
 fn lex_val(pack: &mut Pack) -> Result<bool, Error> {
-    pack.stack.push(Cell::String(pack.dictionary.lex.clone()));
+    pack.stack.push(pack.dictionary.lex.clone().into());
     Ok(true)
 }
 
@@ -470,7 +470,7 @@ fn exist_question(pack: &mut Pack) -> Result<bool, Error> {
     if let Some(Cell::Word(w)) = pack.stack.pop() {
         let b = pack.dictionary.dict.contains_key(&w);
         pack.stack.push(Cell::Word(w));
-        pack.stack.push(Cell::Boolean(b));
+        pack.stack.push(b.into());
         Ok(true)
     }
     else {
