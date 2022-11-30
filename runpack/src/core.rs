@@ -170,6 +170,36 @@ impl Hash for Cell {
 
 impl Eq for Cell {}
 
+impl From<String> for Cell {
+    fn from(val: String) -> Self {
+        Cell::String(val)
+    }
+}
+
+impl From<&str> for Cell {
+    fn from(val: &str) -> Self {
+        Cell::String(val.into())
+    }
+}
+
+impl From<IntegerType> for Cell {
+    fn from(val: IntegerType) -> Self {
+        Cell::Integer(val)
+    } 
+}
+
+impl From<FloatType> for Cell {
+    fn from(val: FloatType) -> Self {
+        Cell::Float(val)
+    } 
+}
+
+impl From<bool> for Cell {
+    fn from(val: bool) -> Self {
+        Cell::Boolean(val)
+    } 
+}
+
 #[derive(Clone)]
 /// Dictionary entry
 pub enum DictEntry {
