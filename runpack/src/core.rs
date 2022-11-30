@@ -4,7 +4,8 @@ TODO:
 Modifications to make it fully async
     - Integrate the runpack_async into the core.
     - Remove the loop word, all loops must be done using recursion.
-    - Rework "reenter", and convert it into "loop{", that works like "{" + "reenter".
+    - Rename "reenter" to "loop".
+    - Create "end" word what is like a break with 1 level.
 
 Modifications to support any struct in the stack/concat:
     - Remove Map and Vector, and use the generic Struct instead.
@@ -75,16 +76,14 @@ pub struct Vector {
 pub trait StructCell: core::fmt::Debug {
     /// Clone wrapper.
     fn custom_clone(&self) -> Box<dyn StructCell>;
-    /// Set value.
-    fn set(&mut self, key: Cell, value: Cell);
-    /// Remove value.
-    fn rem(&mut self, key: &Cell) -> Option<Cell>;
-    /// Get value.
-    fn get(&self, key: &Cell) -> Option<&Cell>;
     /// Execute a command.
     fn doit(&self, cmd: &str, args: Option<Vec<Cell>>) -> Option<Cell>;
     /// Execute a command in a mutable instance.
     fn doit_mut(&mut self, cmd: &str, args: Option<Vec<Cell>>) -> Option<Cell>;
+    /// Execute a command, and return a ref.
+    fn doit_ref(&self, cmd: &str, args: Option<Vec<Cell>>) -> Option<&Cell>;
+    /// Execute a command in a mutable instance, and return a mut ref.
+    fn doit_mut_ref(&mut self, cmd: &str, args: Option<Vec<Cell>>) -> Option<&mut Cell>;
 }
 
 #[derive(Debug)]
@@ -374,7 +373,7 @@ impl Pack {
         pack
     }
 
-    fn next_cell(&mut self) -> Cell {
+    fn next_cell(&mut self) -> Option<Cell> {
         let mut word_found = false;
         let mut in_string = false;
         let mut in_comment = false;
@@ -434,11 +433,11 @@ impl Pack {
 
         if in_string {
             if let Ok(token) = String::from_utf8(buff) {
-                token.into()
+                Some(token.into())
             }
             else {
                 //TODO: string parse error
-                Cell::Empty
+                None
             }
         }
         else {
@@ -446,38 +445,41 @@ impl Pack {
                 self.parse_token(buff)
             }
             else {
-                Cell::Empty
+                None
             }
         }
     }
 
-    fn parse_token(&mut self, token: Vec<u8>) -> Cell {
+    fn parse_token(&mut self, token: Vec<u8>) -> Option<Cell> {
         if let Ok(token) = String::from_utf8(token) {
             if let Some(num_cell) = Cell::number(&token) {
-                num_cell
+                Some(num_cell)
             }
             else if let Some(bool_cell) = Cell::boolean(&token) {
-                bool_cell
+                Some(bool_cell)
+            }
+            else if token == "_" {
+                Some(Cell::Empty)
             }
             else {
-                Cell::Word(token)
+                Some(Cell::Word(token))
             }
         }
         else {
             //TODO: string parse error
-            Cell::Empty
+            None
         }
     }
     
     fn tokenize(&mut self) {
         loop {
             let cell = self.next_cell();
-            if let Cell::Empty = cell {
-                //TODO: add error handling, when the parser fails somewhere
-                break;
+            if let Some(cell) = cell {
+                self.concat.array.push(cell);
             }
             else {
-                self.concat.array.push(cell);
+                //TODO: add error handling, when the parser fails somewhere
+                break;
             }
         }
     }
@@ -553,7 +555,7 @@ impl Pack {
             let cell = cell.clone();
             match cell {
                 Cell::Word(w) => return self.exec(&w),
-                Cell::Empty => return Err(Error::new(format!("Found an invalid cell value in the Concat: {:?}", cell))),
+                Cell::Empty => { /* No Operation */ },
                 _ => self.stack.push(cell),
             }
             Ok(true)

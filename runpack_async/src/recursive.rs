@@ -13,6 +13,8 @@ fn reenter(pack: &mut Pack) -> Result<bool, runpack::Error> {
     Ok(true)
 }
 
+//TODO: create word "end" that is like break with 1 level
+
 fn break_word(pack: &mut Pack) -> Result<bool, runpack::Error> {
     if let Some(Cell::Integer(level)) = pack.stack.pop() {
         // Discard n positions of the return stack + reenter return stack

@@ -201,6 +201,10 @@ fn not(pack: &mut Pack) -> Result<bool, Error> {
     Ok(true)
 }
 
+//TODO: rework if to be a fast version of either. It takes 1 condition from the stack and 2 words from the concat:
+//      10 2 > if do_true do_false
+// In case one of the two conditions must be ignored, just put a _ that is like a NOP:
+//      10 2 > if do_true _
 fn if_word(pack: &mut Pack) -> Result<bool, Error> {
     if let (Some(Cell::Block(blk)), Some(Cell::Boolean(cond))) = (pack.stack.pop(), pack.stack.pop()) {
         if cond {
