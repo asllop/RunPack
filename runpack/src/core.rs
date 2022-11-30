@@ -307,6 +307,17 @@ impl Stack {
         }
     }
 
+    /// Get mutable cell. Position is referenced to the top.
+    pub fn get_mut(&mut self, pos: usize) -> Option<&mut Cell> {
+        if pos < self.size() {
+            let len = self.stack.len();
+            self.stack.get_mut(len - 1 - pos)
+        }
+        else {
+            None
+        }
+    }
+
     /// Size of current stack
     pub fn size(&self) -> usize {
         self.stack.len() - self.base
