@@ -526,17 +526,25 @@ Output:
 
 We introduced multiple new things here. First, the `is_int?` word, checks if the type of the next cell in the stack is an integer, and puts a boolean with the result. Then we have the `either`. This words gets from the stack a boolean, and two blocks, the first block will be executed if the boolean is `true`, and the second if it's `false`.
 
-If we only need a true block, we can use the `if` word:
+Either is nice but a bit slow, because it must create the blocks before executing. This time penalty could be significant in a loop. For these cases we have the `if` word, that words in a diferent way, instead of getting to blocks from the stack, it gets two words from the concat:
 
 ```
-{ 10 > { 'It\'s bigger than ten' print } if } def >10
-100 >10
+{ 'It\'s bigger' print } def bigger
+{ 'It\'s not bigger' print } def not_bigger
+100 10 > if bigger not_bigger
 ```
 
 Output:
 
 ```
-It's bigger than ten
+It's bigger
+```
+
+If we don't care about one of the two cases, we can use the `_` word, that does nothing:
+
+```
+{ 'It\'s bigger' print } def bigger
+100 10 > if bigger _
 ```
 
 Here we introduced one more word, the `>`. This word is a comparator, it gets two cells, compares if the first is bigger thant the second, and returns a boolean. There are 6 comparators: `=`, `!=`, `>`, `<`, `>=`, and `<=`.

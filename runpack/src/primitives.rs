@@ -9,7 +9,7 @@ pub fn register_primitives(pack: &mut Pack) {
         ("!=", not_equal), (">=", big_equal), ("<=", small_equal), ("and", and), ("or", or), ("not", not), ("if", if_word),
         ("either", either), ("loop", loop_word), ("[", open_bracket), ("exe", exe), ("int", int), ("float", float),
         ("string", string), ("word", word), ("type", type_word), ("?", question), ("@@", atat), ("@def", atdef), ("lex#", lex_val),
-        ("skip", skip), ("block", block), ("exist?", exist_question), ("_", underscore), ("reenter", reenter), ("ret", ret),
+        ("skip", skip), ("block", block), ("exist?", exist_question), ("_", underscore), ("reenter", reenter), ("end", end),
         ("break", break_word),
     ]);
 }
@@ -71,7 +71,7 @@ fn close_curly(pack: &mut Pack) -> Result<bool, Error> {
 
 /* TODO:
     - Instead of using a string as an argument, use a word and RunPack will automatically append the dot.
-    - Create a word "unlex" or "endlex" or similar, to clear the lexicon mark, instead of the current unelegant approach os usign an empty string.
+    - Create a word "unlex" or "endlex", "elex", "dislex" or similar, to clear the lexicon mark, instead of the current unelegant approach os usign an empty string.
 */
 
 fn lex(pack: &mut Pack) -> Result<bool, Error> {
@@ -205,21 +205,30 @@ fn not(pack: &mut Pack) -> Result<bool, Error> {
     Ok(true)
 }
 
-//TODO: rework if to be a fast version of either. It takes 1 condition from the stack and 2 words from the concat:
-//      10 2 > if do_true do_false
-// In case one of the two conditions must be ignored, just put a _ that is like a NOP:
-//      10 2 > if do_true _
 fn if_word(pack: &mut Pack) -> Result<bool, Error> {
-    if let (Some(Cell::Block(blk)), Some(Cell::Boolean(cond))) = (pack.stack.pop(), pack.stack.pop()) {
+    if let Some(Cell::Boolean(cond)) = pack.stack.pop() {
         if cond {
-            pack.ret.push(pack.concat.pointer);
-            pack.concat.pointer = blk.pos;
+            if let Some(Cell::Word(true_word)) = pack.concat.next_clone() {
+                pack.concat.next(); // discard the false word
+                pack.exec(&true_word)
+            }
+            else {
+                Err(Error::new("if: couldn't find a word for true".into()))
+            }
+        }
+        else {
+            pack.concat.next(); // discard the true word
+            if let Some(Cell::Word(false_word)) = pack.concat.next_clone() {
+                pack.exec(&false_word)
+            }
+            else {
+                Err(Error::new("if: couldn't find a word for false".into()))
+            }
         }
     }
     else {
-        return Err(Error::new("if: couldn't find condition and 1 block".into()));
+        Err(Error::new("if: couldn't find a condition".into()))
     }
-    Ok(true)
 }
 
 fn either(pack: &mut Pack) -> Result<bool, Error> {
@@ -239,30 +248,8 @@ fn either(pack: &mut Pack) -> Result<bool, Error> {
     }
 }
 
-fn loop_word(pack: &mut Pack) -> Result<bool, Error> {
-    if let (Some(Cell::Block(loop_blk)), Some(Cell::Block(cond_blk))) = (pack.stack.pop(), pack.stack.pop()) {
-        let concat_pointer = pack.concat.pointer;
-        loop {
-            pack.run_block(&cond_blk)?;
-            pack.ret.pop();
-            if let Some(Cell::Boolean(cond)) = pack.stack.pop() {
-                if cond {
-                    pack.run_block(&loop_blk)?;
-                    pack.ret.pop();
-                }
-                else {
-                    pack.concat.pointer = concat_pointer;
-                    break;
-                }
-            }
-            else {
-                return Err(Error::new("loop: condition didn't produce a bool".into()));
-            }
-        }
-    }
-    else {
-        return Err(Error::new("loop: couldn't find 2 blocks".into()));
-    }
+//TODO: this word is not async friendly, it uses run_block, it must be reworked
+fn loop_word(_pack: &mut Pack) -> Result<bool, Error> {
     Ok(true)
 }
 
@@ -492,7 +479,8 @@ fn reenter(pack: &mut Pack) -> Result<bool, Error> {
     Ok(true)
 }
 
-fn ret(pack: &mut Pack) -> Result<bool, Error> {
+//TODO: test it
+fn end(pack: &mut Pack) -> Result<bool, Error> {
     // Discard 1 position of the return stack + reenter return stack
     pack.ret.pop();
     if let Some(pos) = pack.ret.pop() {

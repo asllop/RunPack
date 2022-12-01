@@ -24,7 +24,7 @@ pub const PRELUDE: &str = r#"
     ? and 'a b -> c' 'Calculate logic "and" of two operands: -1 -1 and'
     ? or 'a b -> c' 'Calculate logic "or" of two operands: -1 0 or'
     ? not 'a -> b' 'Calculate logic inversion of an operand: 0 not'
-    ? if 'a b -> ' 'Execute block b if a is true: 2 2 = { "do something" } if'
+    ? if 'a -> ' 'Get a boolean from the stack and executes one of the 2 next words in the concat: condition if word_true word_false'
     ? either 'a b c -> ' 'Execute block b if a is true, or block c if a is false: 2 2 = { "true block" } { "false block" } either'
     ? loop 'a b -> ' 'Execute block b while result of block a is true: 10 var num { num 0 > } { num -- num! } loop'
     ? exe 'a -> ' 'Execute a word referenced in the stack: @ a_word exe'

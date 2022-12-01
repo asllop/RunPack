@@ -4,6 +4,7 @@ TODO:
 Modifications to make it fully async
     - Remove the loop word, all loops must be done using recursion.
     - Rename "reenter" to "loop".
+    - Make native words async, or how to interact with async functions
  */
 
 use hashbrown::HashMap;
@@ -505,8 +506,9 @@ impl Pack {
                     func(self)
                 },
                 DictEntry::Defined(block_ref) => {
-                    let block = block_ref.clone();
-                    self.run_block(&block)
+                    self.ret.push(self.concat.pointer);
+                    self.concat.pointer = block_ref.pos;
+                    Ok(true)
                 },
                 DictEntry::Data(data_cell) => {
                     self.stack.push(data_cell.clone());
@@ -534,23 +536,6 @@ impl Pack {
                 Ok(false) => return Ok(true),
                 Err(e) => return Err(e),
                 _ => {}
-            }
-        }
-    }
-    
-    /// Run a block and return when finished.
-    pub fn run_block(&mut self, block: &BlockRef) -> Result<bool, Error> {
-        self.ret.push(self.concat.pointer);
-        self.concat.pointer = block.pos;
-        loop {
-            match self.one_step() {
-                Ok(true) => {
-                    if self.concat.pointer == block.pos + block.len - 1 {
-                        return Ok(true);
-                    }
-                },
-                Err(e) => return Err(e),
-                _ => return Ok(false)
             }
         }
     }
