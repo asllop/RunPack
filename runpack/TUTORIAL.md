@@ -1034,9 +1034,9 @@ pub enum ExtOption<'a> {
 
 Each command decides the arguments it takes and what it will return. In our case, "get" requires one argument and returns a `SomeRef`, "set" two arguments and returns a `None`, and "rem" one argument and returns a `Some`. Anything else will return an `Invalid` value.
 
-The trait interface also provides an `object_clone()` function, that is used by custom types to clone themselves. The reason for using this instead of the standard `Clone` trait can be found in the [*object safety*](https://doc.rust-lang.org/reference/items/traits.html#object-safety) rules: a boxed dynamic trait must not require `Sized`, and `Clone` does.
+The trait interface also requieres the `object_clone()` function, that is used by custom types to clone themselves. The reason for using this instead of the standard `Clone` trait can be found in the [*object safety*](https://doc.rust-lang.org/reference/items/traits.html#object-safety) rules: a boxed dynamic trait must not require `Sized`, and `Clone` does.
 
-With these tools we could define a set of words (a lexicon) to operate with `MyMap` instances, using the mechanisms shown in the chapter [7.3 The Dictionary](#73-the-dictionary). For example, we could append this to the previous program:
+With these tools we could define a set of words (a lexicon) to operate with `MyMap` instances, using the mechanisms shown in chapter [7.3 The Dictionary](#73-the-dictionary). For example, we could append this to the previous program:
 
 ```rust
 // in main...
