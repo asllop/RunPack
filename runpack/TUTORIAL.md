@@ -999,7 +999,7 @@ impl StructCell for MyMap {
             // Set a key-value pair.
             "set" => {
                 if let Some(mut args) = args {
-                    if let (Some(key), Some(value)) = (args.pop(), args.pop()) {
+                    if let (Some(value), Some(key)) = (args.pop(), args.pop()) {
                         self.map.insert(key, value);
                         return ExtOption::None;
                     }
@@ -1036,4 +1036,40 @@ Each command decides the arguments it takes and what it will return. In our case
 
 The trait interface also provides an `object_clone()` function, that is used by custom types to clone themselves. The reason for using this instead of the standard `Clone` trait can be found in the [*object safety*](https://doc.rust-lang.org/reference/items/traits.html#object-safety) rules: a boxed dynamic trait must not require `Sized`, and `Clone` does.
 
-With these tools we could define a set of words (a lexicon) to operate with `MyMap` instances, using the mechanisms shown in the chapter [7.3 The Dictionary](#73-the-dictionary).
+With these tools we could define a set of words (a lexicon) to operate with `MyMap` instances, using the mechanisms shown in the chapter [7.3 The Dictionary](#73-the-dictionary). For example, we could append this to the previous program:
+
+```rust
+// in main...
+pack.dictionary.native("map.new", map_new);
+pack.dictionary.native("map.set", map_set);
+
+// at the end...
+fn map_set(pack: &mut Pack) -> Result<bool, runpack::Error>  {
+    if let (Some(val), Some(key), Some(Cell::Struct(mut s))) = (pack.stack.pop(), pack.stack.pop(), pack.stack.pop()) {
+        if s.name == "Map" {
+            if let ExtOption::None = s.object.doit_mut("set", Some(vec![key, val])) {
+                pack.stack.push(s.into());
+            }
+        }
+    }
+    Ok(true)
+}
+
+fn map_new(pack: &mut Pack) -> Result<bool, runpack::Error>  {
+    pack.stack.push(MyDict::default().into());
+    Ok(true)
+}
+```
+
+Now we can execute a RunPack program like the following:
+
+```
+map.new 'name' 'Andreu' map.set
+```
+
+And end up with something like this in the stack:
+
+```
+Stack:
+	0 : Struct(Struct { name: "Map", object: MyMap { map: {String("name"): String("Andreu")} } })
+```
