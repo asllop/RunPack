@@ -6,6 +6,7 @@ pub const PRELUDE: &str = r#"
     ? { ' -> a' 'Create a block and put block cell in the stack: { 1 + }'
     ? } ' -> ' 'Return from block, get concat position from the return stack.'
     ? [ '? -> ?' 'Create stack transfer: [ a b | a a ]'
+    ? _ ' -> ' 'It does nothing: _'
     ? skip 'a -> ' 'Skip "a" words from the concat: 1 skip wont_be_executed'
     ? size ' -> a' 'Get size of current stack: size'
     ? lex ' -> ' 'Set prefix for word definition: lex \'mylex.\' 10 def num lex \'\''

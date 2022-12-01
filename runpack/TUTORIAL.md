@@ -47,15 +47,13 @@ fn main() {
 fn print(pack: &mut Pack) -> Result<bool, runpack::Error> {
     if let Some(cell) = pack.stack.pop() {
         match cell {
-            Cell::Empty => println!("<EMPTY>"),
             Cell::Integer(i) => println!("{}", i),
             Cell::Float(f) => println!("{}", f),
             Cell::Boolean(b) => println!("{}", b),
             Cell::String(s) => println!("{}", s),
             Cell::Word(w) => println!("{}", w),
             Cell::Block(b) => println!("{:?}", b),
-            Cell::Map(m) => println!("{:?}", m),
-            Cell::Vector(v) => println!("{:?}", v),
+            Cell::Struct(s) => println!("{:?}", s),
         }
         Ok(true)
     }
@@ -726,15 +724,13 @@ But what is it? Internally, a cell is a Rust enum that looks like:
 
 ```rust
 pub enum Cell {
-    Empty,
-    Integer(IntegerType),
-    Float(FloatType),
+    Integer(i64),
+    Float(f64),
     Boolean(bool),
     String(String),
     Word(String),
     Block(BlockRef),
-    Map(Map),
-    Vector(Vector),
+    Struct(Struct),
 }
 ```
 
@@ -772,7 +768,7 @@ After the stack, the Concat is the most important data structure in RunPack. The
 
 But how does it work?
 
-When we add code to the `Pack`, using `pack.code(...)`, it is tokezined and converted into cells. These cells are appened to the Concat. The Concat contains a pointer to the current cell that is being executed. When the program starts, this pointer is 0. Then it runs a cell taken from the Concat at pointer position, increments the pointer, and starts the loop again. But a word can also get a cell from the Concat. When this happens, the pointer is incremented as if the cell was executed, and the execution will continue after it. Let's create a simple word that just gets a word from the concat and prints it:
+When we add code to the `Pack`, using `pack.code(...)`, it is tokezined and converted into cells. These cells are appened to the Concat. The Concat contains an index to the current cell that is being executed. When the program starts, this index is 0. Then it runs a cell taken from the Concat at index position, increments the index, and starts the loop again. But a word can also get a cell from the Concat. When this happens, the index is incremented as if the cell was executed, and the execution will continue after it. Let's create a simple word that just gets a word from the concat and prints it:
 
 ```rust
 use runpack::{self, Pack, Cell};
@@ -797,7 +793,7 @@ fn hello_word(pack: &mut Pack) -> Result<bool, runpack::Error> {
 }
 ```
 
-We used the method `next()` to get the next cell from the concat. This will return a reference to the cell and increment the pointer. We also have the method `next_clone()` that returns a cloned cell instead of a reference.
+We used the method `next()` to get the next cell from the concat. This will return a reference to the cell and increment the index. We also have the method `next_clone()` that returns a cloned cell instead of a reference.
 
 We used Rust for this example, but we can also play with the Concat using RunPack code. We already know how to get a cell from the Concat:
 
@@ -825,11 +821,11 @@ With all we know now, we could even create our version of `def`:
 
 And now comes the question, if we have two ways to pass arguments to a word (stack and concat), which one should we use?
 
-In general, if the data needs to be dynamic, we should use the stack. And if it won't change and is defined in the moment we write the code, we can use the concat. For example, the `+` word uses two arguments in the stack, because we want to be able to add any number comming from any source. But `def` gets the word name from the concat, because it is something we want to set at the moment we write the program and it won't depend on execution results. This is a general rule, but how we use the stack and the concat must be driven by usuability and code readability criteria.
+In general, if the data needs to be dynamic, we should use the stack. And if it won't change and is defined in the moment we write the code, we can use the concat. For example, the `+` word uses two arguments in the stack, because we want to be able to add any number comming from any source. But `def` gets the word name from the concat, because it is something we want to set at the moment we write the program and it won't depend on execution results. This is a general rule, but how we use the stack and the concat should be driven by usuability and code readability criteria.
 
 ### 7.3 The Dictionary
 
-Every time a word is found in the concat, the interpreter looks for it in the dictionary in order to execute it. Every time we define a word, a new entry in the dictionary is created.
+Every time a word is found in the concat, the interpreter looks for it in the dictionary in order to execute it. Every time we define a word, a new entry is created in the dictionary.
 
 Internally, the dictionary is a hash map where each key is a `String`, and each value is a `DictEntry` enum:
 
@@ -883,7 +879,7 @@ Stack:
 
 What this is telling us is where the code block is located within the concat. The `pos` field contains the index of the first cell, in this case the string `'Hello, World!'`, and `len` is the size of the code block. It is 3 because `}` also counts, this word is like a "return" in other languages.
 
-To create a defined word we need a `BlockRef`. To see a simple example, let's create a partial clone of `def` in Rust:
+To create a defined word we need a `BlockRef`. To see a simple example, let's create a partial clone of `def` in Rust (it's partial because it doesn't support lexicons):
 
 ```rust
 use runpack::{Pack, Cell, BlockRef, self};
@@ -911,7 +907,7 @@ fn my_def(pack: &mut Pack) -> Result<bool, runpack::Error> {
 }
 ```
 
-Our custom word `my_def` got two arguments, a block from the stack and a word from the concat. And it used these arguments to create a new word.
+Our custom word `my_def` got two arguments, a block from the stack and a word from the concat. And it uses these arguments to create a new word.
 
 ### 7.4 The Return Stack
 
@@ -937,3 +933,107 @@ if let Some(address) = pack.ret.pop() {
 ```
 
 Manipulating the return stack is delicate, and must be done with care. In general, you shouldn't touch it, unless you have a very specific need that can't be achieved in any other way.
+
+### 7.5 Custom Structs
+
+In the chapter [7.1 Cells](#71-cells) we saw the structure of a Cell in RunPack, and in the previous and following chapters we alse have seen each one of the variants, except one, the `Struct`. The Struct variant is used to create custom data structures in Rust, and use them as normal cells in RunPack programs. For example, RunPack doesn't natively provide vectors or hash maps, but we can implement them using the `Cell::Struct` variant. To use a custom type as a `Cell::Struct` it must implement the `StructCell` trait. Let's see how we could create a simple hash map:
+
+```rust
+use std::collections::HashMap;
+use runpack::{Pack, Cell, Struct, StructCell, ExtOption, self};
+
+fn main() {
+    let script = r#"
+        "some code here..."
+    "#;
+
+    // Create pack
+    let mut pack = Pack::new();
+
+    // Add a custom struct to the stack
+    pack.stack.push(MyMap::default().into());
+
+    // Modify the custom struct MyMap by sending the command "set" with two arguments: key and value.
+    if let Cell::Struct(s) = pack.stack.get_mut(0).unwrap() {
+        s.object.doit_mut("set", Some(vec!["name".into(), "Andreu".into()]));
+    }
+
+    // Add script and run
+    pack.code(script);
+    pack.run().expect("Failed running the script");
+}
+
+#[derive(Default, Debug, Clone)]
+struct MyMap {
+    map: HashMap<Cell, Cell>,
+}
+
+impl From<MyMap> for Cell {
+    fn from(val: MyMap) -> Self {
+        Struct {
+            name: "Map".into(),
+            object: Box::new(val),
+        }.into()
+    }
+}
+
+impl StructCell for MyMap {
+    fn object_clone(&self) -> Box<dyn StructCell> {
+        Box::new(self.clone())
+    }
+
+    fn doit(&self, cmd: &str, args: Option<Vec<Cell>>) -> ExtOption {
+        // Get an immutable reference to a value using a key.
+        if cmd == "get" {
+            if let Some(args) = args {
+                if let Some(key) = args.get(0) {
+                    return self.map.get(key).into();
+                }
+            }
+        }
+        ExtOption::Invalid
+    }
+
+    fn doit_mut(&mut self, cmd: &str, args: Option<Vec<Cell>>) -> ExtOption {
+        match cmd {
+            // Set a key-value pair.
+            "set" => {
+                if let Some(mut args) = args {
+                    if let (Some(key), Some(value)) = (args.pop(), args.pop()) {
+                        self.map.insert(key, value);
+                        return ExtOption::None;
+                    }
+                }
+            },
+            // Remove a key-value pair, and returns the value.
+            "rem" => {
+                if let Some(args) = args {
+                    if let Some(key) = args.get(0) {
+                        return self.map.remove(key).into();
+                    }
+                }
+            },
+            _ => {},
+        }
+        ExtOption::Invalid
+    }
+}
+```
+
+The `StructCell` trait provides an interface for sending commands to our custom type, in two flavours, immutable (`doit`) and mutable (`doit_mut`). The possible results of a command are provided by the `ExtOption` enum:
+
+```rust
+pub enum ExtOption<'a> {
+    None,
+    Some(Cell),
+    SomeRef(&'a Cell),
+    SomeMutRef(&'a mut Cell),
+    Invalid,
+}
+```
+
+Each command decides the arguments it takes and what it will return. In our case, "get" requires one argument and returns a `SomeRef`, "set" two arguments and returns a `None`, and "rem" one argument and returns a `Some`. Anything else will return an `Invalid` value.
+
+The trait interface also provides an `object_clone()` function, that is used by custom types to clone themselves. The reason for using this instead of the standard `Clone` trait can be found in the [*object safety*](https://doc.rust-lang.org/reference/items/traits.html#object-safety) rules: a boxed dynamic trait must not require `Sized`, and `Clone` does.
+
+With these tools we could define a set of words (a lexicon) to operate with `MyMap` instances, using the mechanisms shown in the chapter [7.3 The Dictionary](#73-the-dictionary).

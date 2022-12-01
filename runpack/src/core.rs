@@ -49,6 +49,8 @@ pub enum ExtOption<'a> {
     SomeRef(&'a Cell),
     /// Mutable Cell reference.
     SomeMutRef(&'a mut Cell),
+    /// Invalid command or arguments.
+    Invalid,
 }
 
 impl<'a> From<Option<Cell>> for ExtOption<'a> {
@@ -87,20 +89,11 @@ impl<'a> From<Option<&'a mut Cell>> for ExtOption<'a> {
 /// Trait for generic structs.
 pub trait StructCell: core::fmt::Debug {
     /// Clone wrapper.
-    fn custom_clone(&self) -> Box<dyn StructCell>;
+    fn object_clone(&self) -> Box<dyn StructCell>;
     /// Execute a command.
     fn doit(&self, cmd: &str, args: Option<Vec<Cell>>) -> ExtOption;
     /// Execute a command in a mutable instance.
     fn doit_mut(&mut self, cmd: &str, args: Option<Vec<Cell>>) -> ExtOption;
-
-    // /// Execute a command, and return a cell.
-    // fn doit(&self, cmd: &str, args: Option<Vec<Cell>>) -> Option<Cell>;
-    // /// Execute a command in a mutable instance, and return a cell.
-    // fn doit_mut(&mut self, cmd: &str, args: Option<Vec<Cell>>) -> Option<Cell>;
-    // /// Execute a command, and return a cell ref.
-    // fn doit_ref(&self, cmd: &str, args: Option<Vec<Cell>>) -> Option<&Cell>;
-    // /// Execute a command in a mutable instance, and return a mut cell ref.
-    // fn doit_mut_ref(&mut self, cmd: &str, args: Option<Vec<Cell>>) -> Option<&mut Cell>;
 }
 
 #[derive(Debug)]
@@ -126,21 +119,15 @@ impl PartialOrd for Struct {
 
 impl Clone for Struct {
     fn clone(&self) -> Self {
-        Self { name: self.name.clone(), object: self.object.custom_clone() }
+        Self { name: self.name.clone(), object: self.object.object_clone() }
     }
 }
-
-/// Integer type alias
-pub type IntegerType = i64;
-
-/// Float type alias
-pub type FloatType = f64;
 
 #[derive(PartialEq, PartialOrd, Clone, Debug)]
 /// Data primitive
 pub enum Cell {
-    Integer(IntegerType),
-    Float(FloatType),
+    Integer(i64),
+    Float(f64),
     Boolean(bool),
     String(String),
     Word(String),
@@ -151,10 +138,10 @@ pub enum Cell {
 impl Cell {
     fn number(token: &str) -> Option<Self> {
         //TODO: support hex and binary integers (https://doc.rust-lang.org/std/primitive.i64.html#method.from_str_radix)
-        if let Ok(int) = token.parse::<IntegerType>() {
+        if let Ok(int) = token.parse::<i64>() {
             Some(int.into())
         }
-        else if let Ok(flt) = token.parse::<FloatType>() {
+        else if let Ok(flt) = token.parse::<f64>() {
             Some(flt.into())
         }
         else {
@@ -195,14 +182,14 @@ impl From<&str> for Cell {
     }
 }
 
-impl From<IntegerType> for Cell {
-    fn from(val: IntegerType) -> Self {
+impl From<i64> for Cell {
+    fn from(val: i64) -> Self {
         Cell::Integer(val)
     } 
 }
 
-impl From<FloatType> for Cell {
-    fn from(val: FloatType) -> Self {
+impl From<f64> for Cell {
+    fn from(val: f64) -> Self {
         Cell::Float(val)
     } 
 }
@@ -211,6 +198,18 @@ impl From<bool> for Cell {
     fn from(val: bool) -> Self {
         Cell::Boolean(val)
     } 
+}
+
+impl From<BlockRef> for Cell {
+    fn from(val: BlockRef) -> Self {
+        Cell::Block(val)
+    }
+}
+
+impl From<Struct> for Cell {
+    fn from(val: Struct) -> Self {
+        Cell::Struct(val)
+    }
 }
 
 #[derive(Clone)]

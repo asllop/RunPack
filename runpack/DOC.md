@@ -26,6 +26,19 @@ Description:
 Remainder of an integer division: 3 2 %
 ```
 
+## _
+
+Stack Effects:
+
+```
+ -> 
+```
+Description:
+
+```
+It does nothing: _
+```
+
 ## (
 
 Stack Effects:
@@ -481,19 +494,6 @@ Description:
 Check if cell in the stack is an integer: 10 is_int?
 ```
 
-## is_map?
-
-Stack Effects:
-
-```
-a -> a bool
-```
-Description:
-
-```
-Check if cell in the stack is a map: ( new ) is_map?
-```
-
 ## is_str?
 
 Stack Effects:
@@ -505,6 +505,19 @@ Description:
 
 ```
 Check if cell in the stack is a string: 'hi' is_str?
+```
+
+## is_struct?
+
+Stack Effects:
+
+```
+a -> a bool
+```
+Description:
+
+```
+Check if cell in the stack is a struct: custom_struct is_struct?
 ```
 
 ## is_word?

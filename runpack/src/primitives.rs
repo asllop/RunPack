@@ -1,4 +1,4 @@
-use super::core::{Pack, Cell, BlockRef, Stack, IntegerType, FloatType, Error};
+use super::core::{Pack, Cell, BlockRef, Stack, Error};
 use hashbrown::HashMap;
 use alloc::string::String;
 
@@ -28,7 +28,7 @@ fn close_parenth(pack: &mut Pack) -> Result<bool, Error> {
 }
 
 fn size(pack: &mut Pack) -> Result<bool, Error> {
-    pack.stack.push((pack.stack.size() as IntegerType).into());
+    pack.stack.push((pack.stack.size() as i64).into());
     Ok(true)
 }
 
@@ -42,7 +42,7 @@ fn open_curly(pack: &mut Pack) -> Result<bool, Error> {
                     level -= 1;
                     if level == 0 {
                         let len = pack.concat.pointer - pos;
-                        pack.stack.push(Cell::Block(BlockRef { pos, len }));
+                        pack.stack.push(BlockRef { pos, len }.into());
                         break;
                     }
                 }
@@ -68,6 +68,11 @@ fn close_curly(pack: &mut Pack) -> Result<bool, Error> {
     }
 }
 
+/* TODO:
+    - Instead of using a string as an argument, use a word and RunPack will automatically append the dot.
+    - Create a word "unlex" or "endlex" or similar, to clear the lexicon mark, instead of the current unelegant approach os usign an empty string.
+*/
+
 fn lex(pack: &mut Pack) -> Result<bool, Error> {
     if let Some(Cell::String(lex_name)) = pack.concat.next() {
         pack.dictionary.lex = lex_name.clone();
@@ -78,7 +83,7 @@ fn lex(pack: &mut Pack) -> Result<bool, Error> {
     }
 }
 
-fn two_num_op(stack: &mut Stack, int_op: fn(IntegerType, IntegerType) -> IntegerType, flt_op: fn(FloatType, FloatType) -> FloatType) -> Result<bool, Error> {
+fn two_num_op(stack: &mut Stack, int_op: fn(i64, i64) -> i64, flt_op: fn(f64, f64) -> f64) -> Result<bool, Error> {
     let (cell_b, cell_a) = (stack.pop(), stack.pop());
     if let (Some(Cell::Integer(int_a)), Some(Cell::Integer(int_b))) = (&cell_a, &cell_b) {
         stack.push(Cell::Integer(int_op(*int_a, *int_b)));
@@ -92,7 +97,7 @@ fn two_num_op(stack: &mut Stack, int_op: fn(IntegerType, IntegerType) -> Integer
     Ok(true)
 }
 
-fn two_num_or_str_op(stack: &mut Stack, int_op: fn(IntegerType, IntegerType) -> IntegerType, flt_op: fn(FloatType, FloatType) -> FloatType, str_op: fn(&String, &String) -> String) -> Result<bool, Error> {
+fn two_num_or_str_op(stack: &mut Stack, int_op: fn(i64, i64) -> i64, flt_op: fn(f64, f64) -> f64, str_op: fn(&String, &String) -> String) -> Result<bool, Error> {
     let (cell_b, cell_a) = (stack.pop(), stack.pop());
     if let (Some(Cell::Integer(int_a)), Some(Cell::Integer(int_b))) = (&cell_a, &cell_b) {
         stack.push(int_op(*int_a, *int_b).into());
@@ -122,13 +127,11 @@ fn star(pack: &mut Pack) -> Result<bool, Error> {
 }
 
 fn slash(pack: &mut Pack) -> Result<bool, Error> {
-    //TODO: check division by zero
-    two_num_op(&mut pack.stack, |a, b| a / b, |a, b| a / b)
+    two_num_op(&mut pack.stack, |a, b| if b != 0 { a / b } else { 0 }, |a, b| if b != 0.0 { a / b } else { 0.0 })
 }
 
 fn percent(pack: &mut Pack) -> Result<bool, Error> {
-    //TODO: check division by zero
-    two_num_op(&mut pack.stack, |a, b| a % b, |a, b| a % b)
+    two_num_op(&mut pack.stack, |a, b| if b != 0 { a % b } else { 0 }, |a, b| if b != 0.0 { a % b } else { 0.0 })
 }
 
 fn two_cell_cmp(pack: &mut Pack, op: fn(Cell, Cell) -> bool) -> Result<bool, Error> {
@@ -165,7 +168,7 @@ fn small_equal(pack: &mut Pack) -> Result<bool, Error> {
     two_cell_cmp(pack, |a,b| a <= b)
 }
 
-fn two_logic_op(stack: &mut Stack, op_bool: fn(bool, bool) -> bool, op_int: fn(IntegerType, IntegerType) -> IntegerType) -> Result<bool, Error> {
+fn two_logic_op(stack: &mut Stack, op_bool: fn(bool, bool) -> bool, op_int: fn(i64, i64) -> i64) -> Result<bool, Error> {
     let (cell_b, cell_a) = (stack.pop(), stack.pop());
     if let (Some(Cell::Boolean(bool_a)), Some(Cell::Boolean(bool_b))) = (&cell_a, &cell_b) {
         stack.push(op_bool(*bool_a, *bool_b).into());
@@ -311,7 +314,7 @@ fn exe(pack: &mut Pack) -> Result<bool, Error> {
 
 fn int(pack: &mut Pack) -> Result<bool, Error> {
     if let Some(Cell::Float(f)) = pack.stack.pop() {
-        pack.stack.push((f as IntegerType).into());
+        pack.stack.push((f as i64).into());
         Ok(true)
     }
     else {
@@ -321,7 +324,7 @@ fn int(pack: &mut Pack) -> Result<bool, Error> {
 
 fn float(pack: &mut Pack) -> Result<bool, Error> {
     if let Some(Cell::Integer(i)) = pack.stack.pop() {
-        pack.stack.push((i as FloatType).into());
+        pack.stack.push((i as f64).into());
         Ok(true)
     }
     else {
@@ -434,7 +437,7 @@ fn block(pack: &mut Pack) -> Result<bool, Error> {
         let new_block_pos = pack.concat.array.len() + 3;
         let new_block_len = block.len;
         // Add skip and {
-        pack.concat.array.push((new_block_len as IntegerType + 1).into());
+        pack.concat.array.push((new_block_len as i64 + 1).into());
         pack.concat.array.push(Cell::Word("skip".into()));
         pack.concat.array.push(Cell::Word("{".into()));
         // Copy the block to the end of the concat
@@ -454,7 +457,7 @@ fn block(pack: &mut Pack) -> Result<bool, Error> {
             pack.concat.array.push(pack.concat.array[n].clone());
         }
         // Return the new block in the stack
-        pack.stack.push(Cell::Block(BlockRef { pos: new_block_pos, len: new_block_len }));
+        pack.stack.push(BlockRef { pos: new_block_pos, len: new_block_len }.into());
         Ok(true)
     }
     else {
