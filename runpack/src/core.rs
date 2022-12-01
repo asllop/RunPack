@@ -39,51 +39,68 @@ pub struct BlockRef {
     pub len: usize,
 }
 
-#[derive(Default, Eq, Clone, Debug)]
-/// Map type
-pub struct Map {
-    pub map: HashMap<Cell, Cell>,
+/// Extended Option.
+pub enum ExtOption<'a> {
+    /// Nothing.
+    None,
+    /// Cell value.
+    Some(Cell),
+    /// Cell reference.
+    SomeRef(&'a Cell),
+    /// Mutable Cell reference.
+    SomeMutRef(&'a mut Cell),
 }
 
-impl Hash for Map {
-    fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
-        self.map.iter().for_each(|(k, v)| {
-            k.hash(state);
-            v.hash(state)
-        });
+impl<'a> From<Option<Cell>> for ExtOption<'a> {
+    fn from(val: Option<Cell>) -> Self {
+        if let Some(cell) = val {
+            ExtOption::Some(cell)
+        }
+        else {
+            ExtOption::None
+        }
     }
 }
 
-impl PartialEq for Map {
-    fn eq(&self, other: &Self) -> bool {
-        self.map.len() == other.map.len()
+impl<'a> From<Option<&'a Cell>> for ExtOption<'a> {
+    fn from(val: Option<&'a Cell>) -> Self {
+        if let Some(cell) = val {
+            ExtOption::SomeRef(cell)
+        }
+        else {
+            ExtOption::None
+        }
     }
 }
 
-impl PartialOrd for Map {
-    fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
-        self.map.len().partial_cmp(&other.map.len())
+impl<'a> From<Option<&'a mut Cell>> for ExtOption<'a> {
+    fn from(val: Option<&'a mut Cell>) -> Self {
+        if let Some(cell) = val {
+            ExtOption::SomeMutRef(cell)
+        }
+        else {
+            ExtOption::None
+        }
     }
 }
 
-#[derive(Default, Eq, PartialEq, PartialOrd, Clone, Debug)]
-/// Custom vector type
-pub struct Vector {
-    pub vector: Vec<Cell>,
-}
-
-/// Trait for generic structs in a Cell.
+/// Trait for generic structs.
 pub trait StructCell: core::fmt::Debug {
     /// Clone wrapper.
     fn custom_clone(&self) -> Box<dyn StructCell>;
     /// Execute a command.
-    fn doit(&self, cmd: &str, args: Option<Vec<Cell>>) -> Option<Cell>;
+    fn doit(&self, cmd: &str, args: Option<Vec<Cell>>) -> ExtOption;
     /// Execute a command in a mutable instance.
-    fn doit_mut(&mut self, cmd: &str, args: Option<Vec<Cell>>) -> Option<Cell>;
-    /// Execute a command, and return a ref.
-    fn doit_ref(&self, cmd: &str, args: Option<Vec<Cell>>) -> Option<&Cell>;
-    /// Execute a command in a mutable instance, and return a mut ref.
-    fn doit_mut_ref(&mut self, cmd: &str, args: Option<Vec<Cell>>) -> Option<&mut Cell>;
+    fn doit_mut(&mut self, cmd: &str, args: Option<Vec<Cell>>) -> ExtOption;
+
+    // /// Execute a command, and return a cell.
+    // fn doit(&self, cmd: &str, args: Option<Vec<Cell>>) -> Option<Cell>;
+    // /// Execute a command in a mutable instance, and return a cell.
+    // fn doit_mut(&mut self, cmd: &str, args: Option<Vec<Cell>>) -> Option<Cell>;
+    // /// Execute a command, and return a cell ref.
+    // fn doit_ref(&self, cmd: &str, args: Option<Vec<Cell>>) -> Option<&Cell>;
+    // /// Execute a command in a mutable instance, and return a mut cell ref.
+    // fn doit_mut_ref(&mut self, cmd: &str, args: Option<Vec<Cell>>) -> Option<&mut Cell>;
 }
 
 #[derive(Debug)]
@@ -122,15 +139,12 @@ pub type FloatType = f64;
 #[derive(PartialEq, PartialOrd, Clone, Debug)]
 /// Data primitive
 pub enum Cell {
-    Empty,
     Integer(IntegerType),
     Float(FloatType),
     Boolean(bool),
     String(String),
     Word(String),
     Block(BlockRef),
-    Map(Map),
-    Vector(Vector),
     Struct(Struct),
 }
 
@@ -458,9 +472,6 @@ impl Pack {
             else if let Some(bool_cell) = Cell::boolean(&token) {
                 Some(bool_cell)
             }
-            else if token == "_" {
-                Some(Cell::Empty)
-            }
             else {
                 Some(Cell::Word(token))
             }
@@ -555,7 +566,6 @@ impl Pack {
             let cell = cell.clone();
             match cell {
                 Cell::Word(w) => return self.exec(&w),
-                Cell::Empty => { /* No Operation */ },
                 _ => self.stack.push(cell),
             }
             Ok(true)

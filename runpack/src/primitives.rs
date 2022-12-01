@@ -9,7 +9,7 @@ pub fn register_primitives(pack: &mut Pack) {
         ("!=", not_equal), (">=", big_equal), ("<=", small_equal), ("and", and), ("or", or), ("not", not), ("if", if_word),
         ("either", either), ("loop", loop_word), ("[", open_bracket), ("exe", exe), ("int", int), ("float", float),
         ("string", string), ("word", word), ("type", type_word), ("?", question), ("@@", atat), ("@def", atdef), ("lex#", lex_val),
-        ("skip", skip), ("block", block), ("exist?", exist_question),
+        ("skip", skip), ("block", block), ("exist?", exist_question), ("_", underscore),
     ]);
 }
 
@@ -352,15 +352,12 @@ fn word(pack: &mut Pack) -> Result<bool, Error> {
 fn type_word(pack: &mut Pack) -> Result<bool, Error> {
     if let Some(cell) = pack.stack.get(0) {
         let type_str = match cell {
-            Cell::Empty => "empty",
             Cell::Integer(_) => "integer",
             Cell::Float(_) => "float",
             Cell::Boolean(_) => "boolean",
             Cell::String(_) => "string",
             Cell::Word(_) => "word",
             Cell::Block(_) => "block",
-            Cell::Map(_) => "map",
-            Cell::Vector(_) => "vector",
             Cell::Struct(_) => "struct",
         };
         pack.stack.push(type_str.into());
@@ -480,4 +477,8 @@ fn exist_question(pack: &mut Pack) -> Result<bool, Error> {
     else {
         Err(Error::new("exist_question: Couldn't get word ref from stack".into()))
     }
+}
+
+fn underscore(_: &mut Pack) -> Result<bool, Error> {
+    Ok(true)
 }

@@ -6,7 +6,7 @@ pub const PRELUDE: &str = r#"
     ? { ' -> a' 'Create a block and put block cell in the stack: { 1 + }'
     ? } ' -> ' 'Return from block, get concat position from the return stack.'
     ? [ '? -> ?' 'Create stack transfer: [ a b | a a ]'
-    ? skip 'a -> ' 'Skip "a" words from the concat: -2 skip'
+    ? skip 'a -> ' 'Skip "a" words from the concat: 1 skip wont_be_executed'
     ? size ' -> a' 'Get size of current stack: size'
     ? lex ' -> ' 'Set prefix for word definition: lex \'mylex.\' 10 def num lex \'\''
     ? + 'a b -> c' 'Add two numbers: 1 2 +'
@@ -87,11 +87,8 @@ pub const PRELUDE: &str = r#"
     ? is_block? 'a -> a bool' 'Check if cell in the stack is a block: { } is_block?'
     { type 'block' = } def is_block?
 
-    ? is_map? 'a -> a bool' 'Check if cell in the stack is an map: ( new ) is_map?'
-    { type 'map' = } def is_map?
-
-    ? is_vec? 'a -> a bool' 'Check if cell in the stack is a vector: ( vec ) is_vec?'
-    { type 'vector' = } def is_vec?
+    ? is_struct? 'a -> a bool' 'Check if cell in the stack is a struct: custom_struct is_struct?'
+    { type 'struct' = } def is_struct?
     
     "--- Math ---"
 
