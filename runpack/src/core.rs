@@ -2,13 +2,8 @@
 TODO:
 
 Modifications to make it fully async
-    - Integrate the runpack_async into the core.
     - Remove the loop word, all loops must be done using recursion.
     - Rename "reenter" to "loop".
-    - Create "end" word what is like a break with 1 level.
-
-Modifications to support any struct in the stack/concat:
-    - Remove Map and Vector, and use the generic Struct instead.
  */
 
 use hashbrown::HashMap;
@@ -16,6 +11,7 @@ use alloc::{boxed::Box, vec::Vec, string::String, format, str};
 use core::hash::Hash;
 use super::primitives::register_primitives;
 use super::prelude::PRELUDE;
+use super::run_future::RunFuture;
 
 // TODO:
 //       - add error location info: concat pos, ret stack (backtrace), and word that caused the crash.
@@ -573,4 +569,11 @@ impl Pack {
             Ok(false)
         }
     }
+
+    /// Async version of run().
+    pub fn async_run(&mut self) -> RunFuture {
+        RunFuture::new(self)
+    }
+
+    //TODO: async version of "exec" to run a word
 }

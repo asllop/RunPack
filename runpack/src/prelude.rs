@@ -113,4 +113,6 @@ pub const PRELUDE: &str = r#"
 
     ? div 'a b c .. N -> z' 'Calculate division of all numbers in the stack: ( 3 6 2 div )'
     { { size 1 > } { / } loop } def div
+
+    "TODO: document async functions: reenter (loop), ret, break"
 "#;
