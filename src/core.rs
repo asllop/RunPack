@@ -259,6 +259,11 @@ impl RetStack {
     pub fn pop(&mut self) -> Option<usize> {
         self.stack.pop()
     }
+
+    /// Stack size
+    pub fn size(&self) -> usize {
+        self.stack.len()
+    }
 }
 
 #[derive(Default, Debug, Clone)]
