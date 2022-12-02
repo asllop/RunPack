@@ -2,8 +2,7 @@
 TODO:
 
 Modifications to make it fully async
-    - Remove the loop word, all loops must be done using recursion.
-    - Rename "reenter" to "loop".
+    - Create a while word that is async-friendly.
     - Make native words async, or how to interact with async functions
  */
 

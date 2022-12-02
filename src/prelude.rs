@@ -26,7 +26,10 @@ pub const PRELUDE: &str = r#"
     ? not 'a -> b' 'Calculate logic inversion of an operand: 0 not'
     ? if 'a -> ' 'Get a boolean from the stack and executes one of the 2 next words in the concat: condition if word_true word_false'
     ? either 'a b c -> ' 'Execute block b if a is true, or block c if a is false: 2 2 = { "true block" } { "false block" } either'
-    ? loop 'a b -> ' 'Execute block b while result of block a is true: 10 var num { num 0 > } { num -- num! } loop'
+
+    " TODO: implement a while word "
+    " ? while 'a b -> ' 'Execute block b while result of block a is true: 10 var num { num 0 > } { num -- num! } while' "
+
     ? exe 'a -> ' 'Execute a word referenced in the stack: @ a_word exe'
     ? int 'a -> b' 'Convert a float into an integer: 10.9 int'
     ? float 'a -> b' 'Convert an integer into a float: 10 float'
@@ -39,9 +42,9 @@ pub const PRELUDE: &str = r#"
     ? block '... a -> b' 'Get a block from the stack and create a new one. For each $ word in the block, it will get a cell from the stack and put in its place: 10 { 1 $ + } block exe'
     ? exist? 'a -> a b' 'Check if word "a" exists and puts a boolean "b" in the stack: @ my_word exist?'
     ? wipe 'a b c ... N -> ' 'Remove all cells in the stack: ( 1 2 3 wipe )'
-    ? reenter ' -> ' 'Put current concat position in the return stack: { reenter \'Loop forever\' print } def endless'
-    ? ret ' -> ' 'Discard one position from the return stack, and then jump to the next position in the return stack: { reenter \'Do it once\' print end } def doit_once'
-    ? break 'a -> ' 'Just like "end" with discards a+1 positions from the return stack, used to returns from deeper nested blocks, where "a" is the depth: { reenter \'Do it once\' print 0 break } def doit_once'
+    ? loop ' -> ' 'Put current concat position in the return stack: { loop \'Loop forever\' print } def endless'
+    ? end ' -> ' 'Discard one position from the return stack, and then jump to the next position in the return stack: { loop \'Do it once\' print end } def doit_once'
+    ? break 'a -> ' 'Just like "end" with discards a+1 positions from the return stack, used to returns from deeper nested blocks, where "a" is the depth: { loop \'Do it once\' print 0 break } def doit_once'
     ? ? ' -> ' 'Get a word and two strings from the concat and generate help words: ? add \'a b -> c\' \'Calculate addition of two operands and put results in stack.\''
 
     "--- Word Definition ---"
@@ -103,15 +106,18 @@ pub const PRELUDE: &str = r#"
     ? fract 'a -> b' 'Calculate the fractional part of a float number: 1.99 fract'
     { dup int float - } def fract
 
-    ? sum 'a b c .. N -> z' 'Calculate sumation of all numbers in the stack: ( 1 2 3 sum )'
-    { { size 1 > } { + } loop } def sum
+    " TODO: Rework these words to use the new loop or rename to while "
+    "
+        ? sum 'a b c .. N -> z' 'Calculate sumation of all numbers in the stack: ( 1 2 3 sum )'
+        { { size 1 > } { + } loop } def sum
 
-    ? sub 'a b c .. N -> z' 'Calculate substraction of all numbers in the stack: ( 1 2 3 sub )'
-    { { size 1 > } { - } loop } def sub
+        ? sub 'a b c .. N -> z' 'Calculate substraction of all numbers in the stack: ( 1 2 3 sub )'
+        { { size 1 > } { - } loop } def sub
 
-    ? prod 'a b c .. N -> z' 'Calculate product of all numbers in the stack: ( 1 2 3 prod )'
-    { { size 1 > } { * } loop } def prod
+        ? prod 'a b c .. N -> z' 'Calculate product of all numbers in the stack: ( 1 2 3 prod )'
+        { { size 1 > } { * } loop } def prod
 
-    ? div 'a b c .. N -> z' 'Calculate division of all numbers in the stack: ( 3 6 2 div )'
-    { { size 1 > } { / } loop } def div
+        ? div 'a b c .. N -> z' 'Calculate division of all numbers in the stack: ( 3 6 2 div )'
+        { { size 1 > } { / } loop } def div
+    "
 "#;
