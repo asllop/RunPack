@@ -477,13 +477,19 @@ impl Pack {
     }
 
     /// Define a batch of native functions
-    pub fn def_natives(&mut self, list: &[(&str, fn(&mut Pack) -> Result<bool, Error>)]) {
+    pub(crate) fn def_natives(&mut self, list: &[(&str, fn(&mut Pack) -> Result<bool, Error>)]) {
         list.iter().for_each(|(word_name, function)| {
             self.dictionary.native(word_name, *function);
         });
     }
+
+    //TODO: create a public version of "exec" that in case of a Defined word,
+    // it automatically calls run and make the current "exec" pub(crate).
+    // Also create an async version of it to partner with "async_run".
     
-    /// Execute a word from the dictionary
+    /// Execute a word from the dictionary.
+    /// 
+    /// Note: If word is Defined, we must call `run` afterward.
     pub fn exec(&mut self, word: &str) -> Result<bool, Error> {
         if let Some(dict_entry) = self.dictionary.dict.get(word) {
             // Cloning the DictEntry is necessary because a Data entry will have to be put into the stack,
@@ -497,7 +503,7 @@ impl Pack {
     }
 
     /// Execute a dictionary entry
-    pub fn exec_dict_entry(&mut self, dict_entry: DictEntry) -> Result<bool, Error> {
+    pub(crate) fn exec_dict_entry(&mut self, dict_entry: DictEntry) -> Result<bool, Error> {
         match dict_entry {
             DictEntry::Native(func) => {
                 func(self)
@@ -543,7 +549,7 @@ impl Pack {
     }
 
     /// Run one cell from the Concat
-    pub fn one_step(&mut self) -> Result<bool, Error> {
+    pub(crate) fn one_step(&mut self) -> Result<bool, Error> {
         if let Some(cell) = self.concat.next() {
             let cell = cell.clone();
             match cell {
@@ -561,6 +567,4 @@ impl Pack {
     pub fn async_run(&mut self) -> RunFuture {
         RunFuture::new(self)
     }
-
-    //TODO: async version of "exec" to run a word
 }
