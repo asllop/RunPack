@@ -501,29 +501,37 @@ impl Pack {
     /// Execute a word from the dictionary
     pub fn exec(&mut self, word: &str) -> Result<bool, Error> {
         if let Some(dict_entry) = self.dictionary.dict.get(word) {
-            match dict_entry {
-                DictEntry::Native(func) => {
-                    func(self)
-                },
-                DictEntry::Defined(block_ref) => {
-                    self.ret.push(self.concat.pointer);
-                    self.concat.pointer = block_ref.pos;
-                    Ok(true)
-                },
-                DictEntry::Data(data_cell) => {
-                    self.stack.push(data_cell.clone());
-                    Ok(true)
-                },
-            }
+            // Cloning the DictEntry is necessary because a Data entry will have to be put into the stack,
+            // and in the other two variants, Native and Defined, a clone has very little performance impact.
+            let dict_entry = dict_entry.clone();
+            self.exec_dict_entry(dict_entry)
         }
         else {
             Err(Error::new(format!("Word '{}' doesn't exist in dictionary", word)))
         }
     }
 
+    /// Execute a dictionary entry
+    pub fn exec_dict_entry(&mut self, dict_entry: DictEntry) -> Result<bool, Error> {
+        match dict_entry {
+            DictEntry::Native(func) => {
+                func(self)
+            },
+            DictEntry::Defined(block_ref) => {
+                self.ret.push(self.concat.pointer);
+                self.concat.pointer = block_ref.pos;
+                Ok(true)
+            },
+            DictEntry::Data(data_cell) => {
+                self.stack.push(data_cell);
+                Ok(true)
+            },
+        }
+    }
+
     /// Append code to the end of the Concat.
     pub fn code(&mut self, code: &str) {
-        //TODO: use the original &str to parse code, and we save one conversion
+        //TODO: use the original &str to parse code, and we save one "into" (that does an allocation + memory copy)
         self.reader = code.into();
         self.tokenize();
         self.reader = String::new();

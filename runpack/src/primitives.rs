@@ -208,18 +208,30 @@ fn not(pack: &mut Pack) -> Result<bool, Error> {
 fn if_word(pack: &mut Pack) -> Result<bool, Error> {
     if let Some(Cell::Boolean(cond)) = pack.stack.pop() {
         if cond {
-            if let Some(Cell::Word(true_word)) = pack.concat.next_clone() {
-                pack.concat.next(); // discard the false word
-                pack.exec(&true_word)
+            if let Some(Cell::Word(true_word)) = pack.concat.next() {
+                if let Some(dict_entry) = pack.dictionary.dict.get(true_word) {
+                    let dict_entry = dict_entry.clone();
+                    pack.concat.next(); // discard the false condition word
+                    pack.exec_dict_entry(dict_entry)
+                }
+                else {
+                    Err(Error::new("if: couldn't find a word for true in the dictionary".into()))
+                }
             }
             else {
                 Err(Error::new("if: couldn't find a word for true".into()))
             }
         }
         else {
-            pack.concat.next(); // discard the true word
-            if let Some(Cell::Word(false_word)) = pack.concat.next_clone() {
-                pack.exec(&false_word)
+            pack.concat.next(); // discard the true condition word
+            if let Some(Cell::Word(false_word)) = pack.concat.next() {
+                if let Some(dict_entry) = pack.dictionary.dict.get(false_word) {
+                    let dict_entry = dict_entry.clone();
+                    pack.exec_dict_entry(dict_entry)
+                }
+                else {
+                    Err(Error::new("if: couldn't find a word for false in the dictionary".into()))
+                }
             }
             else {
                 Err(Error::new("if: couldn't find a word for false".into()))
