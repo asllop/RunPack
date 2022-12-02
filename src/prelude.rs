@@ -39,6 +39,9 @@ pub const PRELUDE: &str = r#"
     ? block '... a -> b' 'Get a block from the stack and create a new one. For each $ word in the block, it will get a cell from the stack and put in its place: 10 { 1 $ + } block exe'
     ? exist? 'a -> a b' 'Check if word "a" exists and puts a boolean "b" in the stack: @ my_word exist?'
     ? wipe 'a b c ... N -> ' 'Remove all cells in the stack: ( 1 2 3 wipe )'
+    ? reenter ' -> ' 'Put current concat position in the return stack: { reenter \'Loop forever\' print } def endless'
+    ? ret ' -> ' 'Discard one position from the return stack, and then jump to the next position in the return stack: { reenter \'Do it once\' print end } def doit_once'
+    ? break 'a -> ' 'Just like "end" with discards a+1 positions from the return stack, used to returns from deeper nested blocks, where "a" is the depth: { reenter \'Do it once\' print 0 break } def doit_once'
     ? ? ' -> ' 'Get a word and two strings from the concat and generate help words: ? add \'a b -> c\' \'Calculate addition of two operands and put results in stack.\''
 
     "--- Word Definition ---"
@@ -111,6 +114,4 @@ pub const PRELUDE: &str = r#"
 
     ? div 'a b c .. N -> z' 'Calculate division of all numbers in the stack: ( 3 6 2 div )'
     { { size 1 > } { / } loop } def div
-
-    "TODO: document async functions: reenter (loop), ret, break"
 "#;

@@ -491,7 +491,6 @@ fn reenter(pack: &mut Pack) -> Result<bool, Error> {
     Ok(true)
 }
 
-//TODO: test it
 fn end(pack: &mut Pack) -> Result<bool, Error> {
     // Discard 1 position of the return stack + reenter return stack
     pack.ret.pop();
