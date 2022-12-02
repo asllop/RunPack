@@ -49,7 +49,7 @@ if let Some(Cell::Integer(i)) = pack.stack.pop() {
 }
 ```
 
-It's easy to define new words in Rust and then call them from a script in RunPack:
+It's easy to define a new word in Rust and then call it from a script in RunPack:
 
 ```rust
 use runpack::{self, Pack, Cell};
@@ -77,7 +77,7 @@ fn hi_word(pack: &mut Pack) -> Result<bool, runpack::Error> {
 }
 ```
 
-And it's also very easy to call a word defined in RunPack from Rust:
+And it's also easy to define a word in RunPack and call it from Rust:
 
 ```rust
 use runpack::{self, Pack, Cell};

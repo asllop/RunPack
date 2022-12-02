@@ -6,6 +6,21 @@ If you are not used to [reverse polish notation](https://en.wikipedia.org/wiki/R
 
 Some programming skills are assumed, at least a basic level of Rust, and understanding of the essential data structures like stacks, and hash maps.
 
+## Index
+  * [0. Setup](#0-setup)
+  * [1. Ye Olde Stack](#1-ye-olde-stack)
+  * [2. Arithmetic & Logic operations](#2-arithmetic--logic-operations)
+  * [3. Words](#3-words)
+  * [4. Control Flow](#4-control-flow)
+  * [5. Lexicons](#5-lexicons)
+  * [6. Word References](#6-word-references)
+  * [7. Advanced Topics](#7-advanced-topics)
+    * [7.1. Cells](#71-cells)
+    * [7.2. The Concat(enation)](#72-the-concatenation)
+    * [7.3. The Dictionary](#73-the-dictionary)
+    * [7.4. The Return Stack](#74-the-return-stack)
+    * [7.5. Custom Structs](#75-custom-structs)
+
 ## 0. Setup
 
 All RunPack scripts in this tutorial have been executed using the REPL tool. To install it, do the following:
