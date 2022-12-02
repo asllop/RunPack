@@ -100,10 +100,10 @@ if let Some(Cell::Float(f)) = pack.stack.pop() {
 
 ## Learn RunPack
 
-Learning is easy, you only need a couple of hours of your time and this introductory [tutorial](runpack/TUTORIAL.md). Additionally, we offer the [RunPack REPL](https://github.com/asllop/RunPack-REPL), a cli tool to facilitate the development of RunPack programs.
+Learning is easy, you only need a couple of hours of your time and this introductory [tutorial](TUTORIAL.md). Additionally, we offer the [RunPack REPL](https://github.com/asllop/RunPack-REPL), a cli tool to facilitate the development of RunPack programs.
 
 Enjoy the trip!
 
 ## Documentation
 
-There are two sources of documentation, one is the standard Rust autodoc, generated with `cargo doc` as usual. The other is the vocabulary of RunPack words offered by a module, that comes in a [DOC.md](runpack/DOC.md) file.
+There are two sources of documentation, one is the standard Rust autodoc, generated with `cargo doc` as usual. The other is the vocabulary of RunPack words offered by a module, that comes in a [DOC.md](DOC.md) file.

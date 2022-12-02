@@ -1,5 +1,10 @@
-[workspace]
+[package]
+name = "runpack"
+version = "0.1.0"
+edition = "2021"
 
-members = [
-    "runpack",
-]
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+hashbrown = "0.12"
+futures = "0.3"
