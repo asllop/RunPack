@@ -370,8 +370,6 @@ pub struct Pack {
     pub dictionary: Dictionary,
     pub ret: RetStack,
     pub concat: Concat,
-    reader: String,
-    pos: usize,
 }
 
 impl Pack {
@@ -383,17 +381,17 @@ impl Pack {
         pack
     }
 
-    fn next_cell(&mut self) -> Option<Cell> {
+    fn next_cell(&mut self, code: &str, mut pos: usize) -> (Option<Cell>, usize) {
         let mut word_found = false;
         let mut in_string = false;
         let mut in_comment = false;
         let mut last_was_escape = false;
         let mut buff = Vec::new();
-        let reader_bytes = self.reader.as_bytes();
+        let code_bytes = code.as_bytes();
 
-        while self.pos < reader_bytes.len() {
-            let b = reader_bytes[self.pos];
-            self.pos += 1;
+        while pos < code_bytes.len() {
+            let b = code_bytes[pos];
+            pos += 1;
             if in_string {
                 if b == 92 {    // backslash
                     if last_was_escape {
@@ -443,19 +441,19 @@ impl Pack {
 
         if in_string {
             if let Ok(token) = String::from_utf8(buff) {
-                Some(token.into())
+                (Some(token.into()), pos)
             }
             else {
                 //TODO: string parse error
-                None
+                (None, pos)
             }
         }
         else {
             if buff.len() > 0 {
-                self.parse_token(buff)
+                (self.parse_token(buff), pos)
             }
             else {
-                None
+                (None, pos)
             }
         }
     }
@@ -475,19 +473,6 @@ impl Pack {
         else {
             //TODO: string parse error
             None
-        }
-    }
-    
-    fn tokenize(&mut self) {
-        loop {
-            let cell = self.next_cell();
-            if let Some(cell) = cell {
-                self.concat.array.push(cell);
-            }
-            else {
-                //TODO: add error handling, when the parser fails somewhere
-                break;
-            }
         }
     }
 
@@ -531,11 +516,19 @@ impl Pack {
 
     /// Append code to the end of the Concat.
     pub fn code(&mut self, code: &str) {
-        //TODO: use the original &str to parse code, and we save one "into" (that does an allocation + memory copy)
-        self.reader = code.into();
-        self.tokenize();
-        self.reader = String::new();
-        self.pos = 0;
+        let mut pos = 0;
+        // tokenize and push cells into the Concat
+        loop {
+            let (cell, tmp_pos) = self.next_cell(code, pos);
+            pos = tmp_pos;
+            if let Some(cell) = cell {
+                self.concat.array.push(cell);
+            }
+            else {
+                //TODO: add error handling, when the parser fails somewhere
+                break;
+            }
+        }
     }
 
     /// Run the script
