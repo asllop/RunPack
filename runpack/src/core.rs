@@ -523,6 +523,7 @@ impl Pack {
 
     /// Append code to the end of the Concat.
     pub fn code(&mut self, code: &str) {
+        //TODO: use the original &str to parse code, and we save one conversion
         self.reader = code.into();
         self.tokenize();
         self.reader = String::new();

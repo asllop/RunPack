@@ -526,7 +526,7 @@ Output:
 
 We introduced multiple new things here. First, the `is_int?` word, checks if the type of the next cell in the stack is an integer, and puts a boolean with the result. Then we have the `either`. This words gets from the stack a boolean, and two blocks, the first block will be executed if the boolean is `true`, and the second if it's `false`.
 
-Either is nice but a bit slow, because it must create the blocks before executing. This time penalty could be significant in a loop. For these cases we have the `if` word, that words in a diferent way, instead of getting to blocks from the stack, it gets two words from the concat:
+The `either` word is nice but a bit slow, because it has to create the blocks before executing. This time penalty could be significant in loops. For these cases we have the `if` word, that works in a diferent way, instead of getting the two code blocks from the stack, it gets two words from the concat:
 
 ```
 { 'It\'s bigger' print } def bigger
@@ -540,7 +540,7 @@ Output:
 It's bigger
 ```
 
-If we don't care about one of the two cases, we can use the `_` word, that does nothing:
+If we don't care about one of the two cases, we can use the `_` word, that just does nothing:
 
 ```
 { 'It\'s bigger' print } def bigger
