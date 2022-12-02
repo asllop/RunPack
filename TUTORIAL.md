@@ -620,17 +620,17 @@ Yes, but look at the `countdown` definition, isn't it much more readable now? It
 
 That's the programming style we should use in RunPack. Is the way to create easy to write, read and maintain applications. We follow an iterative methodology where we atomize the program into small and simple words, we use these words to create other words with a higher abstraction level, and we group these words into lexicons.
 
-RunPack offers a really basic but effective way to define lexicons, the word `lex`. We can rewrite the countdown program to use it:
+RunPack offers a really basic but effective way to define lexicons, the pair of words `lex` and `\lex`. We can rewrite the countdown program to use it:
 
 ```
-lex 'count.'
+lex count
     { dup 0 > } def continue?
     { dup print } def print
     { 1 - } def dec
     { drop } def clean
 
     { { count.continue? } { count.print count.dec } loop count.clean } def down
-lex ''
+\lex
 
 5 count.down
 ```
@@ -642,7 +642,7 @@ One of the most valuable lessons you should learn from these examples is that a 
 This approach is also very flexible. Imagine that, after we finished the program, we decide that we want it to work with a variable, instead of an argument in the stack:
 
 ```
-lex 'count.'
+lex count
     0 var cnt
     { count.cnt! } def set
     { count.cnt 0 > } def continue?
@@ -651,13 +651,27 @@ lex 'count.'
     { 0 count.set } def clean
 
     { { count.continue? } { count.print count.dec } loop count.clean } def down
-lex ''
+\lex
 
 5 count.set
 count.down
 ```
 
 Note that we didn't change the word `count.down` at all. We only adapted the definitions of the support words, but the main part, what contains the core logic of the module, remains the same.
+
+Namespaces defined with `lex` can also be nested:
+
+```
+lex com
+    10 var num
+    lex domain
+        20 var num
+    \lex
+\lex
+
+com.num print
+com.domain.num print
+```
 
 ## 6. Word References
 

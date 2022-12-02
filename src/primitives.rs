@@ -5,9 +5,9 @@ use alloc::string::String;
 pub fn register_primitives(pack: &mut Pack) {
     pack.def_natives(&[
         ("(", open_parenth), (")", close_parenth), ("size", size), ("{", open_curly), ("}", close_curly), ("lex", lex),
-        ("+", plus), ("-", minus), ("*", star), ("/", slash), ("%", percent), (">", bigger), ("<", smaller), ("=", equal),
-        ("!=", not_equal), (">=", big_equal), ("<=", small_equal), ("and", and), ("or", or), ("not", not), ("if", if_word),
-        ("either", either), ("loop", reenter), ("[", open_bracket), ("exe", exe), ("int", int), ("float", float),
+        ("\\lex", close_lex), ("+", plus), ("-", minus), ("*", star), ("/", slash), ("%", percent), (">", bigger), ("<", smaller),
+        ("=", equal), ("!=", not_equal), (">=", big_equal), ("<=", small_equal), ("and", and), ("or", or), ("not", not),
+        ("if", if_word), ("either", either), ("loop", reenter), ("[", open_bracket), ("exe", exe), ("int", int), ("float", float),
         ("string", string), ("word", word), ("type", type_word), ("?", question), ("@@", atat), ("@def", atdef), ("lex#", lex_val),
         ("skip", skip), ("block", block), ("exist?", exist_question), ("_", underscore), ("end", end), ("break", break_word),
         ("wipe", wipe),
@@ -69,19 +69,42 @@ fn close_curly(pack: &mut Pack) -> Result<bool, Error> {
     }
 }
 
-/* TODO:
-    - Instead of using a string as an argument, use a word and RunPack will automatically append the dot.
-    - Create a word "unlex" or "endlex", "elex", "dislex" or similar, to clear the lexicon mark, instead of the current unelegant approach os usign an empty string.
-*/
-
 fn lex(pack: &mut Pack) -> Result<bool, Error> {
-    if let Some(Cell::String(lex_name)) = pack.concat.next() {
-        pack.dictionary.lex = lex_name.clone();
+    if let Some(Cell::Word(lex_name)) = pack.concat.next() {
+        if pack.dictionary.lex.is_empty() {
+            pack.dictionary.lex = lex_name.clone() + ".";
+        }
+        else {
+            pack.dictionary.lex = pack.dictionary.lex.clone() + &lex_name + ".";
+        }
         Ok(true)
     }
     else {
         return Err(Error::new("lex: couldn't find string".into()));
     }
+}
+
+fn close_lex(pack: &mut Pack) -> Result<bool, Error> {
+    let mut index = 0;
+    let mut cnt = 0;
+    for (i, c) in pack.dictionary.lex.char_indices().rev() {
+        if c == '.' {
+            index = i;
+            cnt += 1;
+            if cnt == 2 {
+                break;
+            }
+        }
+    }
+
+    if cnt < 2 {
+        pack.dictionary.lex = "".into();
+    }
+    else {
+        pack.dictionary.lex.truncate(index + 1);
+    }
+    
+    Ok(true)
 }
 
 fn two_num_op(stack: &mut Stack, int_op: fn(i64, i64) -> i64, flt_op: fn(f64, f64) -> f64) -> Result<bool, Error> {
