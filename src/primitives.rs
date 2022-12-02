@@ -10,7 +10,7 @@ pub fn register_primitives(pack: &mut Pack) {
         ("either", either), ("loop", loop_word), ("[", open_bracket), ("exe", exe), ("int", int), ("float", float),
         ("string", string), ("word", word), ("type", type_word), ("?", question), ("@@", atat), ("@def", atdef), ("lex#", lex_val),
         ("skip", skip), ("block", block), ("exist?", exist_question), ("_", underscore), ("reenter", reenter), ("end", end),
-        ("break", break_word),
+        ("break", break_word), ("wipe", wipe),
     ]);
 }
 
@@ -262,7 +262,7 @@ fn either(pack: &mut Pack) -> Result<bool, Error> {
 
 //TODO: this word is not async friendly, it uses run_block, it must be reworked
 fn loop_word(_pack: &mut Pack) -> Result<bool, Error> {
-    Ok(true)
+    Err(Error::new("loop_word: not implemented".into()))
 }
 
 fn open_bracket(pack: &mut Pack) -> Result<bool, Error> {
@@ -521,4 +521,9 @@ fn break_word(pack: &mut Pack) -> Result<bool, Error> {
     else {
         Err(Error::new("break_word: Couln't find integer in stack".into()))
     }
+}
+
+fn wipe(pack: &mut Pack) -> Result<bool, Error> {
+    pack.stack.clear();
+    Ok(true)
 }

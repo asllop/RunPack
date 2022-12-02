@@ -361,6 +361,11 @@ impl Stack {
     pub fn size(&self) -> usize {
         self.stack.len() - self.base
     }
+
+    /// Clear current stack
+    pub fn clear(&mut self) {
+        self.stack.drain(self.base..);
+    }
 }
 
 #[derive(Default, Clone)]

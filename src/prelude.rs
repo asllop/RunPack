@@ -38,6 +38,7 @@ pub const PRELUDE: &str = r#"
     ? lex# ' -> a' 'Put value of current lex prefix in the stack: lex#'
     ? block '... a -> b' 'Get a block from the stack and create a new one. For each $ word in the block, it will get a cell from the stack and put in its place: 10 { 1 $ + } block exe'
     ? exist? 'a -> a b' 'Check if word "a" exists and puts a boolean "b" in the stack: @ my_word exist?'
+    ? wipe 'a b c ... N -> ' 'Remove all cells in the stack: ( 1 2 3 wipe )'
     ? ? ' -> ' 'Get a word and two strings from the concat and generate help words: ? add \'a b -> c\' \'Calculate addition of two operands and put results in stack.\''
 
     "--- Word Definition ---"
@@ -64,9 +65,6 @@ pub const PRELUDE: &str = r#"
 
     ? swap 'a b -> b a' 'Swap positions of 2 cells in the stack.'
     { [ a b | a b ] } def swap
-
-    ? wipe 'a b c ... N -> ' 'Remove all cells in the stack: ( 1 2 3 wipe )'
-    { { size 0 > } { drop } loop } def wipe
 
     "--- Types ---"
 
