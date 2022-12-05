@@ -101,11 +101,11 @@ pub const PRELUDE: &str = r#"
     
     "--- Math ---"
 
-    ? ++ 'a -> b' 'Increment a number in the stack: 10 ++'
-    { is_int? if 1 1.0 + } def ++
+    ? 1+ 'a -> b' 'Increment a number in the stack: 10 1+'
+    { is_int? if 1 1.0 + } def 1+
 
-    ? -- 'a -> b' 'Decrement a number in the stack: 10 --'
-    { is_int? if 1 1.0 - } def --
+    ? 1- 'a -> b' 'Decrement a number in the stack: 10 1-'
+    { is_int? if 1 1.0 - } def 1-
 
     ? fract 'a -> b' 'Calculate the fractional part of a float number: 1.99 fract'
     { dup int float - } def fract
