@@ -48,7 +48,7 @@ pub const PRELUDE: &str = r#"
         10 countdown'
     ? do 'a -> ' 'Get a boolean from the stack, if true, jump to to the next word in the concat, otherwise remove an address from the return stack and skip one word. See \'while\' for a usage example.'
     ? break ' -> ' 'Discard one position from the return stack, and then jump to the next position in the return stack: { loop \'Do it once\' print break } def doit_once'
-    ? nbrk 'a -> ' 'Just like "break" with discards a+1 positions from the return stack, used to returns from deeper nested blocks, where "a" is the depth: { loop \'Do it once\' print 0 nbrk } def doit_once'
+    ? leave 'a -> ' 'Just like "break" with discards a+1 positions from the return stack, used to returns from deeper nested blocks, where "a" is the depth: { loop \'Do it once\' print 0 leave } def doit_once'
     ? ? ' -> ' 'Get a word and two strings from the concat and generate help words: ? add \'a b -> c\' \'Calculate addition of two operands and put results in stack.\''
 
     "--- Word Definition ---"

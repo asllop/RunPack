@@ -450,8 +450,8 @@ And here it is. When we store a block in a word, and then execute this word, we 
 See another example, we will define a word to double a number:
 
 ```
-{ 2 * } def x2
-120 x2 print
+{ 2 * } def 2*
+120 2* print
 ```
 
 Output:
@@ -501,16 +501,16 @@ Output:
 Because of the dynamic nature of RunPack and the use of the stack, there is no way to know the arguments a word takes and the results it produces without inspecting and understending the code. For this reason we have the stack effect comments, to describe in a fast and readable way how a word affects the stack. The format for this comments is: `a b -> x y`, where `a` and `b`, are the contents of the stack before executing the word, and that are used by it, and `x` and `y`, are the contents of the stack after executing the word.
 
 ```
-? double2x 'a b -> x y' 'Double two numbers.'
-{ x2 swap x2 swap } def double2x
+? double2* 'a b -> x y' 'Double two numbers.'
+{ 2* swap 2* swap } def double2*
 ```
 
-_Note_: this word makes use of the `x2` we previously defined.
+_Note_: this word makes use of the `2*` we previously defined.
 
-We used the word `?` to document how `double2x` works. It takes 3 arguments, the word name, the stack effects (a string) and the description (another string). Now we can use the word `help` to consult the documentation:
+We used the word `?` to document how `double2*` works. It takes 3 arguments, the word name, the stack effects (a string) and the description (another string). Now we can use the word `help` to consult the documentation:
 
 ```
-help double2x
+help double2*
 ```
 
 Output:
@@ -524,12 +524,14 @@ The word `?` only does somthing in development mode (while in the REPL tool), wh
 
 ## 4. Control Flow
 
-The `x2` word we implemented in the previous chapter will only work with integers, and that's a problem, because arithmetic operators should accept integers and floats. How could we create a version of it that works with both types?
+### 4.1 Conditional Execution
+
+The `2*` word we implemented in the previous chapter will only work with integers, and that's a problem, because generic arithmetic operators should accept any number. How could we create a version of it that works with both types?
 
 ```
-{ is_int? { 2 } { 2.0 } either * } def x2
-5 x2 print
-5.2 x2 print
+{ is_int? if 2 2.0 * } def 2*
+5 2* print
+5.2 2* print
 ```
 
 Output:
@@ -539,67 +541,96 @@ Output:
 10.4
 ```
 
-We introduced multiple new things here. First, the `is_int?` word, checks if the type of the next cell in the stack is an integer, and puts a boolean with the result. Then we have the `either`. This words gets from the stack a boolean, and two blocks, the first block will be executed if the boolean is `true`, and the second if it's `false`.
-
-The `either` word is nice but a bit slow, because it has to create the blocks before executing. This time penalty could be significant in loops. For these cases we have the `if` word, that works in a diferent way, instead of getting the two code blocks from the stack, it gets two words from the concat:
-
-```
-{ 'It\'s bigger' print } def bigger
-{ 'It\'s not bigger' print } def not_bigger
-100 10 > if bigger not_bigger
-```
-
-Output:
-
-```
-It's bigger
-```
+We introduced multiple new concepts here. First, the `is_int?` word, checks if the type of the next cell in the stack is an integer, and puts a boolean with the result. Then we have the `if`. This words gets a boolean from the stack, if this boolean is true, the first word after the `if` is executed, and the second word is skipped. If the boolean is false, the first word is skipped and the second is executed.
 
 If we don't care about one of the two cases, we can use the `_` word, that just does nothing:
 
 ```
-{ 'It\'s bigger' print } def bigger
-100 10 > if bigger _
+{ 'Is greater' print } def greater
+100 10 > if greater _
 ```
 
-Here we introduced one more word, the `>`. This word is a comparator, it gets two cells, compares if the first is bigger thant the second, and returns a boolean. There are 6 comparators: `=`, `!=`, `>`, `<`, `>=`, and `<=`.
+Here we introduced one more word, the `>`. This word is a comparator, it gets two cells, compares if the first is greater thant the second, and returns a boolean. There are 6 comparators: `=`, `!=`, `>`, `<`, `>=`, and `<=`.
 
-And finally, the last control flow word is `loop`. It gets two blocks, executes the first and if the result is a `true` in the stack, executes the second block, and loops again until the condition block returns a `false`.
+### 4.2 Loops
 
-```
-{ { size 0 > } { 2 * print } loop } def dobl
-( 1 2 3 4 dobl )
-```
+There are two kinds of loops in RunPack: while-do and loop-again.
 
-Output:
+The first kind of loop is defined with the pair of words `while`/`do`. It has the format `while condition do action` where `condition` and `action` **must be words defined with a code block**. For example:
 
 ```
-8
-6
-4
-2
+? continue? 'a -> a b' 'Check if "a" is greater than zero and put in the stack a boolean "b" accordingly.'
+{ dup 0 > } def continue?
+
+? decrement 'a -> b' 'Print number "a" and decrement it, leaving the resulting value "b" in the stack.'
+{ dup print 1- } def decrement
+
+? countdown 'a -> ' 'Print the countdown from "a" to 1.'
+{ while continue? do decrement drop } def countdown
+
+10 countdown
 ```
 
-This word we just defined, `dobl`, gets every integer in the stack, doubles it, and prints. We do this with the `size` word, that returns the size of the current stack. Every time we calculate a multiplication, the stack decreases, until it's 0 and the loop stops.
+The condition word must return a boolean, that is used by `do` do decide whether to execute the action word or end the loop.
 
-Now let's try to write a word to count down. We will pass an integer to it and will print the countdown until it reaches zero. 
+The second kind of loop is defined with the pair of words `loop`/`again`:
+
+```
+{ loop print size 0 > again } def print_all
+( 1 2 3 4 print_all )
+```
+
+This word we just defined, `print_all`, gets every element in the stack and prints it. We do this with the `size` word, that returns the size of the current stack. Every time we print an element, the stack decreases, until it's 0 and the loop stops.
+
+The word `loop` is very simple, it just "marks" its position. This position is then used by the word `again`. The word `again` does most of the work, it reads a boolean from the stack, if this boolean is true, it jumps back to the `loop`, if it's false, just continues the execution normally.
+
+Sometimes we may need to break a loop before reaching the end condition. To accomplish it we have two words: `break` and `leave`.
+
+```
+{ loop 'Do it once' print break true again } def doit_once
+doit_once
+```
+
+This example shows an infinite loop, because we provide a `true` to `again`, so it should loop forever. But it actually runs only once, because the word `break` ends the loop.
+
+The second word, `leave`, does the same, but it takes an integer from the stack. This integer is the number of return stack levels it should leave to actually break the loop. It's used when we want to break a loop from within another word:
+
+```
+{ 2 leave } def actual_break
+{ actual_break } def some_word
+{ loop 'Do it once' print some_word true again } def doit_once
+doit_once
+```
+
+Finally, we can use the word `loop`, `break` and `leave` to implement recursion:
+
+```
+ { loop 'Do it once' print break } def doit_once
+ doit_once
+```
+
+The word `loop` when used without `again`, it produces a loop when the word reaches the `}`. In these cases, the only way to end the loop is with a breaking word.
+
+## 5. Lexicons
+
+**---- TODO: rework this section, change the example ----**
+
+This section is about how to structure applications written un RunPack.
+
+Let's try to write a word to count down. We will pass an integer to it and will print the countdown until it reaches zero. 
 
 An **unexperienced** RunPack programmer could do something like:
 
 ```
-{ { dup 0 > } { dup print, -- } loop drop } def countdown
-5 countdown
+{ loop dup print 1- dup 0 > again print } def countdown
+10 countdown
 ```
 
-Explaination: This `countdown` word we just defined operates over an integer in the stack. That's why we use `dup` before comparing and printing, to avoid consuming the data, that must be used in the next loop iteration. And the final `drop` is to remove the 0 left there after finishing.
+Explaination: This `countdown` word we just defined operates over an integer in the stack. That's why we use `dup` before comparing and printing, to avoid consuming the data, that must be used in the next loop iteration. And the final `print` is to print the 0 left there after leaving the loop.
 
-If you find this code messy or hard to understand, don't worry, **it is**. In the next section we are going to talk more in depth about it.
+If you find this code messy or hard to understand, don't worry, **it is**. It's actually pretty uggly, and that's because we are using an abstraction level that is not adequate to the job. To understand the code, we have to read each word, mentally calculate the stack effects it will produce, and move to the next word to do the same again. It's easy to miss something, and it's just a very straightforward definition, imagine a complex one! When we see the `dup 0 >`, we know we are comparing somthing with 0, but what? `dup` doesn't tell us much about it. Same for `dup print 1-`. These words are too low level. We need new words, with a higher abstraction level, that are specifically desgined to fit in our problem domain.
 
-## 5. Lexicons
-
-This section is more about how to structure applications written un RunPack.
-
-In the previous chapter we crated a `countdown` word, but we are not very happy with the results. The resulting code is actually pretty uggly, and that's because we are using an abstraction level that is not adequate to the job. To understand the code, we have to read each word, mentally calculate the stack effects it will produce, and move to the next word to do the same again. It's easy to miss something, and it's just a very straightforward definition, imagine a complex one! When we see the `dup 0 >`, we know we are comparing somthing with 0, but what? `dup` doesn't tell us much about it. Same for `dup print, --`, and the final `drop`. These words are too low level. We need new words, with a higher abstraction level, that are specifically desgined to fit in our problem domain.
+**---- TODO: rework this section to use the new loop ----**
 
 Knowing all this, let's try to create an alternative version of the countdown:
 
@@ -647,7 +678,7 @@ lex count
     { count.cnt! } def set
     { count.cnt 0 > } def continue?
     { count.cnt print } def print
-    { count.cnt -- count.set } def dec
+    { count.cnt 1- count.set } def dec
     { 0 count.set } def clean
 
     { { count.continue? } { count.print count.dec } loop count.clean } def down
@@ -675,7 +706,7 @@ com.domain.num print
 
 ## 6. Word References
 
-RunPack doesn't have a garbage collector, nor automatic reference counting, or any other built-in memory manager. It uses the Rust memory handling mechanisms. The reason why it's possible is simple: every time you send something from one place to another, you are cloning it. There are no pointers, memory references or shared buffers. You duplicate a string in the stack, RunPack clones the string. You drop it from the stack, RunPack deallocates it. So simple. Everything is passed by value in RunPack. But that doesn't sound too performant, right? What if I have a large piece of data stored in a variable, and I want to pass it to a word to operate? For these kind of cases we have word references. You can create a word reference using the `@` word:
+RunPack doesn't have a garbage collector, nor automatic reference counting, or any other built-in memory manager, it uses memory handling mechanisms provided by Rust. The reason why it's possible is simple: every time you send something from one place to another, you are cloning it. There are no pointers, memory references or shared buffers. You duplicate a string in the stack, RunPack clones the string. You drop it from the stack, RunPack deallocates it. Everything is passed by value in RunPack. So simple. But that doesn't sound too performant, right? What if I have a large piece of data stored in a variable, and I want to pass it to another word to operate with it? For these cases we have word references. You can create a word reference using the `@` word:
 
 ```
 'This is a long string' def my_str
@@ -897,7 +928,7 @@ But we can also create data and defined words using Rust. Data words are easy:
 pack.dictionary.data("my_num", Cell::Integer(101));
 ```
 
-Defined words require a little bit more explanation, first we need to understand the `BlockRef` struct.
+Defined words require a longer explanation, first we need to understand the `BlockRef` struct.
 
 When we write a block in RunPack, like this:
 
@@ -951,11 +982,20 @@ Our custom word `my_def` got two arguments, a block from the stack and a word fr
 When a defined word is called, RunPack needs to know where to contnue the execution after it, and this is achieved using the return stack. For example:
 
 ```
-{ 1 + } def plus_one
-10 plus_one print
+{ 10 show_ret_stack } def just_ten
+just_ten print
 ```
 
-At the moment `plus_one` is called, RunPack puts in the return stack the concat pointer of the next word, that is `print`. Then it gets the block ref of `plus_one`, and put in the concat pointer the value of the `pos` field. Then the block is executed until it reaches the `}` word. This word just gets a value from the return stack, and puts it in the concat pointer, and the execution returns to the `print`.
+Output:
+
+```
+RetStack { stack: [486] }
+10
+```
+
+As we can see, if we run `show_ret_stack` inside a word it shows the return address, the place in the concat we should return after finishing the execution of the current word.
+
+At the moment `just_ten` is called, RunPack puts in the return stack the concat pointer of the next word, that is `print`. Then it gets the `BlockRef` of the word `just_ten` from the dictionary, and overwrites the concat pointer with the value of the `pos` field. Then the block is executed until it reaches the `}` word. This word just gets a value from the return stack, and puts it in the concat pointer, and the execution returns to the `print`.
 
 The `RetStack` is a simple struct that only accepts two operations, pushing an address and popping an address:
 

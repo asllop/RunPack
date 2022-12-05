@@ -9,7 +9,7 @@ pub fn register_primitives(pack: &mut Pack) {
         ("=", equal), ("!=", not_equal), (">=", big_equal), ("<=", small_equal), ("and", and), ("or", or), ("not", not),
         ("wipe", wipe), ("if", if_word), ("either", either), ("[", open_bracket), ("exe", exe), ("int", int), ("float", float),
         ("string", string), ("word", word), ("type", type_word), ("?", question), ("@@", atat), ("@def", atdef), ("lex#", lex_val),
-        ("skip", skip), ("block", block), ("exist?", exist_question), ("_", underscore), ("break", break_word), ("nbrk", nbrk),
+        ("skip", skip), ("block", block), ("exist?", exist_question), ("_", underscore), ("break", break_word), ("leave", leave),
         ("loop", loop_word), ("again", again), ("while", while_word), ("do", do_word),
     ]);
 }
@@ -282,6 +282,7 @@ fn if_word(pack: &mut Pack) -> Result<bool, Error> {
     }
 }
 
+//TODO: Remove?
 fn either(pack: &mut Pack) -> Result<bool, Error> {
     if let (Some(Cell::Block(false_blk)), Some(Cell::Block(true_blk)), Some(Cell::Boolean(cond))) = (pack.stack.pop(), pack.stack.pop(), pack.stack.pop()) {
         if cond {
@@ -532,7 +533,7 @@ fn break_word(pack: &mut Pack) -> Result<bool, Error> {
     }
 }
 
-fn nbrk(pack: &mut Pack) -> Result<bool, Error> {
+fn leave(pack: &mut Pack) -> Result<bool, Error> {
     if let Some(Cell::Integer(level)) = pack.stack.pop() {
         // Discard n positions of the return stack and continue execution at the next position in the return stack
         for _ in 0..level + 1 {
