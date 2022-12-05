@@ -111,14 +111,14 @@ pub const PRELUDE: &str = r#"
     { dup int float - } def fract
 
     ? sum 'a b c .. N -> z' 'Calculate sumation of all numbers in the stack: ( 1 2 3 sum )'
-    { loop + size 1 = if break _ } def sum
+    { loop + size 1 > again } def sum
 
     ? sub 'a b c .. N -> z' 'Calculate substraction of all numbers in the stack: ( 1 2 3 sub )'
-    { loop - size 1 = if break _ } def sub
+    { loop - size 1 > again } def sub
 
     ? prod 'a b c .. N -> z' 'Calculate product of all numbers in the stack: ( 1 2 3 prod )'
-    { loop * size 1 = if break _ } def prod
+    { loop * size 1 > again } def prod
 
     ? div 'a b c .. N -> z' 'Calculate division of all numbers in the stack: ( 3 6 2 div )'
-    { loop / size 1 = if break _ } def div
+    { loop / size 1 > again } def div
 "#;
