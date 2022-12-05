@@ -1,4 +1,4 @@
-use super::core::{Pack, Cell, BlockRef, Stack, Error};
+use super::core::{Pack, Cell, BlockRef, Stack, DictEntry, Error};
 use hashbrown::HashMap;
 use alloc::string::String;
 
@@ -7,10 +7,10 @@ pub fn register_primitives(pack: &mut Pack) {
         ("(", open_parenth), (")", close_parenth), ("size", size), ("{", open_curly), ("}", close_curly), ("lex", lex),
         ("\\lex", close_lex), ("+", plus), ("-", minus), ("*", star), ("/", slash), ("%", percent), (">", bigger), ("<", smaller),
         ("=", equal), ("!=", not_equal), (">=", big_equal), ("<=", small_equal), ("and", and), ("or", or), ("not", not),
-        ("if", if_word), ("either", either), ("loop", reenter), ("[", open_bracket), ("exe", exe), ("int", int), ("float", float),
+        ("wipe", wipe), ("if", if_word), ("either", either), ("[", open_bracket), ("exe", exe), ("int", int), ("float", float),
         ("string", string), ("word", word), ("type", type_word), ("?", question), ("@@", atat), ("@def", atdef), ("lex#", lex_val),
-        ("skip", skip), ("block", block), ("exist?", exist_question), ("_", underscore), ("end", end), ("break", break_word),
-        ("wipe", wipe),
+        ("skip", skip), ("block", block), ("exist?", exist_question), ("_", underscore), ("break", break_word), ("nbrk", nbrk),
+        ("loop", loop_word), ("again", again), ("while", while_word), ("do", do_word),
     ]);
 }
 
@@ -103,7 +103,7 @@ fn close_lex(pack: &mut Pack) -> Result<bool, Error> {
     else {
         pack.dictionary.lex.truncate(index + 1);
     }
-    
+
     Ok(true)
 }
 
@@ -228,6 +228,11 @@ fn not(pack: &mut Pack) -> Result<bool, Error> {
     Ok(true)
 }
 
+fn wipe(pack: &mut Pack) -> Result<bool, Error> {
+    pack.stack.clear();
+    Ok(true)
+}
+
 fn if_word(pack: &mut Pack) -> Result<bool, Error> {
     if let Some(Cell::Boolean(cond)) = pack.stack.pop() {
         if cond {
@@ -282,8 +287,6 @@ fn either(pack: &mut Pack) -> Result<bool, Error> {
         Err(Error::new("either: couldn't find condition and 2 blocks".into()))
     }
 }
-
-//TODO: implement an async-friendly while
 
 fn open_bracket(pack: &mut Pack) -> Result<bool, Error> {
     let mut vars: HashMap<String, Cell> = HashMap::with_capacity(16);
@@ -506,12 +509,7 @@ fn underscore(_: &mut Pack) -> Result<bool, Error> {
     Ok(true)
 }
 
-fn reenter(pack: &mut Pack) -> Result<bool, Error> {
-    pack.ret.push(pack.concat.pointer - 1);
-    Ok(true)
-}
-
-fn end(pack: &mut Pack) -> Result<bool, Error> {
+fn break_word(pack: &mut Pack) -> Result<bool, Error> {
     // Discard 1 position of the return stack and continue execution at the next position in the return stack
     pack.ret.pop();
     if let Some(pos) = pack.ret.pop() {
@@ -523,7 +521,7 @@ fn end(pack: &mut Pack) -> Result<bool, Error> {
     }
 }
 
-fn break_word(pack: &mut Pack) -> Result<bool, Error> {
+fn nbrk(pack: &mut Pack) -> Result<bool, Error> {
     if let Some(Cell::Integer(level)) = pack.stack.pop() {
         // Discard n positions of the return stack and continue execution at the next position in the return stack
         for _ in 0..level + 1 {
@@ -542,7 +540,53 @@ fn break_word(pack: &mut Pack) -> Result<bool, Error> {
     }
 }
 
-fn wipe(pack: &mut Pack) -> Result<bool, Error> {
-    pack.stack.clear();
+fn loop_word(pack: &mut Pack) -> Result<bool, Error> {
+    pack.ret.push(pack.concat.pointer - 1);
     Ok(true)
+}
+
+fn again(pack: &mut Pack) -> Result<bool, Error> {
+    if let (Some(Cell::Boolean(condition)), Some(loop_address)) = (pack.stack.pop(), pack.ret.pop()) {
+        if condition {
+            pack.concat.pointer = loop_address;
+        }
+        Ok(true)
+    }
+    else {
+        Err(Error::new("again: couldn't get a condition and a return address.".into()))
+    }
+}
+
+fn while_word(pack: &mut Pack) -> Result<bool, Error> {
+    if pack.concat.array.len() > pack.concat.pointer + 2 {
+        if let Cell::Word(condition) = &pack.concat.array[pack.concat.pointer] {
+            if let Some(DictEntry::Defined(condition)) = pack.dictionary.dict.get(condition) {
+                pack.ret.push(pack.concat.pointer - 1);
+                pack.ret.push(pack.concat.pointer + 1);
+                pack.concat.pointer = condition.pos;
+                return Ok(true);
+            }
+        }
+    }
+    Err(Error::new("while_word: it must have the structure 'while condition do action', with 'condition' and 'action' being defined word.".into()))
+}
+
+fn do_word(pack: &mut Pack) -> Result<bool, Error> {
+    if pack.concat.array.len() > pack.concat.pointer {
+        if let Cell::Word(action) = &pack.concat.array[pack.concat.pointer] {
+            if let Some(DictEntry::Defined(action)) = pack.dictionary.dict.get(action) {
+                if let Some(Cell::Boolean(condition)) = pack.stack.pop() {
+                    if condition {
+                        pack.concat.pointer = action.pos;
+                    }
+                    else {
+                        pack.ret.pop(); // discard the address of "while"
+                        pack.concat.pointer += 1;
+                    }
+                    return Ok(true);
+                }
+            }
+        }
+    }
+    Err(Error::new("do_word: it must have the structure 'while condition do action', with 'condition' and 'action' being defined word.".into()))
 }

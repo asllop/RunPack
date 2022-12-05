@@ -491,10 +491,6 @@ impl Pack {
             self.dictionary.native(word_name, *function);
         });
     }
-
-    //TODO: create a public version of "exec" that in case of a Defined word,
-    // it automatically calls run and make the current "exec" pub(crate).
-    // Also create an async version of it to partner with "async_run".
     
     /// Execute a word from the dictionary.
     /// 
@@ -512,7 +508,7 @@ impl Pack {
     }
 
     /// Execute a dictionary entry
-    pub(crate) fn exec_dict_entry(&mut self, dict_entry: DictEntry) -> Result<bool, Error> {
+    pub fn exec_dict_entry(&mut self, dict_entry: DictEntry) -> Result<bool, Error> {
         match dict_entry {
             DictEntry::Native(func) => {
                 func(self)
@@ -557,8 +553,12 @@ impl Pack {
         }
     }
 
+    //TODO: create "run_word", a public version of "exec" that in case of a Defined word,
+    // it automatically calls run and make the current "exec" pub(crate).
+    // Also create an async version of it to partner with "async_run".
+
     /// Run one cell from the Concat
-    pub(crate) fn one_step(&mut self) -> Result<bool, Error> {
+    pub fn one_step(&mut self) -> Result<bool, Error> {
         if let Some(cell) = self.concat.next() {
             let cell = cell.clone();
             match cell {

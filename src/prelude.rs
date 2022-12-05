@@ -27,10 +27,6 @@ pub const PRELUDE: &str = r#"
     ? not 'a -> b' 'Calculate logic inversion of an operand: 0 not'
     ? if 'a -> ' 'Get a boolean from the stack and executes one of the 2 next words in the concat: condition if word_true word_false'
     ? either 'a b c -> ' 'Execute block b if a is true, or block c if a is false: 2 2 = { "true block" } { "false block" } either'
-
-    " TODO: implement a while word "
-    " ? while 'a b -> ' 'Execute block b while result of block a is true: 10 var num { num 0 > } { num -- num! } while' "
-
     ? exe 'a -> ' 'Execute a word referenced in the stack: @ a_word exe'
     ? int 'a -> b' 'Convert a float into an integer: 10.9 int'
     ? float 'a -> b' 'Convert an integer into a float: 10 float'
@@ -44,8 +40,15 @@ pub const PRELUDE: &str = r#"
     ? exist? 'a -> a b' 'Check if word "a" exists and puts a boolean "b" in the stack: @ my_word exist?'
     ? wipe 'a b c ... N -> ' 'Remove all cells in the stack: ( 1 2 3 wipe )'
     ? loop ' -> ' 'Put current concat position in the return stack: { loop \'Loop forever\' print } def endless'
-    ? end ' -> ' 'Discard one position from the return stack, and then jump to the next position in the return stack: { loop \'Do it once\' print end } def doit_once'
-    ? break 'a -> ' 'Just like "end" with discards a+1 positions from the return stack, used to returns from deeper nested blocks, where "a" is the depth: { loop \'Do it once\' print 0 break } def doit_once'
+    ? again 'a -> ' 'Get a boolean from the stack and an address from the return stack. If boolean is true, it jumps to the address: 10 loop dup print -- dup 0 > again drop'
+    ? while ' -> ' 'Put two addresses into the return stack, its own and +2, then jump to the next word:
+        { dup 0 > } def continue?
+        { dup print -- } def print_and_dec
+        { while continue? do print_and_dec drop } def countdown
+        10 countdown'
+    ? do 'a -> ' 'Get a boolean from the stack, if true, jump to to the next word in the concat, otherwise remove an address from the return stack and skip one word. See \'while\' for a usage example.'
+    ? break ' -> ' 'Discard one position from the return stack, and then jump to the next position in the return stack: { loop \'Do it once\' print break } def doit_once'
+    ? nbrk 'a -> ' 'Just like "break" with discards a+1 positions from the return stack, used to returns from deeper nested blocks, where "a" is the depth: { loop \'Do it once\' print 0 nbrk } def doit_once'
     ? ? ' -> ' 'Get a word and two strings from the concat and generate help words: ? add \'a b -> c\' \'Calculate addition of two operands and put results in stack.\''
 
     "--- Word Definition ---"
