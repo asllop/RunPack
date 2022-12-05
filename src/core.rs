@@ -1,20 +1,9 @@
-/*
-TODO:
-
-Modifications to make it fully async
-    - Create a while word that is async-friendly.
-    - Make native words async, or how to interact with async functions
- */
-
 use hashbrown::HashMap;
 use alloc::{boxed::Box, vec::Vec, string::String, format, str};
 use core::hash::Hash;
 use super::primitives::register_primitives;
 use super::prelude::PRELUDE;
 use super::run_future::RunFuture;
-
-// TODO:
-//       - add error location info: concat pos, ret stack (backtrace), and word that caused the crash.
 
 #[derive(Debug)]
 /// Error type
@@ -207,6 +196,8 @@ impl From<Struct> for Cell {
         Cell::Struct(val)
     }
 }
+
+//TODO: Make native words async, or how to interact with async functions
 
 #[derive(Clone)]
 /// Dictionary entry

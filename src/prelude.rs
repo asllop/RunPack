@@ -102,26 +102,23 @@ pub const PRELUDE: &str = r#"
     "--- Math ---"
 
     ? ++ 'a -> b' 'Increment a number in the stack: 10 ++'
-    { is_int? { 1 } { 1.0 } either + } def ++
+    { is_int? if 1 1.0 + } def ++
 
     ? -- 'a -> b' 'Decrement a number in the stack: 10 --'
-    { is_int? { 1 } { 1.0 } either - } def --
+    { is_int? if 1 1.0 - } def --
 
     ? fract 'a -> b' 'Calculate the fractional part of a float number: 1.99 fract'
     { dup int float - } def fract
 
-    " TODO: Rework these words to use the new loop or rename to while "
-    "
-        ? sum 'a b c .. N -> z' 'Calculate sumation of all numbers in the stack: ( 1 2 3 sum )'
-        { { size 1 > } { + } loop } def sum
+    ? sum 'a b c .. N -> z' 'Calculate sumation of all numbers in the stack: ( 1 2 3 sum )'
+    { loop + size 1 = if break _ } def sum
 
-        ? sub 'a b c .. N -> z' 'Calculate substraction of all numbers in the stack: ( 1 2 3 sub )'
-        { { size 1 > } { - } loop } def sub
+    ? sub 'a b c .. N -> z' 'Calculate substraction of all numbers in the stack: ( 1 2 3 sub )'
+    { loop - size 1 = if break _ } def sub
 
-        ? prod 'a b c .. N -> z' 'Calculate product of all numbers in the stack: ( 1 2 3 prod )'
-        { { size 1 > } { * } loop } def prod
+    ? prod 'a b c .. N -> z' 'Calculate product of all numbers in the stack: ( 1 2 3 prod )'
+    { loop * size 1 = if break _ } def prod
 
-        ? div 'a b c .. N -> z' 'Calculate division of all numbers in the stack: ( 3 6 2 div )'
-        { { size 1 > } { / } loop } def div
-    "
+    ? div 'a b c .. N -> z' 'Calculate division of all numbers in the stack: ( 3 6 2 div )'
+    { loop / size 1 = if break _ } def div
 "#;
