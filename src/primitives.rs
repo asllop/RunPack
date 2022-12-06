@@ -8,7 +8,7 @@ pub fn register_primitives(pack: &mut Pack) {
         ("\\lex", close_lex), ("+", plus), ("-", minus), ("*", star), ("/", slash), ("%", percent), (">", bigger), ("<", smaller),
         ("=", equal), ("!=", not_equal), (">=", big_equal), ("<=", small_equal), ("and", and), ("or", or), ("not", not),
         ("wipe", wipe), ("if", if_word), ("either", either), ("[", open_bracket), ("exe", exe), ("int", int), ("float", float),
-        ("string", string), ("word", word), ("type", type_word), ("?", question), ("@@", atat), ("@def", atdef), ("lex#", lex_val),
+        ("string", string), ("word", word), ("type", type_word), ("?", question), ("@@", atat), ("@def", atdef), ("lex#", lex_sharp),
         ("skip", skip), ("block", block), ("exist?", exist_question), ("_", underscore), ("break", break_word), ("leave", leave),
         ("loop", loop_word), ("again", again), ("while", while_word), ("do", do_word),
     ]);
@@ -500,7 +500,7 @@ fn block(pack: &mut Pack) -> Result<bool, Error> {
     }
 }
 
-fn lex_val(pack: &mut Pack) -> Result<bool, Error> {
+fn lex_sharp(pack: &mut Pack) -> Result<bool, Error> {
     pack.stack.push(pack.dictionary.lex.clone().into());
     Ok(true)
 }
@@ -529,7 +529,7 @@ fn break_word(pack: &mut Pack) -> Result<bool, Error> {
         Ok(true)
     }
     else {
-        Err(Error::new("end: Return stack underflow".into()))
+        Err(Error::new("break_word: Return stack underflow".into()))
     }
 }
 
@@ -544,11 +544,11 @@ fn leave(pack: &mut Pack) -> Result<bool, Error> {
             Ok(true)
         }
         else {
-            Err(Error::new("break_word: Return stack underflow".into()))
+            Err(Error::new("leave: Return stack underflow".into()))
         }
     }
     else {
-        Err(Error::new("break_word: Couln't find integer in stack".into()))
+        Err(Error::new("leave: Couln't find integer in stack".into()))
     }
 }
 

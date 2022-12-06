@@ -9,6 +9,8 @@ Some programming skills are assumed, at least a basic level of Rust, and underst
 ## Index
   * [0. Setup](#0-setup)
   * [1. Ye Olde Stack](#1-ye-olde-stack)
+    * [1.1. Stack Transfers](#11-stack-transfers)
+    * [1.2. Nested Stacks](#12-nested-stacks)
   * [2. Arithmetic & Logic operations](#2-arithmetic--logic-operations)
   * [3. Words](#3-words)
   * [4. Control Flow](#4-control-flow)
@@ -201,7 +203,7 @@ Stack:
 	1 : String("B")
 ```
 
-### Stack Transfers
+### 1.1 Stack Transfers
 
 Sometimes it can be hard to work with the stack. Our word needs the arguments in the stack in a certain way, but the current stack state left by the previous words is far from what we want. For these cases we have the stack transfer operator.
 
@@ -275,7 +277,7 @@ Stack:
 	3 : Integer(1)
 ```
 
-### Nested Stacks
+### 1.2 Nested Stacks
 
 The way we have used the stack until now is linear, we push and pop data into the stack. But the RunPack stack is more powerful than that, and it's actually a stack of stacks.
 
@@ -392,7 +394,7 @@ To define a word we use the word `def` followed by a name:
 555555 def phone
 ```
 
-This syntax may look contradictory for a language that uses Reverse Polish Notation, it seems to violate the rules. The word `def` uses an argument that is in the stack, that's good, but then it uses another argument, the word name, that is not in the stack. For now let's leave it, we will understand what's going on once we get into the [Concat](#72-the-concatenation).
+This syntax may look contradictory for a language that uses Reverse Polish Notation, it seems to violate the rules. The word `def` uses an argument that is in the stack, that's good, but then it uses another argument, the word name, that is not in the stack. For now let's park it, we will understand what's going on once we get into the [Concat](#72-the-concatenation).
 
 Now, what happens when we execute these words?
 
@@ -615,9 +617,9 @@ The word `loop` when used without `again`, it produces a loop when the word reac
 
 ## 5. Lexicons
 
-In the previous section, [loops](#42-loops), we saw a simple usage example of `while`/`do`, the countdown. This code may look too verbose for someone comming from another programming language, where we are used to create loops with condition and action defined in the same code block. Having to separate each one of these parts in a word could sound strange, but it's actually very RunPack-style code.
+In the previous section, [loops](#42-loops), we saw a simple usage example of `while`/`do`, the countdown. This code may look a bit verbose for someone comming from another programming language, where we are used to create loops with condition and action defined within the same code block. Having to separate each one of these parts into a different block isn't normal in other languages, but it's actually very RunPack-style code.
 
-Let's try to write the countdown in a different way, more like we could do in other programming languages. An **unexperienced** RunPack programmer could do something like:
+Let's try to rewrite the countdown in a different way, more like we could do in other programming languages. An **unexperienced** RunPack programmer could do something like:
 
 ```
 { loop dup print 1- dup 0 > again drop } def countdown
@@ -632,31 +634,31 @@ Knowing all this, let's try to create an alternative version of the countdown:
 
 ```
 { dup 0 > } def continue?
-{ dup print } def plot
+{ dup print } def print_count
 { 1 - } def decrement
 { drop } def cleanup
 
-{ loop plot decrement continue? again cleanup } def countdown
+{ loop print_count decrement continue? again cleanup } def countdown
 
 5 countdown
 ```
 
 Wow, that was pretty verbose, wasn't it?
 
-Yes, but look at the `countdown` definition, isn't it much more readable now? It's almost plain english. We defined four support words before `countdown`. Many, or maybe all of these words doesn't make sense outside the context of the countdown. They are closely related, all together form what Leo Brodie called a **lexicon**, in his influential book *"Thinking Forth"*. One could argue that we just took the parts of the old `countdown` definition and moved them to a different place. And that's true, but that makes the difference. First, we gave them meaningful names, so we can know what they do. Second, by splitting them apart, we can test them separately. And third, we can modify them without touching the main word.
+Yes, but look at the `countdown` definition, isn't it much more readable now? It's almost plain english. We defined four support words before `countdown`. Many, or maybe all of these words doesn't make sense outside the context of the countdown. They are closely related, all together form what Leo Brodie called a **lexicon** in his influential book *"Thinking Forth"*. One could argue that we just took the parts of the old `countdown` definition and moved them to a different place. And that's true, but that makes the difference too. First, we gave them meaningful names, so we can know what they do. Second, by splitting them apart, we can test them separately. And third, we can modify them without touching the main word.
 
-That's the programming style we should use in RunPack. Is the way to create easy to write, read and maintain applications. We follow an iterative methodology where we atomize the program into small and simple words, we use these words to create other words with a higher abstraction level, and we group these words into lexicons.
+That's the programming style we should use in RunPack. Is the way to create easy to write, read, and maintain applications. We follow an iterative methodology where we atomize the program into small and simple words, we use these words to create other words with a higher abstraction level, and we group these words into lexicons.
 
 RunPack offers a really basic but effective way to define lexicons, the pair of words `lex` and `\lex`. We can rewrite the countdown program to use them:
 
 ```
 lex count
     { dup 0 > } def continue?
-    { dup print } def plot
+    { dup print } def print
     { 1 - } def decrement
     { drop } def cleanup
 
-    { loop count.plot count.decrement count.continue? again count.cleanup } def down
+    { loop count.print count.decrement count.continue? again count.cleanup } def down
 \lex
 
 5 count.down
@@ -666,21 +668,20 @@ The word `lex` simply sets a prefix that will be added to every new word defined
 
 One of the most valuable lessons you should learn from these examples is that a word definition is never too small. Even a word that only contains one word inside it (like `count.cleanup`), it's worth it if it clarifies the code.
 
-This approach is also very flexible. Imagine that, after we finished the program, we decide that we want it to work with a variable, instead of an argument in the stack:
+This approach is also very flexible. Imagine that, after we finished writing the program, we decide that we want to work with a variable, instead of an argument in the stack:
 
 ```
 lex count
-    0 var cnt
-    { count.cnt! } def set
-    { count.cnt 0 > } def continue?
-    { count.cnt print } def plot
-    { count.cnt 1- count.set } def decrement
-    { 0 count.set } def cleanup
+    0 var value
+    { count.value 0 > } def continue?
+    { count.value print } def print
+    { count.value 1- count.value! } def decrement
+    { 0 count.value! } def cleanup
 
-    { loop count.plot count.decrement count.continue? again count.cleanup } def down
+    { loop count.print count.decrement count.continue? again count.cleanup } def down
 \lex
 
-5 count.set
+5 count.value!
 count.down
 ```
 
