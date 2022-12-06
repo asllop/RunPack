@@ -13,6 +13,7 @@ Some programming skills are assumed, at least a basic level of Rust, and underst
     * [1.2. Nested Stacks](#12-nested-stacks)
   * [2. Arithmetic & Logic operations](#2-arithmetic--logic-operations)
   * [3. Words](#3-words)
+    * [3.1. Word Documentation](#word-documentation)
   * [4. Control Flow](#4-control-flow)
     * [4.1. Conditional Execution](#41-conditional-execution)
     * [4.2. Loops](#42-loops)
@@ -500,12 +501,12 @@ Output:
 202
 ```
 
-### Word Documentation
+### 3.1 Word Documentation
 
 Because of the dynamic nature of RunPack and the use of the stack, there is no way to know the arguments a word takes and the results it produces without inspecting and understending the code. For this reason we have the stack effect comments, to describe in a fast and readable way how a word affects the stack. The format for this comments is: `a b -> x y`, where `a` and `b`, are the contents of the stack before executing the word, and that are used by it, and `x` and `y`, are the contents of the stack after executing the word.
 
 ```
-? double2* 'a b -> x y' 'Double two numbers.'
+? double2* 'a b -> x y' 'Double two numbers: 2 3 double2*'
 { 2* swap 2* swap } def double2*
 ```
 
@@ -521,7 +522,7 @@ Output:
 
 ```
 Stack effect:	a b -> x y
-Description:	Double two numbers.
+Description:	Double two numbers: 2 3 double2*
 ```
 
 The word `?` only does somthing in development mode (while in the REPL tool), when running a script in production mode, it will be ignored.
