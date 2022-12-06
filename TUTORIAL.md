@@ -13,7 +13,7 @@ Some programming skills are assumed, at least a basic level of Rust, and underst
     * [1.2. Nested Stacks](#12-nested-stacks)
   * [2. Arithmetic & Logic operations](#2-arithmetic--logic-operations)
   * [3. Words](#3-words)
-    * [3.1. Word Documentation](#word-documentation)
+    * [3.1. Word Documentation](#31-word-documentation)
   * [4. Control Flow](#4-control-flow)
     * [4.1. Conditional Execution](#41-conditional-execution)
     * [4.2. Loops](#42-loops)
