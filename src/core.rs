@@ -546,7 +546,6 @@ impl Pack {
 
     //TODO: create "run_word", a public version of "exec" that in case of a Defined word,
     // it automatically calls run and make the current "exec" pub(crate).
-    // Also create an async version of it to partner with "async_run".
 
     /// Run one cell from the Concat
     pub fn one_step(&mut self) -> Result<bool, Error> {
@@ -562,6 +561,8 @@ impl Pack {
             Ok(false)
         }
     }
+
+    //TODO: create an async version of "run_word" to partner with "async_run".
 
     /// Async version of run().
     pub fn async_run(&mut self) -> RunFuture {

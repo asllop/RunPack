@@ -589,32 +589,15 @@ This word we just defined, `print_all`, gets every element in the stack and prin
 
 The word `loop` is very simple, it just "marks" its position. This position is then used by the word `again`. The word `again` does most of the work, it reads a boolean from the stack, if this boolean is true, it jumps back to the `loop`, if it's false, just continues the execution normally.
 
-Sometimes we may need to break a loop before reaching the end condition. To accomplish it we have two words: `break` and `leave`.
+Sometimes we may need to break a loop before reaching the end condition. To accomplish it we use `leave`. This word gets an integer (N) from the stack and discards N positions from the return stack, then uses the next as the return address. See how we can break an endless loop using it:
 
 ```
-{ loop 'Do it once' print break true again } def doit_once
+{ loop 'Do it once' print 1 leave } def doit_once
 doit_once
+'We continue here after breaking' print
 ```
 
-This example shows an infinite loop, because we provide a `true` to `again`, so it should loop forever. But it actually runs only once, because the word `break` ends the loop.
-
-The second word, `leave`, does the same, but it takes an integer from the stack. This integer is the number of return stack levels it should leave to actually break the loop. It's used when we want to break a loop from within another word:
-
-```
-{ 2 leave } def actual_break
-{ actual_break } def some_word
-{ loop 'Do it once' print some_word true again } def doit_once
-doit_once
-```
-
-Finally, we can use the word `loop`, `break` and `leave` to implement recursion:
-
-```
- { loop 'Do it once' print break } def doit_once
- doit_once
-```
-
-The word `loop` when used without `again`, it produces a loop when the word reaches the `}`. In these cases, the only way to end the loop is with a breaking word.
+This example shows an infinite loop, because the word `}` returns to the address pushed into the RetStack by `loop`. But `leave` discards 1 address from the RetStack, in this case the address pushed by `loop`, then gets one more address, the one pushed when we called `doit_once`, and returns to it.
 
 ## 5. Lexicons
 

@@ -9,8 +9,8 @@ pub fn register_primitives(pack: &mut Pack) {
         ("=", equal), ("!=", not_equal), (">=", big_equal), ("<=", small_equal), ("and", and), ("or", or), ("not", not),
         ("wipe", wipe), ("if", if_word), ("either", either), ("[", open_bracket), ("exe", exe), ("int", int), ("float", float),
         ("string", string), ("word", word), ("type", type_word), ("?", question), ("@@", atat), ("@def", atdef), ("lex#", lex_sharp),
-        ("skip", skip), ("block", block), ("exist?", exist_question), ("_", underscore), ("break", break_word), ("leave", leave),
-        ("loop", loop_word), ("again", again), ("while", while_word), ("do", do_word),
+        ("skip", skip), ("block", block), ("exist?", exist_question), ("_", underscore), ("leave", leave), ("loop", loop_word),
+        ("again", again), ("while", while_word), ("do", do_word),
     ]);
 }
 
@@ -521,22 +521,10 @@ fn underscore(_: &mut Pack) -> Result<bool, Error> {
     Ok(true)
 }
 
-fn break_word(pack: &mut Pack) -> Result<bool, Error> {
-    // Discard 1 position of the return stack and continue execution at the next position in the return stack
-    pack.ret.pop();
-    if let Some(pos) = pack.ret.pop() {
-        pack.concat.pointer = pos;
-        Ok(true)
-    }
-    else {
-        Err(Error::new("break_word: Return stack underflow".into()))
-    }
-}
-
 fn leave(pack: &mut Pack) -> Result<bool, Error> {
     if let Some(Cell::Integer(level)) = pack.stack.pop() {
         // Discard n positions of the return stack and continue execution at the next position in the return stack
-        for _ in 0..level + 1 {
+        for _ in 0..level {
             pack.ret.pop();
         }
         if let Some(pos) = pack.ret.pop() {
