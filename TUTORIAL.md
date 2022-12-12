@@ -306,7 +306,7 @@ Nested stacks are useful for operations that use all the data from the stack, be
 
 ## 2. Arithmetic & Logic operations
 
-We have already seen some of them. Arithmetic operations can work either with integers or floats, but can't mix them. There are five: addition, subtraction, multiplication, division, and remainder of a division.
+We have already seen some of them. Arithmetic operations can work either with integers or floats, but can't mix them. There are five words, for addition, subtraction, multiplication, division, and remainder of a division.
 
 ```
 wipe
@@ -326,6 +326,18 @@ Output:
 10
 2
 1
+```
+
+The word `+` can also operate on strings:
+
+```
+'Hello, ' 'World!' + print
+```
+
+Output:
+
+```
+Hello, World!
 ```
 
 If we need, we can convert between float and integer:
@@ -994,7 +1006,7 @@ Manipulating the return stack is delicate, and must be done with care. In genera
 
 ### 7.5 Custom Structs
 
-In the chapter [7.1 Cells](#71-cells) we saw the structure of a Cell in RunPack, and in the previous and following chapters we alse have seen each one of the variants, except one, the `Struct`. The Struct variant is used to create custom data structures in Rust, and use them as normal cells in RunPack programs. For example, RunPack doesn't natively provide vectors or hash maps, but we can implement them using the `Cell::Struct` variant. To use a custom type as a `Cell::Struct` it must implement the `StructCell` trait. Let's see how we could create a simple hash map:
+In the Cell enum there is one mysterious variant we haven't used yet, the `Cell::Struct`. The struct variant is used to create custom data structures in Rust, and use them as normal cells in RunPack programs. For example, RunPack doesn't natively provide vectors or hash maps, but we can implement them using the `Cell::Struct` variant. To use a custom type as a `Cell::Struct` it must implement the `StructCell` trait. Let's see how we could create a simple hash map:
 
 ```rust
 use std::collections::HashMap;
