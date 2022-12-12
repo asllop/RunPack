@@ -350,15 +350,15 @@ Sometimes an arithmetic operation that is big and complicated can look messy whe
 
 Pretty ugly, uh?
 
-For this kind of cases we have the sequence operations: `sum` and `prod`:
+For this kind of cases we have the sequence operations: `add` and `mul`:
 
 ```
-( ( 1 2 3 sum ) ( 4 5 6 sum ) ( 7 8 9 sum ) prod ) print
+( ( 1 2 3 add ) ( 4 5 6 add ) ( 7 8 9 add ) mul ) print
 ```
 
 Pretty neat, uh?
 
-This is the typical case where [nested stacks](#nested-stacks) are useful. The `sum` word gets all numbers in the stack and adds them. Same for `prod`, but with multiplication. Because we want to limit the data available for each operation, we use the words `(` and `)` to create a stack, where we put the data and finally call the operation we want.
+This is the typical case where [nested stacks](#nested-stacks) are useful. The `add` word gets all numbers in the stack and adds them. Same for `mul`, but with multiplication. Because we want to limit the data available for each operation, we use the words `(` and `)` to create a stack, where we put the data and finally call the operation we want.
 
 Yet again, beware of the spaces!
 
